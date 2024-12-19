@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-class DataStandardizer:
+class DataProcessor:
     def __init__(self):
         self.base_path = Path("data")
         self.columns = [
@@ -13,7 +13,7 @@ class DataStandardizer:
             'timetable_reasons', 'timetable_impact', 'total_device_hours', 'hours_socialmedia', 
             'level_of_study', 'gender', 'physical_activities', 'hours_between_lectures', 
             'hours_per_week_lectures', 'hours_socialising', 'actual', 'student_type_time', 
-            'student_type_location', 'cost_of_study', 'sense_of _belonging'
+            'student_type_location', 'cost_of_study', 'sense_of_belonging'
         ]
         self.value_mappings = {
             'diet': {
@@ -27,19 +27,19 @@ class DataStandardizer:
                 'Black/African/Caribbean/Black British': 'Black',
                 'Asian/Asian British': 'Asian',
                 'Mixed/multiple ethnic groups': 'Mixed',
-                'Other ethnic group': 'Arab'
+                'Other ethnic group': 'Other'
             },
             'family_earning_class': {
-                'Lower class (less than £25000 per annum)': 'Lower Class',
-                'Lower class (below £25,000)': 'Lower Class',
-                'Lower class': 'Lower Class',
-                'Middle class (between £25k and £90K)': 'Middle Class',
-                'Middle class (£25,000-£54,999)': 'Middle Class',
-                'Middle class': 'Middle Class',
-                'Higher class (£90001 or above per annum)': 'Higher Class',
-                'Higher class (£55,000-£90,000)': 'Higher Class',
-                'Higher class': 'Higher Class',
-                'Upper higher class (above £90,000)': 'Higher Class'
+                'Lower class (less than £25000 per annum)': 'Lower Class (below £25,000)',
+                'Lower class (below £25,000)': 'Lower Class (below £25,000)',
+                'Lower class': 'Lower Class (below £25,000)',
+                'Middle class (between £25k and £90K)': 'Middle Class (£25,000-£54,999)',
+                'Middle class (£25,000-£54,999)': 'Middle Class (£25,000-£54,999)',
+                'Middle class': 'Middle Class (£25,000-£54,999)',
+                'Higher class (£90001 or above per annum)': 'Higher Class (£55,000-£90,000)',
+                'Higher class (£55,000-£90,000)': 'Higher Class (£55,000-£90,000)',
+                'Higher class': 'Higher Class (£55,000-£90,000)',
+                'Upper higher class (above £90,000)': 'Upper Higher Class (above £90,000)'
             },
             'quality_of_life': {
                 'Medium quality of life': 'Medium',
@@ -71,7 +71,6 @@ class DataStandardizer:
                 'Yes (due to employment-related issues),Yes (due to other circumstances, such as health, family issues, etc),Yes (due to university work)': 'Yes',
                 'Yes (due to university work),No': 'Yes',
                 'Yes (due to employment-related issues), Yes (due to university work)': 'Yes'
-
             },
             'stress_before_exams': {
                 'Yes (due to university work)': 'Yes',
@@ -84,11 +83,6 @@ class DataStandardizer:
                 'No (I am not stressed)': 'No'
             },
             'well_hydrated': {'Yes': 'Yes', 'No': 'No'},
-            'known_disabilities': {
-                'Yes': 'Yes',
-                'No': 'No',
-                'Prefer not to say': 'No'
-            },
             'financial_problems': {'Yes': 'Yes', 'No': 'No'},
             'feel_afraid': {
                 'Very frequently': 'Very Frequently',
@@ -115,7 +109,7 @@ class DataStandardizer:
             'student_type_time': {
                 'I am a part-time student': 'Part Time',
                 'I am a full-time student': 'Full Time',
-                'I am unsure': 'Part Time'
+                'I am unsure': "Don't Know"
             },
             'student_type_location': {
                 'Home Student': 'Home student',
@@ -142,16 +136,16 @@ class DataStandardizer:
                 'No, it does not help': 'No'
             },
             'level_of_study': {
-                'Level 4': 'Undergraduate Year 1',
-                'Level 4 ': 'Undergraduate Year 1',
-                'Level 4 (first year, undergraduate)': 'Undergraduate Year 1',
-                'Level 4 Foundation year': 'Foundation',
-                'Foundation year': 'Foundation',
-                'Level 5 (second year, undergraduate)': 'Undergraduate Year 2',
-                'Level 6 (third year, undergraduate)': 'Undergraduate Year 3',
-                'Level 7': 'Postgraduate',
-                'Level 7 ': 'Postgraduate',
-                'Level 7 (postgraduate)': 'Postgraduate',
+                'Level 4': 'Level 4',
+                'Level 4 ': 'Level 4',
+                'Level 4 (first year, undergraduate)': 'Level 4',
+                'Level 4 Foundation year': 'Level 4',
+                'Foundation year': 'Level 4',
+                'Level 5 (second year, undergraduate)': 'Level 5',
+                'Level 6 (third year, undergraduate)': 'Level 6',
+                'Level 7': 'Level 7',
+                'Level 7 ': 'Level 7',
+                'Level 7 (postgraduate)': 'Level 7',
                 'Others': 'Other',
                 'Other': 'Other'
             },
@@ -239,19 +233,22 @@ class DataStandardizer:
 
     def clean_and_standardize_dataset(self, df):
         """Clean and standardize the merged dataset"""
+        
         if 'timetable_reasons' in df.columns:
             df = df.drop('timetable_reasons', axis=1)
+            
         # Clean special characters
         for col in df.columns:
             if df[col].dtype == 'object':
                 df[col] = df[col].astype(str).str.replace('Â', '')
                 df[col] = df[col].str.strip()
     
-         # Handle stress columns first
+        # Handle stress columns first
         stress_columns = ['stress_in_general', 'stress_before_exams']
         for col in stress_columns:
             if col in df.columns:
                 df[col] = df[col].apply(self.standardize_stress)
+        
         # Apply value mappings
         for col, mapping in self.value_mappings.items():
             if col in df.columns:
@@ -301,13 +298,13 @@ class DataStandardizer:
         merged_df = self.clean_and_standardize_dataset(merged_df)
         
         # Save merged dataset
-        merged_df.to_excel(self.base_path / "merged_dataset.xlsx", index=False)
+        merged_df.to_excel(self.base_path / "merged_dataset_cleaned_vx.xlsx", index=False)
         print(f"Merged dataset saved with {len(merged_df)} rows")
         
         return merged_df
     
     def compare_columns(self):
-        merged = pd.read_excel(self.base_path / "merged_dataset.xlsx")
+        merged = pd.read_excel(self.base_path / "evaluated_dataset.xlsx")
         
         
         comparison_results = {}
@@ -320,7 +317,7 @@ class DataStandardizer:
         return comparison_results
 
     def save_comparison_results(self, comparison_results):
-        output_path = self.base_path / "comparison_results.txt"
+        output_path = self.base_path / "comparison_results_evaluated.txt"
         with open(output_path, 'w', encoding='utf-8') as f:
             for col, datasets in comparison_results.items():
                 f.write(f"Column: {col}\n")
@@ -390,6 +387,6 @@ class DataStandardizer:
         return 'No'
 
 if __name__ == "__main__":
-    standardizer = DataStandardizer()
+    standardizer = DataProcessor()
     # merged_data = standardizer.merge_datasets()
     standardizer.save_comparison_results(standardizer.compare_columns())

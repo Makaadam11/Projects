@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
-from models import AnthropicLanguageModel
+from models import AnthropicLanguageModel, GroqClient
 matplotlib.use('Agg')
 from pathlib import Path
 from fpdf import FPDF
@@ -60,7 +60,7 @@ def preprocess_dataframe(df):
 class Reports:
     def __init__(self, df):
         self.df = preprocess_dataframe(df)
-        self.llm = AnthropicLanguageModel()
+        self.llm = GroqClient()
         self.output_dir = Path("report_assets")
         self.output_dir.mkdir(exist_ok=True)
         self.pdf = FPDF()

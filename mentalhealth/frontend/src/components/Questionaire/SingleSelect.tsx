@@ -1,19 +1,12 @@
 import { useState, useEffect } from 'react'
-
 interface SingleSelectProps {
-  value: string
-  onValueChange: (value: string) => void
+  question: string;
+  options: string[];
+  value: string;
+  onValueChange: (value: string) => void;
 }
 
-const ethnicGroups = [
-  { id: 'white', label: 'White' },
-  { id: 'mixed', label: 'Mixed/multiple ethnic groups' },
-  { id: 'asian', label: 'Asian/Asian British' },
-  { id: 'black', label: 'Black/African/Caribbean/Black British' },
-  { id: 'other', label: 'Other ethnic group' },
-]
-
-export default function SingleSelect({ value, onValueChange }: SingleSelectProps) {
+export default function SingleSelect({ question, options, value, onValueChange }: SingleSelectProps) {
   const [localValue, setLocalValue] = useState(value)
 
   useEffect(() => {
@@ -27,22 +20,22 @@ export default function SingleSelect({ value, onValueChange }: SingleSelectProps
 
   return (
     <div className="space-y-4">
-      <h2 className="font-medium">Ethnic Group</h2>
+      <h2 className="font-medium">{question}</h2>
       <div className="space-y-2">
-        {ethnicGroups.map((group) => (
+        {options.map(option =>  (
           <label
-            key={group.id}
+            key={option}
             className="flex items-center p-3 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
           >
             <input
               type="radio"
               name="ethnicGroup"
-              value={group.id}
-              checked={localValue === group.id}
+              value={value}
+              checked={localValue === option}
               onChange={(e) => handleChange(e.target.value)}
               className="mr-3"
             />
-            <span>{group.label}</span>
+            <span>{option}</span>
           </label>
         ))}
       </div>
