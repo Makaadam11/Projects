@@ -2,15 +2,14 @@
 import { useState } from 'react'
 import SingleSelect from './Questionaire/SingleSelect'
 import Slider from './Questionaire/Slider'
-import MultiSelect from './Questionaire/MultiSelect'
-import { TextInput } from './Questionaire/TextInput'
-import { Question } from './'
+import { Question, surveyQuestions } from '../types/QuestionaireTypes'
+import MultiSelect from './Questionaire/MultiSelect';
+import DropdownSelect from './Questionaire/DropdownSelect'
+import { TextInput } from './Questionaire/TextInput';
 
 export default function Questionaire() {
-  const [formData, setFormData] = useState({
-    ethnicGroup: '',
-    studyHours: 0
-  })
+  const [formData, setFormData] = useState<Record<string, any>>({});
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,57 +20,79 @@ export default function Questionaire() {
     switch (question.type) {
       case 'single':
         return (
-          <SingleSelect
-            key={question.id}
-            question={question.question}
-            options={question.options || []}
-            value={formData[question.id] || ''}
-            onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
-          />
+          <div key={question.id}>
+            <SingleSelect
+              question={question.question}
+              options={question.options || []}
+              value={formData[question.id] || ''}
+              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+            />
+          </div>
         )
       case 'slider':
         return (
-          <Slider
-            key={question.id}
-            question={question.question}
-            min={question.min || 0}
-            max={question.max || 100}
-            step={question.step || 1}
-            value={formData[question.id] || 0}
-            onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
-          />
+          <div key={question.id}>
+            <Slider
+              question={question.question}
+              min={question.min || 0}
+              max={question.max || 100}
+              step={question.step || 1}
+              value={formData[question.id] || 0}
+              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+            />
+          </div>
         )
-      // Add other cases
+      case 'multi':
+        return (
+          <div key={question.id}>
+            <MultiSelect
+              question={question.question}
+              options={question.options || []}
+              value={formData[question.id] || []}
+              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+            />
+          </div>
+        )
+      case 'text':
+        return (
+          <div key={question.id}>
+            <TextInput
+              question={question.question}
+              value={formData[question.id] || ''}
+              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+            />
+          </div>
+        )
+      case 'dropdown':
+        return (
+          <div key={question.id}>
+            <DropdownSelect
+              question={question.question}
+              options={question.options || []}
+              value={formData[question.id] || ''}
+              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+            />
+          </div>
+        )
+      case 'textinput':
+        return (
+          <div key={question.id}>
+            <TextInput
+              question={question.question}
+              value={formData[question.id] || ''}
+              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+            />
+          </div>
+        )
     }
   }
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="space-y-8 p-6 bg-white rounded-lg shadow">
+      <form className="space-y-8 p-6 bg-white rounded-lg shadow">
         <h1 className="text-2xl font-bold mb-6">Student Survey</h1>
-        
-        <SingleSelect 
-          value={formData.ethnicGroup}
-          onValueChange={(value) => setFormData(prev => ({...prev, ethnicGroup: value}))}
-        />
-        
-        <Slider 
-          value={formData.studyHours}
-          onValueChange={(value) => setFormData(prev => ({...prev, studyHours: value}))}
-        />
-
-        <MultiSelect value={[]} onValueChange={function (value: string[]): void {
-          throw new Error('Function not implemented.')
-        } }/>
-        
-        <TextInput value={''} onChange={function (value: string): void {
-          throw new Error('Function not implemented.')
-        } }/>
-        
-        <button
-          type="submit"
-          className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
+        {surveyQuestions.map(renderQuestion)}
+        <button type="submit" className="w-full py-2 px-4 bg-blue-600 text-white rounded">
           Submit
         </button>
       </form>

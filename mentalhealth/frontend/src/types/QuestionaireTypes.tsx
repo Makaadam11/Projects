@@ -1,4 +1,4 @@
-export type QuestionType = 'single' | 'multi' | 'slider' | 'text';
+export type QuestionType = 'single' | 'multi' | 'slider' | 'text' | 'dropdown' | 'textinput';
 
 export interface Question {
   id: string;
@@ -10,23 +10,265 @@ export interface Question {
   step?: number;
 }
 
+const countries = [
+  { value: "", label: "Select a country" },
+  { value: "AF", label: "Afghanistan" },
+  { value: "AL", label: "Albania" },
+  { value: "DZ", label: "Algeria" },
+  { value: "AS", label: "American Samoa" },
+  { value: "AD", label: "Andorra" },
+  { value: "AO", label: "Angola" },
+  { value: "AI", label: "Anguilla" },
+  { value: "AQ", label: "Antarctica" },
+  { value: "AG", label: "Antigua and Barbuda" },
+  { value: "AR", label: "Argentina" },
+  { value: "AM", label: "Armenia" },
+  { value: "AW", label: "Aruba" },
+  { value: "AU", label: "Australia" },
+  { value: "AT", label: "Austria" },
+  { value: "AZ", label: "Azerbaijan" },
+  { value: "BS", label: "Bahamas" },
+  { value: "BH", label: "Bahrain" },
+  { value: "BD", label: "Bangladesh" },
+  { value: "BB", label: "Barbados" },
+  { value: "BY", label: "Belarus" },
+  { value: "BE", label: "Belgium" },
+  { value: "BZ", label: "Belize" },
+  { value: "BJ", label: "Benin" },
+  { value: "BM", label: "Bermuda" },
+  { value: "BT", label: "Bhutan" },
+  { value: "BO", label: "Bolivia" },
+  { value: "BA", label: "Bosnia and Herzegovina" },
+  { value: "BW", label: "Botswana" },
+  { value: "BR", label: "Brazil" },
+  { value: "IO", label: "British Indian Ocean Territory" },
+  { value: "VG", label: "British Virgin Islands" },
+  { value: "BN", label: "Brunei" },
+  { value: "BG", label: "Bulgaria" },
+  { value: "BF", label: "Burkina Faso" },
+  { value: "BI", label: "Burundi" },
+  { value: "KH", label: "Cambodia" },
+  { value: "CM", label: "Cameroon" },
+  { value: "CA", label: "Canada" },
+  { value: "CV", label: "Cape Verde" },
+  { value: "KY", label: "Cayman Islands" },
+  { value: "CF", label: "Central African Republic" },
+  { value: "TD", label: "Chad" },
+  { value: "CL", label: "Chile" },
+  { value: "CN", label: "China" },
+  { value: "CX", label: "Christmas Island" },
+  { value: "CC", label: "Cocos Islands" },
+  { value: "CO", label: "Colombia" },
+  { value: "KM", label: "Comoros" },
+  { value: "CK", label: "Cook Islands" },
+  { value: "CR", label: "Costa Rica" },
+  { value: "HR", label: "Croatia" },
+  { value: "CU", label: "Cuba" },
+  { value: "CW", label: "Curacao" },
+  { value: "CY", label: "Cyprus" },
+  { value: "CZ", label: "Czech Republic" },
+  { value: "CD", label: "Democratic Republic of the Congo" },
+  { value: "DK", label: "Denmark" },
+  { value: "DJ", label: "Djibouti" },
+  { value: "DM", label: "Dominica" },
+  { value: "DO", label: "Dominican Republic" },
+  { value: "TL", label: "East Timor" },
+  { value: "EC", label: "Ecuador" },
+  { value: "EG", label: "Egypt" },
+  { value: "SV", label: "El Salvador" },
+  { value: "GQ", label: "Equatorial Guinea" },
+  { value: "ER", label: "Eritrea" },
+  { value: "EE", label: "Estonia" },
+  { value: "ET", label: "Ethiopia" },
+  { value: "FK", label: "Falkland Islands" },
+  { value: "FO", label: "Faroe Islands" },
+  { value: "FJ", label: "Fiji" },
+  { value: "FI", label: "Finland" },
+  { value: "FR", label: "France" },
+  { value: "PF", label: "French Polynesia" },
+  { value: "GA", label: "Gabon" },
+  { value: "GM", label: "Gambia" },
+  { value: "GE", label: "Georgia" },
+  { value: "DE", label: "Germany" },
+  { value: "GH", label: "Ghana" },
+  { value: "GI", label: "Gibraltar" },
+  { value: "GR", label: "Greece" },
+  { value: "GL", label: "Greenland" },
+  { value: "GD", label: "Grenada" },
+  { value: "GU", label: "Guam" },
+  { value: "GT", label: "Guatemala" },
+  { value: "GG", label: "Guernsey" },
+  { value: "GN", label: "Guinea" },
+  { value: "GW", label: "Guinea-Bissau" },
+  { value: "GY", label: "Guyana" },
+  { value: "HT", label: "Haiti" },
+  { value: "HN", label: "Honduras" },
+  { value: "HK", label: "Hong Kong" },
+  { value: "HU", label: "Hungary" },
+  { value: "IS", label: "Iceland" },
+  { value: "IN", label: "India" },
+  { value: "ID", label: "Indonesia" },
+  { value: "IR", label: "Iran" },
+  { value: "IQ", label: "Iraq" },
+  { value: "IE", label: "Ireland" },
+  { value: "IM", label: "Isle of Man" },
+  { value: "IL", label: "Israel" },
+  { value: "IT", label: "Italy" },
+  { value: "CI", label: "Ivory Coast" },
+  { value: "JM", label: "Jamaica" },
+  { value: "JP", label: "Japan" },
+  { value: "JE", label: "Jersey" },
+  { value: "JO", label: "Jordan" },
+  { value: "KZ", label: "Kazakhstan" },
+  { value: "KE", label: "Kenya" },
+  { value: "KI", label: "Kiribati" },
+  { value: "XK", label: "Kosovo" },
+  { value: "KW", label: "Kuwait" },
+  { value: "KG", label: "Kyrgyzstan" },
+  { value: "LA", label: "Laos" },
+  { value: "LV", label: "Latvia" },
+  { value: "LB", label: "Lebanon" },
+  { value: "LS", label: "Lesotho" },
+  { value: "LR", label: "Liberia" },
+  { value: "LY", label: "Libya" },
+  { value: "LI", label: "Liechtenstein" },
+  { value: "LT", label: "Lithuania" },
+  { value: "LU", label: "Luxembourg" },
+  { value: "MO", label: "Macau" },
+  { value: "MK", label: "Macedonia" },
+  { value: "MG", label: "Madagascar" },
+  { value: "MW", label: "Malawi" },
+  { value: "MY", label: "Malaysia" },
+  { value: "MV", label: "Maldives" },
+  { value: "ML", label: "Mali" },
+  { value: "MT", label: "Malta" },
+  { value: "MH", label: "Marshall Islands" },
+  { value: "MR", label: "Mauritania" },
+  { value: "MU", label: "Mauritius" },
+  { value: "YT", label: "Mayotte" },
+  { value: "MX", label: "Mexico" },
+  { value: "FM", label: "Micronesia" },
+  { value: "MD", label: "Moldova" },
+  { value: "MC", label: "Monaco" },
+  { value: "MN", label: "Mongolia" },
+  { value: "ME", label: "Montenegro" },
+  { value: "MS", label: "Montserrat" },
+  { value: "MA", label: "Morocco" },
+  { value: "MZ", label: "Mozambique" },
+  { value: "MM", label: "Myanmar" },
+  { value: "NA", label: "Namibia" },
+  { value: "NR", label: "Nauru" },
+  { value: "NP", label: "Nepal" },
+  { value: "NL", label: "Netherlands" },
+  { value: "NC", label: "New Caledonia" },
+  { value: "NZ", label: "New Zealand" },
+  { value: "NI", label: "Nicaragua" },
+  { value: "NE", label: "Niger" },
+  { value: "NG", label: "Nigeria" },
+  { value: "NU", label: "Niue" },
+  { value: "KP", label: "North Korea" },
+  { value: "MP", label: "Northern Mariana Islands" },
+  { value: "NO", label: "Norway" },
+  { value: "OM", label: "Oman" },
+  { value: "PK", label: "Pakistan" },
+  { value: "PW", label: "Palau" },
+  { value: "PS", label: "Palestine" },
+  { value: "PA", label: "Panama" },
+  { value: "PG", label: "Papua New Guinea" },
+  { value: "PY", label: "Paraguay" },
+  { value: "PE", label: "Peru" },
+  { value: "PH", label: "Philippines" },
+  { value: "PN", label: "Pitcairn Islands" },
+  { value: "PL", label: "Poland" },
+  { value: "PT", label: "Portugal" },
+  { value: "PR", label: "Puerto Rico" },
+  { value: "QA", label: "Qatar" },
+  { value: "CG", label: "Republic of the Congo" },
+  { value: "RE", label: "Reunion" },
+  { value: "RO", label: "Romania" },
+  { value: "RU", label: "Russia" },
+  { value: "RW", label: "Rwanda" },
+  { value: "BL", label: "Saint Barthelemy" },
+  { value: "SH", label: "Saint Helena" },
+  { value: "KN", label: "Saint Kitts and Nevis" },
+  { value: "LC", label: "Saint Lucia" },
+  { value: "MF", label: "Saint Martin" },
+  { value: "PM", label: "Saint Pierre and Miquelon" },
+  { value: "VC", label: "Saint Vincent and the Grenadines" },
+  { value: "WS", label: "Samoa" },
+  { value: "SM", label: "San Marino" },
+  { value: "ST", label: "Sao Tome and Principe" },
+  { value: "SA", label: "Saudi Arabia" },
+  { value: "SN", label: "Senegal" },
+  { value: "RS", label: "Serbia" },
+  { value: "SC", label: "Seychelles" },
+  { value: "SL", label: "Sierra Leone" },
+  { value: "SG", label: "Singapore" },
+  { value: "SX", label: "Sint Maarten" },
+  { value: "SK", label: "Slovakia" },
+  { value: "SI", label: "Slovenia" },
+  { value: "SB", label: "Solomon Islands" },
+  { value: "SO", label: "Somalia" },
+  { value: "ZA", label: "South Africa" },
+  { value: "KR", label: "South Korea" },
+  { value: "SS", label: "South Sudan" },
+  { value: "ES", label: "Spain" },
+  { value: "LK", label: "Sri Lanka" },
+  { value: "SD", label: "Sudan" },
+  { value: "SR", label: "Suriname" },
+  { value: "SJ", label: "Svalbard and Jan Mayen" },
+  { value: "SZ", label: "Swaziland" },
+  { value: "SE", label: "Sweden" },
+  { value: "CH", label: "Switzerland" },
+  { value: "SY", label: "Syria" },
+  { value: "TW", label: "Taiwan" },
+  { value: "TJ", label: "Tajikistan" },
+  { value: "TZ", label: "Tanzania" },
+  { value: "TH", label: "Thailand" },
+  { value: "TG", label: "Togo" },
+  { value: "TK", label: "Tokelau" },
+  { value: "TO", label: "Tonga" },
+  { value: "TT", label: "Trinidad and Tobago" },
+  { value: "TN", label: "Tunisia" },
+  { value: "TR", label: "Turkey" },
+  { value: "TM", label: "Turkmenistan" },
+  { value: "TC", label: "Turks and Caicos Islands" },
+  { value: "TV", label: "Tuvalu" },
+  { value: "UG", label: "Uganda" },
+  { value: "UA", label: "Ukraine" },
+  { value: "AE", label: "United Arab Emirates" },
+  { value: "GB", label: "United Kingdom" },
+  { value: "US", label: "United States" },
+  { value: "UY", label: "Uruguay" },
+  { value: "UZ", label: "Uzbekistan" },
+  { value: "VU", label: "Vanuatu" },
+  { value: "VA", label: "Vatican" },
+  { value: "VE", label: "Venezuela" },
+  { value: "VN", label: "Vietnam" },
+  { value: "VI", label: "Virgin Islands, U.S." },
+  { value: "EH", label: "Western Sahara" },
+  { value: "YE", label: "Yemen" },
+  { value: "ZM", label: "Zambia" },
+  { value: "ZW", label: "Zimbabwe" }
+];
+
 export const surveyQuestions: Question[] = [
   {
     id: 'diet',
     type: 'single',
-    question: 'Would you describe your current diet as healthy and balanced?',
+    question: '1. Would you describe your current diet as healthy and balanced?',
     options: ['Yes', 'No', 'Sometimes']
   },
   {
     id: 'ethnicGroup',
     type: 'single',
-    question: 'What is your ethnic group?',
+    question: '2. What is your ethnic group?',
     options: ['Asian', 'Black', 'Mixed', 'White', 'Arab', 'Other']
   },
   {
     id: 'studyHours',
     type: 'slider',
-    question: 'How many hours do you spend on university/academic-related work per week during exams?',
+    question: '3. How many hours do you spend on university/academic-related work per week during exams?',
     min: 0,
     max: 50,
     step: 1
@@ -34,44 +276,44 @@ export const surveyQuestions: Question[] = [
   {
     id: 'familyClass',
     type: 'single',
-    question: 'How would you rate your family class? (family earnings per year)',
+    question: '4. How would you rate your family class? (family earnings per year)',
     options: ['Lower Class (below £25,000)', 'Middle Class (£25,000-£54,999)', 
               'Higher Class (£55,000-£90,000)', 'Upper Higher Class (above £90,000)']
   },
   {
     id: 'qualityOfLife',
     type: 'single',
-    question: 'How would you define your quality of life?',
+    question: '5. How would you define your quality of life?',
     options: ['Very Poor', 'Poor', 'Neither Poor nor Good', 'Good', 'Very Good']
   },
   {
     id: 'alcoholConsumption',
     type: 'single',
-    question: 'How would you define your alcohol consumption?',
+    question: '6. How would you define your alcohol consumption?',
     options: ['Never', 'Occasionally', 'Regularly', 'Frequently', 'Daily']
   },
   {
     id: 'personalityType',
     type: 'single',
-    question: 'Would you consider yourself an introvert or extrovert person?',
+    question: '7. Would you consider yourself an introvert or extrovert person?',
     options: ['Introvert', 'Extrovert', 'Ambivert']
   },
   {
     id: 'stressFactors',
     type: 'multi',
-    question: 'In general, do you feel you experience stress while in University?',
+    question: '8. In general, do you feel you experience stress while in University?',
     options: ['Due to university work', 'Due to employment', 'Due to personal circumstances', 'No stress']
   },
   {
     id: 'hydration',
     type: 'single',
-    question: 'Would you say that you are normally well hydrated?',
+    question: '9. Would you say that you are normally well hydrated?',
     options: ['Yes', 'No', 'Sometimes']
   },
   {
     id: 'exerciseFrequency',
     type: 'slider',
-    question: 'How often do you exercise per week?',
+    question: '10. How often do you exercise per week?',
     min: 0,
     max: 7,
     step: 1
@@ -79,13 +321,13 @@ export const surveyQuestions: Question[] = [
   {
     id: 'disabilities',
     type: 'single',
-    question: 'Do you have any known disabilities?',
+    question: '11. Do you have any known disabilities?',
     options: ['Yes', 'No', 'Prefer not to say']
   },
   {
     id: 'workHours',
     type: 'slider',
-    question: 'How many hours per week do you work?',
+    question: '12. How many hours per week do you work?',
     min: 0,
     max: 40,
     step: 1
@@ -93,30 +335,31 @@ export const surveyQuestions: Question[] = [
   {
     id: 'financialSupport',
     type: 'single',
-    question: 'What is your main financial support for your studies?',
+    question: '13. What is your main financial support for your studies?',
     options: ['Student loan', 'Parent support', 'Self-funded', 'Scholarship', 'Other']
   },
   {
     id: 'employment',
     type: 'single',
-    question: 'Are you in any form of employment?',
+    question: '14. Are you in any form of employment?',
     options: ['Full-time', 'Part-time', 'Not employed', 'Self-employed']
   },
   {
     id: 'financialIssues',
     type: 'single',
-    question: 'Do you normally encounter financial issues paying your fees?',
+    question: '15. Do you normally encounter financial issues paying your fees?',
     options: ['Yes', 'No', 'Sometimes']
   },
   {
     id: 'homeCountry',
-    type: 'text',
-    question: 'What Country are you from?'
+    type: 'dropdown',
+    question: '16. What Country are you from?',
+    options: countries.map(country => country.label)
   },
   {
     id: 'yearOfBirth',
     type: 'slider',
-    question: 'What is your year of birth?',
+    question: '17. What is your year of birth?',
     min: 1970,
     max: 2010,
     step: 1
@@ -124,41 +367,41 @@ export const surveyQuestions: Question[] = [
   {
     id: 'courseOfStudy',
     type: 'text',
-    question: 'What is your course of study?'
+    question: '18. What is your course of study?'
   },
   {
     id: 'examStress',
     type: 'single',
-    question: 'Do you normally feel stressed before exams?',
+    question: '19. Do you normally feel stressed before exams?',
     options: ['Yes', 'No', 'Sometimes']
   },
   {
     id: 'anxiety',
     type: 'single',
-    question: 'How often did you feel afraid that something awful might happen?',
+    question: '20. How often did you feel afraid that something awful might happen?',
     options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Very Often']
   },
   {
     id: 'timetablePreference',
     type: 'single',
-    question: 'Would you prefer your timetable to be spread or compact?',
+    question: '21. Would you prefer your timetable to be spread or compact?',
     options: ['Spread (3-4 days with fewer lectures)', 'Compact (1-2 busy days)']
   },
   {
     id: 'timetableReasons',
     type: 'text',
-    question: 'What are the reasons for your timetable preference?'
+    question: '22. What are the reasons for your timetable preference?'
   },
   {
     id: 'timetableImpact',
     type: 'single',
-    question: 'Does your timetabling structure impact your study, life and health?',
+    question: '23. Does your timetabling structure impact your study, life and health?',
     options: ['Yes', 'No', 'Sometimes']
   },
   {
     id: 'deviceHours',
     type: 'slider',
-    question: 'How many hours do you spend using technology devices per day?',
+    question: '24. How many hours do you spend using technology devices per day?',
     min: 0,
     max: 24,
     step: 1
@@ -166,7 +409,7 @@ export const surveyQuestions: Question[] = [
   {
     id: 'socialMediaHours',
     type: 'slider',
-    question: 'How many hours do you spend using social media per day?',
+    question: '25. How many hours do you spend using social media per day?',
     min: 0,
     max: 24,
     step: 1
@@ -174,25 +417,25 @@ export const surveyQuestions: Question[] = [
   {
     id: 'yearOfStudy',
     type: 'single',
-    question: 'What year of study are you in?',
+    question: '26. What year of study are you in?',
     options: ['First Year', 'Second Year', 'Third Year', 'Fourth Year', 'Postgraduate']
   },
   {
     id: 'gender',
     type: 'single',
-    question: 'How would you describe your biological gender?',
+    question: '27. How would you describe your biological gender?',
     options: ['Male', 'Female', 'Other', 'Prefer not to say']
   },
   {
     id: 'physicalActivity',
     type: 'single',
-    question: 'Do you consider physical activity to be helpful to your mental health?',
+    question: '28. Do you consider physical activity to be helpful to your mental health?',
     options: ['Yes', 'No', 'Not sure']
   },
   {
     id: 'hoursBetweenLectures',
     type: 'slider',
-    question: 'How many hours do you normally have BETWEEN lectures per day?',
+    question: '29. How many hours do you normally have BETWEEN lectures per day?',
     min: 0,
     max: 12,
     step: 1
@@ -200,7 +443,7 @@ export const surveyQuestions: Question[] = [
   {
     id: 'lectureHours',
     type: 'slider',
-    question: 'How many hours per week do you have active lectures?',
+    question: '30. How many hours per week do you have active lectures?',
     min: 0,
     max: 40,
     step: 1
@@ -208,7 +451,7 @@ export const surveyQuestions: Question[] = [
   {
     id: 'socialHours',
     type: 'slider',
-    question: 'How many hours per week do you socialise?',
+    question: '31. How many hours per week do you socialise?',
     min: 0,
     max: 40,
     step: 1
@@ -216,25 +459,25 @@ export const surveyQuestions: Question[] = [
   {
     id: 'mentalHealth',
     type: 'single',
-    question: 'Have you been diagnosed with mental health issues by a professional?',
+    question: '32. Have you been diagnosed with mental health issues by a professional?',
     options: ['Yes', 'No', 'Prefer not to say']
   },
   {
     id: 'studentType',
     type: 'single',
-    question: 'Are you full-time or part-time student?',
+    question: '33. Are you full-time or part-time student?',
     options: ['Full-time', 'Part-time']
   },
   {
     id: 'studentStatus',
     type: 'single',
-    question: 'Are you a home student or an international student?',
+    question: '34. Are you a home student or an international student?',
     options: ['Home student', 'International student', 'EU student']
   },
   {
     id: 'tuitionFees',
     type: 'slider',
-    question: 'What are the approximate costs for your studies per year (£)?',
+    question: '35. What are the approximate costs for your studies per year (£)?',
     min: 0,
     max: 50000,
     step: 1000
@@ -242,12 +485,14 @@ export const surveyQuestions: Question[] = [
   {
     id: 'belonging',
     type: 'single',
-    question: 'Do you feel a sense of belonging at Solent?',
+    question: '36. Do you feel a sense of belonging at Solent?',
     options: ['Very much', 'Somewhat', 'Not really', 'Not at all']
   },
   {
     id: 'mentalHealthActivities',
     type: 'text',
-    question: 'What activities could support your mental health?'
+    question: '37. What activities could support your mental health?'
   }
 ]
+
+
