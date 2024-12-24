@@ -1,3 +1,25 @@
+import { loadCourses } from "@/utils/dataLoad";
+
+export interface Course {
+  name: string;
+}
+
+export interface CoursesResponse {
+  courses: string[];
+}
+
+export interface QuestionaireProps {
+  university: string;
+  formData: Record<string, any>;
+  setFormData: (data: Record<string, any>) => void;
+  onSubmitSuccess: () => void;
+}
+
+export interface QuestionarieData {
+  answers: Record<string, string | number | string[]>;
+  source: string;
+}
+
 export type QuestionType = 'single' | 'multi' | 'slider' | 'text' | 'dropdown' | 'textinput';
 
 export interface Question {
@@ -252,247 +274,249 @@ const countries = [
   { value: "ZW", label: "Zimbabwe" }
 ];
 
-export const surveyQuestions: Question[] = [
-  {
-    id: 'diet',
-    type: 'single',
-    question: '1. Would you describe your current diet as healthy and balanced?',
-    options: ['Yes', 'No', 'Sometimes']
-  },
-  {
-    id: 'ethnicGroup',
-    type: 'single',
-    question: '2. What is your ethnic group?',
-    options: ['Asian', 'Black', 'Mixed', 'White', 'Arab', 'Other']
-  },
-  {
-    id: 'studyHours',
-    type: 'slider',
-    question: '3. How many hours do you spend on university/academic-related work per week during exams?',
-    min: 0,
-    max: 50,
-    step: 1
-  },
-  {
-    id: 'familyClass',
-    type: 'single',
-    question: '4. How would you rate your family class? (family earnings per year)',
-    options: ['Lower Class (below £25,000)', 'Middle Class (£25,000-£54,999)', 
-              'Higher Class (£55,000-£90,000)', 'Upper Higher Class (above £90,000)']
-  },
-  {
-    id: 'qualityOfLife',
-    type: 'single',
-    question: '5. How would you define your quality of life?',
-    options: ['Very Poor', 'Poor', 'Neither Poor nor Good', 'Good', 'Very Good']
-  },
-  {
-    id: 'alcoholConsumption',
-    type: 'single',
-    question: '6. How would you define your alcohol consumption?',
-    options: ['Never', 'Occasionally', 'Regularly', 'Frequently', 'Daily']
-  },
-  {
-    id: 'personalityType',
-    type: 'single',
-    question: '7. Would you consider yourself an introvert or extrovert person?',
-    options: ['Introvert', 'Extrovert', 'Ambivert']
-  },
-  {
-    id: 'stressFactors',
-    type: 'multi',
-    question: '8. In general, do you feel you experience stress while in University?',
-    options: ['Due to university work', 'Due to employment', 'Due to personal circumstances', 'No stress']
-  },
-  {
-    id: 'hydration',
-    type: 'single',
-    question: '9. Would you say that you are normally well hydrated?',
-    options: ['Yes', 'No', 'Sometimes']
-  },
-  {
-    id: 'exerciseFrequency',
-    type: 'slider',
-    question: '10. How often do you exercise per week?',
-    min: 0,
-    max: 7,
-    step: 1
-  },
-  {
-    id: 'disabilities',
-    type: 'single',
-    question: '11. Do you have any known disabilities?',
-    options: ['Yes', 'No', 'Prefer not to say']
-  },
-  {
-    id: 'workHours',
-    type: 'slider',
-    question: '12. How many hours per week do you work?',
-    min: 0,
-    max: 40,
-    step: 1
-  },
-  {
-    id: 'financialSupport',
-    type: 'single',
-    question: '13. What is your main financial support for your studies?',
-    options: ['Student loan', 'Parent support', 'Self-funded', 'Scholarship', 'Other']
-  },
-  {
-    id: 'employment',
-    type: 'single',
-    question: '14. Are you in any form of employment?',
-    options: ['Full-time', 'Part-time', 'Not employed', 'Self-employed']
-  },
-  {
-    id: 'financialIssues',
-    type: 'single',
-    question: '15. Do you normally encounter financial issues paying your fees?',
-    options: ['Yes', 'No', 'Sometimes']
-  },
-  {
-    id: 'homeCountry',
-    type: 'dropdown',
-    question: '16. What Country are you from?',
-    options: countries.map(country => country.label)
-  },
-  {
-    id: 'yearOfBirth',
-    type: 'slider',
-    question: '17. What is your year of birth?',
-    min: 1970,
-    max: 2010,
-    step: 1
-  },
-  {
-    id: 'courseOfStudy',
-    type: 'text',
-    question: '18. What is your course of study?'
-  },
-  {
-    id: 'examStress',
-    type: 'single',
-    question: '19. Do you normally feel stressed before exams?',
-    options: ['Yes', 'No', 'Sometimes']
-  },
-  {
-    id: 'anxiety',
-    type: 'single',
-    question: '20. How often did you feel afraid that something awful might happen?',
-    options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Very Often']
-  },
-  {
-    id: 'timetablePreference',
-    type: 'single',
-    question: '21. Would you prefer your timetable to be spread or compact?',
-    options: ['Spread (3-4 days with fewer lectures)', 'Compact (1-2 busy days)']
-  },
-  {
-    id: 'timetableReasons',
-    type: 'text',
-    question: '22. What are the reasons for your timetable preference?'
-  },
-  {
-    id: 'timetableImpact',
-    type: 'single',
-    question: '23. Does your timetabling structure impact your study, life and health?',
-    options: ['Yes', 'No', 'Sometimes']
-  },
-  {
-    id: 'deviceHours',
-    type: 'slider',
-    question: '24. How many hours do you spend using technology devices per day?',
-    min: 0,
-    max: 24,
-    step: 1
-  },
-  {
-    id: 'socialMediaHours',
-    type: 'slider',
-    question: '25. How many hours do you spend using social media per day?',
-    min: 0,
-    max: 24,
-    step: 1
-  },
-  {
-    id: 'yearOfStudy',
-    type: 'single',
-    question: '26. What year of study are you in?',
-    options: ['First Year', 'Second Year', 'Third Year', 'Fourth Year', 'Postgraduate']
-  },
-  {
-    id: 'gender',
-    type: 'single',
-    question: '27. How would you describe your biological gender?',
-    options: ['Male', 'Female', 'Other', 'Prefer not to say']
-  },
-  {
-    id: 'physicalActivity',
-    type: 'single',
-    question: '28. Do you consider physical activity to be helpful to your mental health?',
-    options: ['Yes', 'No', 'Not sure']
-  },
-  {
-    id: 'hoursBetweenLectures',
-    type: 'slider',
-    question: '29. How many hours do you normally have BETWEEN lectures per day?',
-    min: 0,
-    max: 12,
-    step: 1
-  },
-  {
-    id: 'lectureHours',
-    type: 'slider',
-    question: '30. How many hours per week do you have active lectures?',
-    min: 0,
-    max: 40,
-    step: 1
-  },
-  {
-    id: 'socialHours',
-    type: 'slider',
-    question: '31. How many hours per week do you socialise?',
-    min: 0,
-    max: 40,
-    step: 1
-  },
-  {
-    id: 'mentalHealth',
-    type: 'single',
-    question: '32. Have you been diagnosed with mental health issues by a professional?',
-    options: ['Yes', 'No', 'Prefer not to say']
-  },
-  {
-    id: 'studentType',
-    type: 'single',
-    question: '33. Are you full-time or part-time student?',
-    options: ['Full-time', 'Part-time']
-  },
-  {
-    id: 'studentStatus',
-    type: 'single',
-    question: '34. Are you a home student or an international student?',
-    options: ['Home student', 'International student', 'EU student']
-  },
-  {
-    id: 'tuitionFees',
-    type: 'slider',
-    question: '35. What are the approximate costs for your studies per year (£)?',
-    min: 0,
-    max: 50000,
-    step: 1000
-  },
-  {
-    id: 'belonging',
-    type: 'single',
-    question: '36. Do you feel a sense of belonging at Solent?',
-    options: ['Very much', 'Somewhat', 'Not really', 'Not at all']
-  },
-  {
-    id: 'mentalHealthActivities',
-    type: 'text',
-    question: '37. What activities could support your mental health?'
-  }
-]
-
+export const getQuestions = async (university: string, courses: string[]): Promise<Question[]> => {
+  return [
+    {
+      id: 'diet',
+      type: 'single',
+      question: '1. Would you describe your current diet as healthy and balanced?',
+      options: ['Yes', 'No', 'Sometimes']
+    },
+    {
+      id: 'ethnic_group',
+      type: 'single',
+      question: '2. What is your ethnic group?',
+      options: ['Asian', 'Black', 'Mixed', 'White', 'Arab', 'Other']
+    },
+    {
+      id: 'hours_per_week_university_work',
+      type: 'slider',
+      question: '3. How many hours do you spend on university/academic-related work, separate from your Course Timetable, per week during exams?',
+      min: 0,
+      max: 50,
+      step: 1
+    },
+    {
+      id: 'family_earning_class',
+      type: 'single',
+      question: '4. How would you rate your family class? (family earnings per year)',
+      options: ['Lower Class (below £25,000)', 'Middle Class (£25,000-£54,999)', 
+                'Higher Class (£55,000-£90,000)', 'Upper Higher Class (above £90,000)']
+    },
+    {
+      id: 'quality_of_life',
+      type: 'single',
+      question: '5. How would you define your quality of life? (as defined by the World Health Organization)',
+      options: ['Very Poor', 'Poor', 'Neither Poor nor Good', 'Good', 'Very Good']
+    },
+    {
+      id: 'alcohol_consumption',
+      type: 'single',
+      question: '6. How would you define your alcohol consumption?',
+      options: ['Never', 'Occasionally', 'Regularly', 'Frequently', 'Daily']
+    },
+    {
+      id: 'personality_type',
+      type: 'single',
+      question: '7. Would you consider yourself an introvert or extrovert person? (Definitions from Oxford Languages)',
+      options: ['Introvert', 'Extrovert', 'Ambivert']
+    },
+    {
+      id: 'stress_in_general',
+      type: 'multi',
+      question: '8. In general, do you feel you experience stress while in the University/Academic Studies? (tick all that apply)',
+      options: ['Due to university work', 'Due to employment', 'Due to personal circumstances', 'No stress']
+    },
+    {
+      id: 'well_hydrated',
+      type: 'single',
+      question: '9. Would you say that you are normally well hydrated?',
+      options: ['Yes', 'No', 'Sometimes']
+    },
+    {
+      id: 'exercise_per_week',
+      type: 'slider',
+      question: '10. How often do you exercise per week?',
+      min: 0,
+      max: 7,
+      step: 1
+    },
+    {
+      id: 'known_disabilities',
+      type: 'single',
+      question: '11. Do you have any known disabilities?',
+      options: ['Yes', 'No', 'Prefer not to say']
+    },
+    {
+      id: 'work_hours_per_week',
+      type: 'slider',
+      question: '12. How many hours per week do you work?',
+      min: 0,
+      max: 40,
+      step: 1
+    },
+    {
+      id: 'financial_support',
+      type: 'single',
+      question: '13. What is your main financial support for your studies?',
+      options: ['Student loan', 'Parent support', 'Self-funded', 'Scholarship', 'Other']
+    },
+    {
+      id: 'form_of_employment',
+      type: 'single',
+      question: '14. Are you in any form of employment?',
+      options: ['Full-time', 'Part-time', 'Not employed', 'Self-employed']
+    },
+    {
+      id: 'financial_problems',
+      type: 'single',
+      question: '15. Do you normally encounter financial issues paying your fees?',
+      options: ['Yes', 'No', 'Sometimes']
+    },
+    {
+      id: 'home_country',
+      type: 'dropdown',
+      question: '16. What Country are you from?',
+      options: countries.map(country => country.label)
+    },
+    {
+      id: 'age',
+      type: 'slider',
+      question: '17. What is your year of birth?',
+      min: 1970,
+      max: 2010,
+      step: 1
+    },
+    {
+      id: 'course_of_study',
+      type: 'dropdown',
+      question: '18. What is your course of study?',
+      options: courses
+    },
+    {
+      id: 'stress_before_exams',
+      type: 'single',
+      question: '19. Do you normally feel stressed before exams?',
+      options: ['Yes', 'No', 'Sometimes']
+    },
+    {
+      id: 'feel_afraid',
+      type: 'single',
+      question: '20. How often in the last week or two did you feel afraid that something awful might happen?',
+      options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Very Often']
+    },
+    {
+      id: 'timetable_preference',
+      type: 'single',
+      question: '21. If your Course has less than 24 hours on Timetable, would you prefer your timetable to be spread or compact so you have less stress at university? (eg, 1-2 busy days or 3-4 days with less lectures)',
+      options: ['Spread (3-4 days with fewer lectures)', 'Compact (1-2 busy days)']
+    },
+    {
+      id: 'timetable_reasons',
+      type: 'text',
+      question: '22. What are the reasons for your timetable preference?'
+    },
+    {
+      id: 'timetable_impact',
+      type: 'single',
+      question: '23. Do you feel your timetabling structure has any impact on your study, life and health?',
+      options: ['Yes', 'No', 'Sometimes']
+    },
+    {
+      id: 'total_device_hours',
+      type: 'slider',
+      question: '24. How many hours do you spend using technology devices per day (mobile, desktop, laptops, etc)?',
+      min: 0,
+      max: 24,
+      step: 1
+    },
+    {
+      id: 'hours_socialmedia',
+      type: 'slider',
+      question: '25. How many hours do you spend using social media per day (Instagram, Tiktok, Twitter, etc)?',
+      min: 0,
+      max: 24,
+      step: 1
+    },
+    {
+      id: 'level_of_study',
+      type: 'single',
+      question: '26. What year of study are you in?',
+      options: ['First Year', 'Second Year', 'Third Year', 'Fourth Year', 'Postgraduate']
+    },
+    {
+      id: 'gender',
+      type: 'single',
+      question: '27. How would you describe your biological gender?',
+      options: ['Male', 'Female', 'Other', 'Prefer not to say']
+    },
+    {
+      id: 'physical_activities',
+      type: 'single',
+      question: '28. Do you consider physical activity to be helpful to your mental health?',
+      options: ['Yes', 'No', 'Not sure']
+    },
+    {
+      id: 'hours_between_lectures',
+      type: 'slider',
+      question: '29. How many hours do you normally have BETWEEN lectures per day?',
+      min: 0,
+      max: 12,
+      step: 1
+    },
+    {
+      id: 'hours_per_week_lectures',
+      type: 'slider',
+      question: '30. How many hours per week do you have active lectures? (Active means attending lectures)',
+      min: 0,
+      max: 40,
+      step: 1
+    },
+    {
+      id: 'hours_socialising',
+      type: 'slider',
+      question: '31. How many hours per week do you socialise? (Meeting other people, participating in social activities etc).',
+      min: 0,
+      max: 40,
+      step: 1
+    },
+    {
+      id: 'actual',
+      type: 'single',
+      question: '32. Would you classify yourself or have you been diagnosed with mental health issues by a professional?',
+      options: ['Yes', 'No', 'Prefer not to say']
+    },
+    {
+      id: 'student_type_time',
+      type: 'single',
+      question: '33. Are you full-time or part-time student?',
+      options: ['Full-time', 'Part-time']
+    },
+    {
+      id: 'student_type_location',
+      type: 'single',
+      question: '34. Are you a home student or an international student?',
+      options: ['Home student', 'International student', 'EU student']
+    },
+    {
+      id: 'cost_of_study',
+      type: 'slider',
+      question: '35. What are the approximate costs for your studies? (tuition fee per year of study, in pound sterling £)',
+      min: 0,
+      max: 50000,
+      step: 1000
+    },
+    {
+      id: 'sense_of_belonging',
+      type: 'single',
+      question: '36. Do you feel a sense of "belonging" at UAL?',
+      options: ['Very much', 'Somewhat', 'Not really', 'Not at all']
+    },
+    {
+      id: 'mental_health_activities',
+      type: 'text',
+      question: '37. Please let us know about any activities that could support your mental health that you would be interested in. (e.g., physical activities, sports, mindfulness, book clubs, arts/craft activities etc)'
+    }
+  ];
+};
 

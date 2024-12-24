@@ -1,5 +1,7 @@
 import pandas as pd
 from pathlib import Path
+from datetime import datetime
+import os
 
 class DataProcessor:
     def __init__(self):
@@ -138,6 +140,37 @@ class DataProcessor:
         except Exception as e:
             print(f"Error processing data: {e}")
             raise
+        
+    def save_to_excel(self):
+        try:
+            # Convert model to dict
+            data_dict = self.dict()
+            
+            # Add timestamp and source
+            data_dict['capturedAt'] = datetime.now().strftime('%d/%m/%Y %H:%M')
+            data_dict['source'] = 'UAL'
+            
+            # Create DataFrame from dict
+            new_row = pd.DataFrame([data_dict])
+            
+            # Path to Excel file
+            excel_path = "C:/Projects/mentalhealth/data/report_data.xlsx"
+            
+            # Read existing Excel if it exists
+            if os.path.exists(excel_path):
+                df = pd.read_excel(excel_path)
+                # Append new row
+                df = pd.concat([df, new_row], ignore_index=True)
+            else:
+                df = new_row
+            
+            # Save updated DataFrame
+            df.to_excel(excel_path, index=False)
+            return True
+            
+        except Exception as e:
+            print(f"Error saving to Excel: {e}")
+            return False
 
 if __name__ == "__main__":
     processor = DataProcessor()

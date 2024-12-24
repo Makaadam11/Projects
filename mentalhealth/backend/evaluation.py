@@ -132,6 +132,7 @@ def evaluate_models(df, suppress_warnings=True):
             'sense_of_belonging'
         ]
 
+        print(len(df), " df ")
         # Preprocess entire dataset
         df, encoders = clean_and_encode_data(df, selected_numeric_features, selected_categorical_features)
         
@@ -150,11 +151,14 @@ def evaluate_models(df, suppress_warnings=True):
         X = df[selected_numeric_features + selected_categorical_features]
         y = df['predictions'].values
         
+        print(len(X), " X total")
+        print(len(y), " y total")
+        
         # Split data for validation maybe increase test size
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.25, random_state=42, stratify=y
         )
-        
+        print(len(X_train), " xtrain", len(X_test), " xtest", len(y_train), " ytrain", len(y_test), " ytest")
         # Scale features
         scaler = StandardScaler()
         X_train[selected_numeric_features] = scaler.fit_transform(X_train[selected_numeric_features])
@@ -167,11 +171,11 @@ def evaluate_models(df, suppress_warnings=True):
         # Updated models with better parameters
         models = {
             'RandomForest': RandomForestClassifier(
-                n_estimators=600,  # Zwiększ liczbę drzew
-                max_depth=40,      # Zwiększ głębokość
+                n_estimators=600,
+                max_depth=40,
                 min_samples_split=3,
                 class_weight='balanced',
-                random_state=42
+                random_state=24
             ),
             'NeuralNetwork': MLPClassifier(
                 hidden_layer_sizes=(400,150,50),  # Głębsza sieć
@@ -193,10 +197,11 @@ def evaluate_models(df, suppress_warnings=True):
         y_array = y_train_resampled
         
         # K-fold cross-validation
-        kf = KFold(n_splits=5, shuffle=True, random_state=42)
+        kf = KFold(n_splits=10, shuffle=True, random_state=42)
         
         for idx, (name, model) in enumerate(models.items()):
             cv_scores = []
+            f1_scores = []
             for train_idx, val_idx in kf.split(X_array):
                 X_fold_train, X_fold_val = X_array[train_idx], X_array[val_idx]
                 y_fold_train, y_fold_val = y_array[train_idx], y_array[val_idx]
@@ -208,8 +213,11 @@ def evaluate_models(df, suppress_warnings=True):
                     y_pred_proba = model.decision_function(X_fold_val)
                     
                 cv_scores.append(roc_auc_score(y_fold_val, y_pred_proba))
+                y_fold_pred = model.predict(X_fold_val)
+                f1_scores.append.f1_score(y_fold_val, y_fold_pred)
             
             print(f"\n{name} Cross-validation ROC AUC: {np.mean(cv_scores):.3f} (+/- {np.std(cv_scores)*2:.3f})")
+            print(f"Fold F1 Score: {np.mean(f1_scores):.3f}")
             
             # Train final model and plot metrics
             model.fit(X_train_resampled, y_train_resampled)
@@ -247,6 +255,18 @@ def evaluate_models(df, suppress_warnings=True):
             print(confusion_matrix(y_test, test_pred))
             print("\nClassification Report:")
             print(classification_report(y_test, test_pred))
+            
+            # Calculate training metrics
+            train_pred = model.predict(X_train_resampled)
+            print("\nTraining Set Metrics:")
+            print(f"Accuracy: {accuracy_score(y_train_resampled, train_pred):.2f}")
+            print(f"Precision: {precision_score(y_train_resampled, train_pred):.2f}")
+            print(f"Recall: {recall_score(y_train_resampled, train_pred):.2f}")
+            print(f"F1 Score: {f1_score(y_train_resampled, train_pred):.2f}")
+            print("\nConfusion Matrix:")
+            print(confusion_matrix(y_train_resampled, train_pred))
+            print("\nClassification Report:")
+            print(classification_report(y_train_resampled, train_pred))
             
             # Predict undiagnosed cases
             X_undiagnosed = undiagnosed[selected_numeric_features + selected_categorical_features]

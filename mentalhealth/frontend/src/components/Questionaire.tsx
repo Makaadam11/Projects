@@ -1,20 +1,64 @@
+'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import SingleSelect from './Questionaire/SingleSelect'
 import Slider from './Questionaire/Slider'
-import { Question, surveyQuestions } from '../types/QuestionaireTypes'
-import MultiSelect from './Questionaire/MultiSelect';
+import { Question, QuestionarieData, getQuestions, QuestionaireProps } from '../types/QuestionaireTypes'
+import MultiSelect from './Questionaire/MultiSelect'
 import DropdownSelect from './Questionaire/DropdownSelect'
-import { TextInput } from './Questionaire/TextInput';
+import { TextInput } from './Questionaire/TextInput'
+import { submitQuestionaire } from '../api/questionaire'
+import { loadCourses } from '../utils/dataLoad'
 
-export default function Questionaire() {
-  const [formData, setFormData] = useState<Record<string, any>>({});
+export default function Questionaire({ 
+  university, 
+  formData, 
+  setFormData, 
+  onSubmitSuccess 
+}: QuestionaireProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        const courses = await loadCourses(university);
+        const loadedQuestions = await getQuestions(university, courses);
+        setQuestions(loadedQuestions);
+        setIsLoading(false);
+      } catch (err) {
+        setError('Failed to load questions');
+        setIsLoading(false);
+      }
+    };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('Form data:', formData)
-  }
+    loadQuestions();
+  }, [university]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    submitQuestionaire({
+      answers: formData,
+      source: university.toUpperCase()
+    })
+      .then(() => {
+        onSubmitSuccess();
+      })
+      .catch(() => {
+        setError('Failed to submit survey');
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
+
+  if (isLoading) return <div>Loading questions...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   const renderQuestion = (question: Question) => {
     switch (question.type) {
@@ -89,13 +133,24 @@ export default function Questionaire() {
 
   return (
     <div>
-      <form className="space-y-8 p-6 bg-white rounded-lg shadow">
+      <form onSubmit={handleSubmit} className="space-y-8 p-6 bg-white rounded-lg shadow">
         <h1 className="text-2xl font-bold mb-6">Student Survey</h1>
-        {surveyQuestions.map(renderQuestion)}
-        <button type="submit" className="w-full py-2 px-4 bg-blue-600 text-white rounded">
-          Submit
+        {error && (
+          <div className="p-4 bg-red-100 text-red-700 rounded mb-4">
+            {error}
+          </div>
+        )}
+        {questions.map(renderQuestion)}
+        <button 
+          type="submit" 
+          disabled={isSubmitting}
+          className={`w-full py-2 px-4 ${
+            isSubmitting ? 'bg-blue-400' : 'bg-blue-600'
+          } text-white rounded hover:bg-blue-700 transition-colors`}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit'}
         </button>
       </form>
     </div>
-  )
+  );
 }

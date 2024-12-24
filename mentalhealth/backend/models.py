@@ -2,6 +2,7 @@ from pydantic import BaseModel
 import anthropic
 import json
 import os
+from typing import Optional, List, Union
 
 with open('api_key.json') as f:
     key = json.load(f)['key']
@@ -61,58 +62,43 @@ class AnthropicLanguageModel:
             return f"Error generating report: {str(e)}"
 
 class QuestionnaireDataModel(BaseModel):
-    StartDate: str
-    EndDate: str
-    Status: str
-    IPAddress: str
-    Progress: int
-    Duration: int
-    Finished: bool
-    RecordedDate: str
-    ResponseId: str
-    RecipientLastName: str
-    RecipientFirstName: str
-    RecipientEmail: str
-    ExternalReference: str
-    LocationLatitude: float
-    LocationLongitude: float
-    DistributionChannel: str
-    UserLanguage: str
-    Instruction: str
-    Q1: str
-    Q2: str
-    Q3_1: int
-    Q4: str
-    Q5: str
-    Q6: str
-    Q7: str
-    Q8: str
-    Q9: str
-    Q10_1: int
-    Q11: str
-    Q12_1: int
-    Q13: str
-    Q14: str
-    Q15: str
-    Q16: str
-    Q17_1: int
-    Q18: str
-    Q19: str
-    Q20: str
-    Q21: str
-    Q22: str
-    Q23: str
-    Q24_1: int
-    Q25_1: int
-    Q26: str
-    Q27: str
-    Q28: str
-    Q29_1: int
-    Q30_1: int
-    Q31_1: int
-    Q32: str
-    Q33: str
-    Q34: str
-    Q35: str
-    Q36: str
-    Q37: str
+    diet: str
+    ethnicGroup: str
+    studyHours: int
+    familyClass: str
+    qualityOfLife: str
+    alcoholConsumption: str
+    personalityType: str
+    stressFactors: List[str]
+    hydration: str
+    exerciseFrequency: int
+    disabilities: str
+    workHours: int
+    financialSupport: str
+    employment: str
+    financialIssues: str
+    homeCountry: str
+    yearOfBirth: int
+    courseOfStudy: str
+    examStress: str
+    anxietyLevel: str
+    timetablePreference: str
+    timetableReasons: str
+    timetableImpact: str
+    deviceHours: int
+    socialMediaHours: int
+    yearOfStudy: str
+    gender: str
+    physicalActivity: str
+    hoursBetweenLectures: int
+    lectureHours: int
+    socialHours: int
+    mentalHealth: str
+    studentType: str
+    studentStatus: str
+    tuitionFees: int
+    belonging: str
+    mentalHealthActivities: Optional[str]
+    source: str
+    prediction: int
+    capturedAt: float
