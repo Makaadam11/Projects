@@ -8,7 +8,7 @@ import MultiSelect from './Questionaire/MultiSelect'
 import DropdownSelect from './Questionaire/DropdownSelect'
 import { TextInput } from './Questionaire/TextInput'
 import { submitQuestionaire } from '../api/questionaire'
-import { loadCourses } from '../utils/dataLoad'
+import { loadCourses } from '../api/questionaire'
 
 export default function Questionaire({ 
   university, 

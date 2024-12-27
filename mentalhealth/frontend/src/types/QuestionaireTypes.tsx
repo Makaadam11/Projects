@@ -1,5 +1,3 @@
-import { loadCourses } from "@/utils/dataLoad";
-
 export interface Course {
   name: string;
 }
