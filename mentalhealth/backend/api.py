@@ -3,16 +3,16 @@ from pydantic import BaseModel
 from typing import List
 import pandas as pd
 from models import QuestionnaireDataModel
-from evaluation import evaluate_models
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from data_processor import DataProcessor
 
 app = FastAPI()
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,12 +25,14 @@ class CourseResponse(BaseModel):
 class FilePath(BaseModel):
     path: str
 
-@app.post("/api/addQuestionarie")
-async def submit_questionaire(data: QuestionnaireDataModel):
+@app.post("/api/submit/{university}")
+async def submit_questionaire(university: str, data: QuestionnaireDataModel):
     try:
-        # Process survey data
-        # Add to database or file
-        return {"status": "success", "message": "Survey submitted successfully"}
+        # Save data to Excel
+        if DataProcessor.save_and_evaluate(data, university):
+            return {"status": "success", "message": "Survey submitted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save survey data")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -43,7 +45,7 @@ async def get_reports():
 async def get_courses(university: str):
     try:
         # Construct file path
-        file_path = f"C:/Projects/mentalhealth/data/{university.lower()}/{university.lower()}_courses.xlsx"
+        file_path = f"../data/{university.lower()}/{university.lower()}_courses.xlsx"
         
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail=f"Course file not found for {university}")
@@ -53,7 +55,6 @@ async def get_courses(university: str):
         
         # Convert to list of courses
         courses = df.iloc[:, 0].tolist()
-        print(courses)
         
         return {
             "courses": courses,

@@ -42,8 +42,13 @@ export default function Questionaire({
     setIsSubmitting(true);
     setError(null);
 
+    const answers = questions.map(question => ({
+      id: question.id,
+      answer: formData[question.id]
+    }));
+
     submitQuestionaire({
-      answers: formData,
+      answers,
       source: university.toUpperCase()
     })
       .then(() => {

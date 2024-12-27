@@ -2,6 +2,9 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 import os
+from data_evaluation import evaluate_data
+from models import QuestionnaireColumnsModel
+import numpy as np
 
 class DataProcessor:
     def __init__(self):
@@ -59,119 +62,165 @@ class DataProcessor:
                 'Other': 'Other'
             },
         }
-
-    def standardize_yes_no(self, value):
-        """Convert any value to Yes/No"""
-        if pd.isna(value) or value == 'nan':
-            return 'No'
-            
-        value = str(value).lower()
-        return 'Yes' if 'yes' in value else 'No'
-    
-    def standardize_course(self, course):
-        """Standardize course names to degree types"""
-        if pd.isna(course):
-            return 'Other'
-            
-        course = str(course).upper().strip()
         
-        # Handle Foundation Years
-        if 'FOUNDATION' in course:
-            return 'Foundation'
+    @staticmethod
+    def append_row_to_excel(excel_path, data_dict):
+        if os.path.exists(excel_path):
+            # Read full file with first row as header
+            df = pd.read_excel(excel_path, header=0)
             
-        # Handle specific degree types
-        if 'BSC' in course or 'BACHELOR OF SCIENCE' in course:
-            return 'BSc'
-        elif 'BA' in course or 'BACHELOR OF ARTS' in course:
-            return 'BA'
-        elif 'MSC' in course or 'MASTER OF SCIENCE' in course:
-            return 'MSc'
-        elif 'MA ' in course or 'MASTER OF ARTS' in course:
-            return 'MA'
-        elif 'BENG' in course or 'BACHELOR OF ENGINEERING' in course:
-            return 'BEng'
-        elif 'FDSC' in course:
-            return 'FdSc'
-        elif 'MBA' in course:
-            return 'MBA'
-        elif 'MRES' in course:
-            return 'MRes'
-        elif 'HNC' in course or 'HND' in course:
-            return 'HNC/HND'
-        elif 'LLB' in course:
-            return 'LLB'
-        elif 'BMUS' in course:
-            return 'BMus'
-        elif 'APPRENTICESHIP' in course:
-            return 'Apprenticeship'
-        elif any(x in course for x in ['STUDY ABROAD', 'EXCHANGES']):
-            return 'Exchange'
+            # Create new row
+            new_row = {}
+            for col in df.columns:
+                col_id = df.iloc[0][col]  # Get column ID from second row
+                
+                # Find matching answer
+                answer = next((item.get('answer', None) 
+                            for item in data_dict['answers'] 
+                            if item['id'] == col_id), None)
+                
+                # Special handling
+                if col_id == 'stress_in_general' and answer:
+                    if any('Yes' in a for a in answer):
+                        answer = [a for a in answer if a != 'No']
+                    answer = ','.join(answer).replace('[', '').replace(']', '')
+                elif col_id == 'age' and answer:
+                    current_year = int(datetime.now().strftime('%Y'))
+                    answer = current_year - int(answer)
+                    
+                new_row[col] = answer
             
-        return 'Other'
+            # Add metadata
+            new_row['Source'] = data_dict['source']
+            new_row['Predictions'] = data_dict['predictions']
+            new_row['Captured At'] = data_dict['captured_at']
+            
+            # Append row after headers
+            new_row_df = pd.DataFrame([new_row])
+            df = pd.concat([df.iloc[:1], new_row_df, df.iloc[1:]], ignore_index=True)
+            
+            # Save preserving both header rows
+            df.to_excel(excel_path, index=False)
+            
+        else:
+            # Create new file with two header rows
+            questions = [
+                '1. Would you describe your current diet as healthy and balanced?',
+                # ... rest of questions
+                'Source', 'Predictions', 'Captured At'
+            ]
+            
+            column_ids = [
+                'diet', 'ethnic_group',
+                # ... rest of ids
+                'source', 'predictions', 'captured_at'
+            ]
+            
+            # Create DataFrame with questions as headers
+            df = pd.DataFrame(columns=questions)
+            
+            # Add column IDs as first row
+            df.loc[0] = column_ids
+            
+            # Add new data row
+            new_row = {}
+            for q, col_id in zip(questions, column_ids):
+                if col_id in ['source', 'predictions', 'captured_at']:
+                    answer = data_dict.get(col_id)
+                else:
+                    answer = next((item.get('answer', None) 
+                                for item in data_dict['answers'] 
+                                if item['id'] == col_id), None)
+                new_row[q] = answer
+                
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            df.to_excel(excel_path, index=False)
     
-    def process_data(self):
-        """Process data for pre-evaluation"""
-        try:
-            # Read from report data
-            df = pd.read_excel(self.base_path / "report_data.xlsx")
-            print(f"Loaded dataset with {len(df)} rows")
-            if 'timetable_reasons' in df.columns:
-                df = df.drop('timetable_reasons', axis=1)
-            
-            stress_columns = ['stress_in_general', 'stress_before_exams', 'timetable_impact']
-            for col in stress_columns:
-                if col in df.columns:
-                    df[col] = df[col].apply(self.standardize_yes_no)
-
-            # Process only selected columns
-            for col in self.selected_columns:
-                if col in df.columns:
-                    if col in self.value_mappings:
-                        df[col] = df[col].map(self.value_mappings[col]).fillna(df[col])
-                    elif col == 'course_of_study':
-                        df[col] = df[col].apply(self.standardize_course)
-            
-            # Save pre-evaluation dataset
-            df.to_excel(self.base_path / "pre_evaluation_dataset.xlsx", index=False)
-            print("Pre-evaluation dataset saved successfully")
-            
-            return df
-            
-        except Exception as e:
-            print(f"Error processing data: {e}")
-            raise
-        
-    def save_to_excel(self):
+    @staticmethod
+    def save_and_evaluate(data, university: str):
         try:
             # Convert model to dict
-            data_dict = self.dict()
+            data_dict = data.dict()
+            print("Before processing:", data_dict)
             
             # Add timestamp and source
-            data_dict['capturedAt'] = datetime.now().strftime('%d/%m/%Y %H:%M')
-            data_dict['source'] = 'UAL'
+            data_dict['source'] = university.upper()
+            data_dict['predictions'] = 0
+            data_dict['captured_at'] = datetime.now().strftime('%d.%m.%Y %H:%M')
             
-            # Create DataFrame from dict
-            new_row = pd.DataFrame([data_dict])
+            # Paths to Excel files
+            university_excel_path = f"../data/{university.lower()}/{university.lower()}_data/{university.lower()}_data.xlsx"
+            merged_excel_path = "../data/merged/merged_data.xlsx"
             
-            # Path to Excel file
-            excel_path = "C:/Projects/mentalhealth/data/report_data.xlsx"
+            # Append row to both university-specific and merged Excel files
+            DataProcessor.append_row_to_excel(university_excel_path, data_dict)
+            DataProcessor.append_row_to_excel(merged_excel_path, data_dict)
             
-            # Read existing Excel if it exists
-            if os.path.exists(excel_path):
-                df = pd.read_excel(excel_path)
-                # Append new row
-                df = pd.concat([df, new_row], ignore_index=True)
-            else:
-                df = new_row
+            # Read Excel
+            df_merged = pd.read_excel(merged_excel_path, header=None)
+
+
+            # Store questions (first row) and set IDs as headers (second row)
+            questions_row = df_merged.iloc[0].copy()  # Store questions
+            column_ids = df_merged.iloc[1].copy()     # Set IDs as column names
+            df_merged = df_merged.iloc[2:]            # Keep only data rows
+
+            # Set column IDs for processing
+            df_merged.columns = column_ids
+
+            # Process data with ID headers
+            df_copy = pd.read_excel(merged_excel_path, header=[0,1])
+            df_merged_evaluated = evaluate_data(df_copy)
+
+            # Update predictions keeping ID headers
+            df_merged['predictions'] = df_merged_evaluated['predictions']
+             # Format 'captured_at' column
+            df_merged['captured_at'] = pd.to_datetime(df_merged['captured_at'], errors='coerce').dt.strftime('%d.%m.%Y %H:%M')
             
-            # Save updated DataFrame
-            df.to_excel(excel_path, index=False)
+            print("Before merged columns:", df_merged.columns)
+            print("After merged columns:", questions_row)
+            # Create DataFrame with questions as new columns
+            df_merged.columns = questions_row
+            print("After merged columns:", df_merged.columns)
+            
+            # Update source files
+            for source in df_merged['Source'].unique():
+                if pd.isna(source):
+                    continue
+                source_str = str(source).strip()
+                if not source_str:
+                    continue
+                
+                source_df = df_merged[df_merged['Source'] == source].copy()
+                source_excel_path = f"../data/{source_str.lower()}/{source_str.lower()}_data/{source_str.lower()}_data.xlsx"
+
+                # Add empty row at the beginning
+                source_df.loc[-1] = [None] * len(source_df.columns)
+                source_df.index = source_df.index + 1
+                source_df = source_df.sort_index()
+
+                # Fill first row with column_ids values
+                for idx, col in enumerate(source_df.columns):
+                    source_df.iloc[0, idx] = column_ids.values[idx]
+                
+                source_df.to_excel(source_excel_path, index=False)
+
+            # Add empty row at the beginning of merged df
+            df_merged.loc[-1] = [None] * len(df_merged.columns)
+            df_merged.index = df_merged.index + 1
+            df_merged = df_merged.sort_index()
+
+            # Fill first row with column_ids values
+            for idx, col in enumerate(df_merged.columns):
+                df_merged.iloc[0, idx] = column_ids.values[idx]
+
+            df_merged.to_excel(merged_excel_path, index=False)
             return True
             
         except Exception as e:
             print(f"Error saving to Excel: {e}")
             return False
-
+        
 if __name__ == "__main__":
     processor = DataProcessor()
     processor.process_data()

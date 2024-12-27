@@ -16,7 +16,7 @@ export interface QuestionaireProps {
 }
 
 export interface QuestionarieData {
-  answers: Record<string, string | number | string[]>;
+  answers: { id: string; answer: string | number | string[] }[];
   source: string;
 }
 
@@ -280,7 +280,7 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'diet',
       type: 'single',
       question: '1. Would you describe your current diet as healthy and balanced?',
-      options: ['Yes', 'No', 'Sometimes']
+      options: ['Healthy', 'Unhealthy', 'Somewhat Inbetween']
     },
     {
       id: 'ethnic_group',
@@ -325,8 +325,12 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'stress_in_general',
       type: 'multi',
       question: '8. In general, do you feel you experience stress while in the University/Academic Studies? (tick all that apply)',
-      options: ['Due to university work', 'Due to employment', 'Due to personal circumstances', 'No stress']
-    },
+      options: [
+        'Yes (due to university work)',
+        'Yes (due to employment-related issues)',
+        'Yes (due to other circumstances, such as health, family issues, etc)',
+        'No'
+      ]},
     {
       id: 'well_hydrated',
       type: 'single',

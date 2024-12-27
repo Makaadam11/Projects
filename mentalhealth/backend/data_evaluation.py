@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import RandomizedSearchCV, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
@@ -14,40 +14,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib
 matplotlib.use('Agg')  # Set backend before importing pyplot
-
-
-def clean_and_encode_data(df, numeric_features, categorical_features):
-    """Clean and encode all data before splitting"""
-    # Handle numeric features first
-    for col in numeric_features:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-    
-    # Convert actual to numeric for KNN imputer
-    df['actual'] = df['actual'].map({'Yes': 1, 'No': 0, 1: 1, 0: 0})
-    df['actual'] = pd.to_numeric(df['actual'], errors='coerce')
-    
-    # Add actual to numeric features for imputation
-    numeric_with_actual = numeric_features + ['actual']
-    
-    # Use KNN imputer for numeric features and actual
-    imputer = KNNImputer(n_neighbors=5)
-    df[numeric_with_actual] = imputer.fit_transform(df[numeric_with_actual])
-    
-    # Round actual values after imputation
-    df['actual'] = df['actual'].round().astype(int)
-    
-    # Handle categorical features
-    encoders = {}
-    for col in categorical_features:
-        if col in df.columns:
-            df[col] = df[col].fillna(df[col].mode()[0])
-            df[col] = df[col].astype(str)
-            le = LabelEncoder()
-            df[col] = le.fit_transform(df[col])
-            encoders[col] = le
-            
-    return df, encoders
 
 def plot_model_metrics(y_true, y_pred_proba, model_name):
     """Plot ROC, KS, Gain and Lift charts"""
@@ -75,8 +41,8 @@ def plot_model_metrics(y_true, y_pred_proba, model_name):
     plt.plot(fpr, tpr, label='Positive Class')
     plt.plot(fpr, fpr, 'r--', label='Negative Class')
     ks_stat = max(tpr - fpr)
-    plt.plot([fpr[np.argmax(tpr - fpr)]], [tpr[np.argmax(tpr - fpr)]], 'bo', 
-             label=f'KS = {ks_stat:.3f}')
+    ks_point = (fpr[np.argmax(tpr - fpr)], tpr[np.argmax(tpr - fpr)])
+    plt.plot([ks_point[0]], [ks_point[1]], 'bo', label=f'KS = {ks_stat:.3f}')
     plt.xlabel('Score')
     plt.ylabel('Cumulative %')
     plt.title('Kolmogorov-Smirnov Chart')
@@ -86,36 +52,104 @@ def plot_model_metrics(y_true, y_pred_proba, model_name):
     plt.subplot(2, 2, 3)
     percentile = np.arange(0, 100, 1)
     gain = np.percentile(y_pred_proba, percentile)
-    plt.plot(percentile, gain)
+    plt.plot(percentile, gain, label=f'Gain = {gain[-1]:.2f}')
     plt.plot([0, 100], [0, 1], 'k--')
     plt.xlabel('Population %')
     plt.ylabel('Gain')
     plt.title('Gain Chart')
+    plt.legend()
     
     # Lift Chart
     plt.subplot(2, 2, 4)
-    lift = gain / (percentile/100)
-    plt.plot(percentile, lift)
+    lift = gain / (percentile / 100)
+    plt.plot(percentile, lift, label=f'Lift = {lift[-1]:.2f}')
     plt.xlabel('Population %')
     plt.ylabel('Lift')
     plt.title('Lift Chart')
+    plt.legend()
     
     plt.tight_layout()
     # Save and close with non-GUI backend
     plt.savefig(f'metrics_{model_name}.png', backend='Agg')
     plt.close(fig)
+
+def clean_and_encode_data(df, numeric_features, categorical_features):
+    """Clean and encode all data before splitting"""
+    # Handle numeric features first
+    for col in numeric_features:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
     
-def evaluate_models(df, suppress_warnings=True):
+    # # Clean categorical features
+    # for col in categorical_features:
+    #     if col in df.columns:
+    #         df[col] = df[col].apply(lambda x: x.split(',')[0] if 'Yes' in str(x) else x)
+    
+    # Convert actual to numeric for KNN imputer
+    df['actual'] = df['actual'].map({'Yes': 1, 'No': 0, 1: 1, 0: 0})
+    df['actual'] = pd.to_numeric(df['actual'], errors='coerce')
+    
+    # Add actual to numeric features for imputation
+    numeric_with_actual = numeric_features + ['actual']
+    
+    # Use KNN imputer for numeric features and actual
+    imputer = KNNImputer(n_neighbors=5)
+    df[numeric_with_actual] = imputer.fit_transform(df[numeric_with_actual])
+    
+    # Round actual values after imputation
+    df['actual'] = df['actual'].round().astype(int)
+    
+    # Handle categorical features
+    encoders = {}
+    for col in categorical_features:
+        if col in df.columns:
+            df[col] = df[col].fillna(df[col].mode()[0])
+            df[col] = df[col].astype(str)
+            le = LabelEncoder()
+            df[col] = le.fit_transform(df[col])
+            encoders[col] = le
+            
+    # Save encoded DataFrame to file
+    df.to_excel('encoded_data.xlsx', index=False)
+    
+    return df, encoders
+
+def evaluate_data(df, suppress_warnings=True):
     if suppress_warnings:
         warnings.filterwarnings('ignore')
     
     try:
+        # Define correct column names in order
+        correct_columns = [
+            'diet', 'ethnic_group', 'hours_per_week_university_work',
+            'family_earning_class', 'quality_of_life', 'alcohol_consumption',
+            'personality_type', 'stress_in_general', 'well_hydrated',
+            'exercise_per_week', 'known_disabilities', 'work_hours_per_week',
+            'financial_support', 'form_of_employment', 'financial_problems',
+            'home_country', 'age', 'course_of_study', 'stress_before_exams',
+            'feel_afraid', 'timetable_preference', 'timetable_reasons',
+            'timetable_impact', 'total_device_hours', 'hours_socialmedia',
+            'level_of_study', 'gender', 'physical_activities',
+            'hours_between_lectures', 'hours_per_week_lectures',
+            'hours_socialising', 'actual', 'student_type_time',
+            'student_type_location', 'cost_of_study', 'sense_of_belonging',
+            'mental_health_activities', 'source', 'predictions', 'captured_at'
+        ]
+        
+        # Set new column names
+        df.columns = correct_columns
+        
+        
+        # Verify no quotes remain
+        if any("'" in col for col in df.columns):
+            print("Warning: Some columns still contain quotes")
+        
         selected_numeric_features = [
             'age', 'hours_socialising', 'hours_socialmedia', 
             'total_device_hours', 'hours_per_week_university_work',
             'exercise_per_week', 'work_hours_per_week',
             'hours_between_lectures', 'hours_per_week_lectures',
-            'cost_of_study'
+            'cost_of_study'  # Removed 'actual' from here
         ]
         
         selected_categorical_features = [
@@ -132,10 +166,26 @@ def evaluate_models(df, suppress_warnings=True):
             'sense_of_belonging'
         ]
 
-        print(len(df), " df ")
+        # Verify required columns exist
+        missing_columns = [col for col in selected_numeric_features + selected_categorical_features + ['actual'] 
+                         if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {missing_columns}")
+
+        # Handle 'actual' column before other processing
+        if 'actual' in df.columns:
+            print("Processing 'actual' column...")
+            df['actual'] = df['actual'].map({'Yes': 1, 'No': 0, 1: 1, 0: 0})
+            df['actual'] = pd.to_numeric(df['actual'], errors='coerce')
+
+        # Exclude specific columns
+        exclude_columns = ['mental_health_activities', 'timetable_reasons', 'source', 'captured_at']
+        df = df.drop(columns=[col for col in exclude_columns if col in df.columns])
+
         # Preprocess entire dataset
         df, encoders = clean_and_encode_data(df, selected_numeric_features, selected_categorical_features)
         
+        df.to_excel('encoded_cleaned_data.xlsx', index=False)
         # Split after preprocessing
         diagnosed = df[df['actual'] == 1].copy()
         undiagnosed = df[df['actual'] == 0].copy()
@@ -144,8 +194,6 @@ def evaluate_models(df, suppress_warnings=True):
         print(f"Total cases: {len(df)}")
         print(f"Diagnosed cases (actual=1): {len(diagnosed)} ({len(diagnosed)/len(df)*100:.2f}%)")
         print(f"Undiagnosed cases: {len(undiagnosed)} ({len(undiagnosed)/len(df)*100:.2f}%)")
-        
-        
         
         # Prepare features for full dataset
         X = df[selected_numeric_features + selected_categorical_features]
@@ -168,18 +216,35 @@ def evaluate_models(df, suppress_warnings=True):
         smote = SMOTE(random_state=42)
         X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
 
+        # Define the parameter grid for RandomizedSearchCV
+        n_estimators = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
+        max_features = ['auto', 'sqrt']
+        max_depth = [int(x) for x in np.linspace(10, 110, num=11)]
+        max_depth.append(None)
+        min_samples_split = [2, 5, 10]
+        min_samples_leaf = [1, 2, 4]
+        bootstrap = [True, False]
+        random_grid = {
+            'n_estimators': n_estimators,
+            'max_features': max_features,
+            'max_depth': max_depth,
+            'min_samples_split': min_samples_split,
+            'min_samples_leaf': min_samples_leaf,
+            'bootstrap': bootstrap
+        }
+
+        # Perform RandomizedSearchCV to find the best parameters for RandomForest
+        # rf = RandomForestClassifier()
+        # rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, verbose=2, random_state=42, n_jobs=-1)
+        # rf_random.fit(X_train_resampled, y_train_resampled)
+        # best_rf = rf_random.best_estimator_
+
         # Updated models with better parameters
         models = {
-            'RandomForest': RandomForestClassifier(
-                n_estimators=600,
-                max_depth=40,
-                min_samples_split=3,
-                class_weight='balanced',
-                random_state=24
-            ),
+            # 'RandomForest': best_rf,
             'NeuralNetwork': MLPClassifier(
                 hidden_layer_sizes=(400,150,50),  # Głębsza sieć
-                max_iter=2000,
+                max_iter=20,
                 early_stopping=True,
                 random_state=42
             ),
@@ -214,7 +279,7 @@ def evaluate_models(df, suppress_warnings=True):
                     
                 cv_scores.append(roc_auc_score(y_fold_val, y_pred_proba))
                 y_fold_pred = model.predict(X_fold_val)
-                f1_scores.append.f1_score(y_fold_val, y_fold_pred)
+                f1_scores.append(f1_score(y_fold_val, y_fold_pred))
             
             print(f"\n{name} Cross-validation ROC AUC: {np.mean(cv_scores):.3f} (+/- {np.std(cv_scores)*2:.3f})")
             print(f"Fold F1 Score: {np.mean(f1_scores):.3f}")
@@ -289,30 +354,10 @@ def evaluate_models(df, suppress_warnings=True):
         print(f"Newly identified potential cases: {sum(final_predictions == 1)}")
         print(f"Total identified cases: {len(diagnosed) + sum(final_predictions == 1)}")
         
-        return models, result_df
-        
+        return result_df
+
     except Exception as e:
         print(f"Error in model evaluation: {str(e)}")
         raise   
 
-def main():
-    try:
-        df = pd.read_excel("C:/Projects/mentalhealth/data/pre_evaluation_dataset.xlsx")
-        print(f"Loaded dataset with {len(df)} rows")
-        
-        models, df_processed = evaluate_models(df)
-        df_processed.to_excel("C:/Projects/mentalhealth/data/evaluated_dataset.xlsx", index=False)
-        print("\nEvaluation completed successfully")
-        
-        report_df = pd.read_excel("C:/Projects/mentalhealth/data/report_data_test.xlsx")
-        report_df['predictions'] = df_processed['predictions']
-        
-        # Save updated report
-        report_df.to_excel("C:/Projects/mentalhealth/data/report_data_test.xlsx", index=False)
-        print("\nPredictions added to report data")
-    except Exception as e:
-        print(f"Error in main execution: {str(e)}")
-        raise
 
-if __name__ == "__main__":
-    main()
