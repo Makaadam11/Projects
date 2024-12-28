@@ -37,7 +37,7 @@ export const FinancialChart: React.FC<Props> = ({ data }) => {
   };
 
   const chartData = React.useMemo(() => {
-    const studentTypes = ['Full-time', 'Part-time'];
+    const studentTypes = ['Full Time', 'Part Time'];
     if (viewType === 'financialSupport') {
       const supportTypes = [
         'Self-paid', 'Parent (family) support', 'Student loan', 'Credit', 

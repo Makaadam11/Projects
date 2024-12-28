@@ -1,11 +1,11 @@
 "use client"
 import React from 'react';
-import { Paper, Typography, FormGroup, FormControlLabel, Checkbox, Slider, Box } from '@mui/material';
+import { Paper, Typography, FormControl, Select, MenuItem, FormControlLabel, Checkbox, Box, InputLabel, ListItemText } from '@mui/material';
 import type { DashboardData, FilterState } from '../../types/dashboard';
 
 interface FilterPanelProps {
-  filters: FilterState;
-  onFilterChange: (newFilters: Partial<FilterState>) => void;
+  filters: FilterState | any;
+  onFilterChange: (key: keyof FilterState, value: string[]) => void;
   data: DashboardData[];
 }
 
@@ -33,47 +33,63 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFilterChang
       <Typography variant="h6" gutterBottom>
         Filters
       </Typography>
-      
+
       {Object.entries(uniqueValues).map(([key, values]) => (
         <Box key={key} sx={{ mb: 3 }}>
           <Typography variant="subtitle2" gutterBottom>
             {key.replace(/([A-Z])/g, ' $1').trim()}
           </Typography>
-          <FormGroup>
-            {values.map(value => (
-              <FormControlLabel
-                key={value}
-                control={
-                  <Checkbox
-                    checked={filters[key as keyof typeof uniqueValues].includes(value)}
-                    onChange={() => {
-                      const currentValues = filters[key as keyof typeof uniqueValues];
-                      const newValues = currentValues.includes(value)
-                        ? currentValues.filter(v => v !== value)
-                        : [...currentValues, value];
-                      onFilterChange({ [key]: newValues });
-                    }}
-                  />
-                }
-                label={value}
-              />
-            ))}
-          </FormGroup>
+          
+          {key === 'courseCategory' ? (
+            <FormControl fullWidth>
+              <InputLabel>Course Category</InputLabel>
+              <Select
+                multiple
+                value={filters[key] || []}
+                onChange={(e) => {
+                  const value = e.target.value as string[];
+                  onFilterChange(key as keyof FilterState, value);
+                }}
+                renderValue={(selected) => (selected as string[]).join(', ')}
+              >
+                <MenuItem value="">
+                  <em>All Courses</em>
+                </MenuItem>
+                {values.map((value: string) => (
+                  <MenuItem key={value} value={value}>
+                    <Checkbox checked={filters[key]?.includes(value) || false} />
+                    <ListItemText primary={value} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : (
+            <Box>
+              {values.map((value: string) => (
+                <FormControlLabel
+                  key={value}
+                  control={
+                    <Checkbox
+                      checked={filters[key]?.includes(value) || false}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        const currentFilters = filters[key] || [];
+                        onFilterChange(
+                          key as keyof FilterState,
+                          isChecked
+                            ? [...currentFilters, value]
+                            : currentFilters.filter((v: string) => v !== value)
+                        );
+                      }}
+                    />
+                  }
+                  label={value}
+                />
+              ))}
+            </Box>
+          )}
         </Box>
       ))}
-
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" gutterBottom>
-          Age Range
-        </Typography>
-        <Slider
-          value={filters.ageRange}
-          onChange={(_, newValue) => onFilterChange({ ageRange: newValue as [number, number] })}
-          valueLabelDisplay="auto"
-          min={18}
-          max={65}
-        />
-      </Box>
     </Paper>
   );
 };

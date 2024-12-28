@@ -45,7 +45,7 @@ export const CountryMap: React.FC<Props> = ({ data }) => {
         Mental Health Distribution by Country
       </Typography>
       <Box sx={{ height: 500 }}>
-        <ComposableMap style={{ width: "100%", height: 500 }}>
+        <ComposableMap style={{ width: "100%", height: 500 ,  border: '2px solid #ddd', borderRadius: '8px', overflow: 'hidden'}}>
           <ZoomableGroup zoom = {1.3}>
             <Geographies geography="/topo.json">
               {({ geographies }) =>

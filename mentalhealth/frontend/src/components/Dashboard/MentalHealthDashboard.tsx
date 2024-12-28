@@ -54,8 +54,8 @@ const MentalHealthDashboard: React.FC = () => {
     }
   };
 
-  const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+  const handleFilterChange = useCallback((key: keyof FilterState, value: string[]) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
 
   const filteredData = React.useMemo(() => {

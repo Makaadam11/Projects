@@ -74,7 +74,7 @@ export default function Questionaire({
               question={question.question}
               options={question.options || []}
               value={formData[question.id] || ''}
-              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+              onValueChange={(value) => setFormData((prev: any) => ({...prev, [question.id]: value}))}
             />
           </div>
         )
@@ -87,7 +87,7 @@ export default function Questionaire({
               max={question.max || 100}
               step={question.step || 1}
               value={formData[question.id] || 0}
-              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+              onValueChange={(value) => setFormData((prev: any) => ({...prev, [question.id]: value}))}
             />
           </div>
         )
@@ -98,7 +98,7 @@ export default function Questionaire({
               question={question.question}
               options={question.options || []}
               value={formData[question.id] || []}
-              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+              onValueChange={(value) => setFormData((prev: any) => ({...prev, [question.id]: value}))}
             />
           </div>
         )
@@ -108,7 +108,7 @@ export default function Questionaire({
             <TextInput
               question={question.question}
               value={formData[question.id] || ''}
-              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+              onValueChange={(value) => setFormData((prev: any) => ({...prev, [question.id]: value}))}
             />
           </div>
         )
@@ -119,7 +119,7 @@ export default function Questionaire({
               question={question.question}
               options={question.options || []}
               value={formData[question.id] || ''}
-              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+              onValueChange={(value) => setFormData((prev: any) => ({...prev, [question.id]: value}))}
             />
           </div>
         )
@@ -129,10 +129,12 @@ export default function Questionaire({
             <TextInput
               question={question.question}
               value={formData[question.id] || ''}
-              onValueChange={(value) => setFormData(prev => ({...prev, [question.id]: value}))}
+              onValueChange={(value) => setFormData((prev: any) => ({...prev, [question.id]: value}))}
             />
           </div>
         )
+      default:
+        return null;
     }
   }
 
@@ -149,13 +151,11 @@ export default function Questionaire({
         <button 
           type="submit" 
           disabled={isSubmitting}
-          className={`w-full py-2 px-4 ${
-            isSubmitting ? 'bg-blue-400' : 'bg-blue-600'
-          } text-white rounded hover:bg-blue-700 transition-colors`}
+          className={`w-full py-2 px-4 ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600'} text-white rounded hover:bg-blue-700 transition-colors`}
         >
           {isSubmitting ? 'Submitting...' : 'Submit'}
         </button>
       </form>
     </div>
   );
-}
+};

@@ -1,19 +1,6 @@
 import { ChangeEvent, useState } from 'react';
 import styled from 'styled-components';
 
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  gap: 12px;
-`;
-
-const QuestionText = styled.h2`
-  font-size: 16px;
-  color: #333333;
-  font-weight: 500;
-`;
-
 const TextAreaWrapper = styled.div`
   width: 100%;
   background-color: rgb(240, 240, 240);
@@ -48,6 +35,15 @@ const StyledTextArea = styled.textarea`
   }
 `;
 
+const QuestionText = styled.h2`
+  text-align: justify;
+  width: 100%;
+  margin-bottom: 8px;
+  color: #333333;
+  font-size: 1.125rem;
+  font-weight: 500;
+`;
+
 interface TextInputProps {
   question: string;
   value: string;
@@ -69,9 +65,9 @@ export const TextInput = ({
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-[#333333] text-lg font-medium">{question}</h2>
-      <div className="relative pt-1">
+    <div className="space-y-4 ">
+      <QuestionText>{question}</QuestionText>
+      <div className="relative pt-1 ">
         <TextAreaWrapper>
           <StyledTextArea
             id={id}

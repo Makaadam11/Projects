@@ -16,7 +16,7 @@ export default function DashboardPage() {
             </Link>
           </div>
         </nav>
-        <MentalHealthDashboard data={[]}/>
+        <MentalHealthDashboard />
       </div>
     );
   }

@@ -23,11 +23,11 @@ export default function MultiSelect({ question, options, value = [], onValueChan
   }
 
   return (
-    <div className="w-full max-w-[600px] space-y-4">
+    <div className="w-full  space-y-4">
       <h2 className="text-[#333333] text-lg font-medium">
         {question}
       </h2>
-      <div className="space-y-2">
+      <div className="space-y-2 w-full">
         {options.map((option) => (
           <label
             key={option}

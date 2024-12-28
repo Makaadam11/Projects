@@ -25,11 +25,11 @@ export default function SingleSelect({
   };
 
   return (
-    <div className="w-full max-w-[600px] space-y-4">
-      <h2 className="text-[#333333] text-lg font-medium">
+    <div className="w-full  space-y-4">
+      <h2 className="text-[#333333] text-lg font-medium w-full text-justify">
         {question}
       </h2>
-      <div className="space-y-2">
+      <div className="space-y-2 \">
         {options.map(option => (
           <label
             key={option}

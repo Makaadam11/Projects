@@ -273,6 +273,7 @@ const countries = [
 ];
 
 export const getQuestions = async (university: string, courses: string[]): Promise<Question[]> => {
+
   return [
     {
       id: 'diet',
@@ -511,7 +512,7 @@ export const getQuestions = async (university: string, courses: string[]): Promi
     {
       id: 'sense_of_belonging',
       type: 'single',
-      question: '36. Do you feel a sense of "belonging" at UAL?',
+      question: `36. Do you feel a sense of "belonging" at ${university.toUpperCase()}?`,
       options: ['Very much', 'Somewhat', 'Not really', 'Not at all']
     },
     {

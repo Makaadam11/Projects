@@ -38,7 +38,7 @@ export const PersonalityChart: React.FC<Props> = ({ data }) => {
 
   const chartData = React.useMemo(() => {
     if (viewType === 'personalityDevice') {
-      return ['Introvert', 'Extrovert', 'Ambivert'].map(type => ({
+      return ['Introvert', 'Extrovert', 'Somewhat in-between'].map(type => ({
         name: type,
         'No MH': data.filter(d => d.personality_type === type && d.predictions === 0).reduce((sum, curr) => sum + curr.total_device_hours, 0) / data.filter(d => d.personality_type === type && d.predictions === 0).length,
         'MH': data.filter(d => d.personality_type === type && d.predictions === 1).reduce((sum, curr) => sum + curr.total_device_hours, 0) / data.filter(d => d.personality_type === type && d.predictions === 1).length
