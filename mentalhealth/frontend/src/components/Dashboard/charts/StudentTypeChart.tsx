@@ -1,5 +1,6 @@
-import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Switch, FormControlLabel, Menu, MenuItem, IconButton } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   BarChart,
   Bar,
@@ -8,72 +9,85 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  LabelList
 } from 'recharts';
-import type { MentalHealthData } from '../../../types/dashboard';
+import type { DashboardData } from '@/types/dashboard';
 
 interface Props {
-  data: MentalHealthData[];
+  data: DashboardData[];
 }
 
 export const StudentTypeChart: React.FC<Props> = ({ data }) => {
-  const chartData = React.useMemo(() => {
-    const groupedData = data.reduce((acc, curr) => {
-      const key = curr.student_type_location;
-      if (!acc[key]) {
-        acc[key] = {
-          studentType: key,
-          lectureHours: 0,
-          workHours: 0,
-          count: 0,
-          mentalHealthCount: 0
-        };
-      }
-      acc[key].lectureHours += curr.hours_per_week_lectures;
-      acc[key].workHours += curr.hours_per_week_university_work;
-      acc[key].count += 1;
-      if (curr.mental_health_status) acc[key].mentalHealthCount += 1;
-      return acc;
-    }, {} as Record<string, any>);
+  const [showLabels, setShowLabels] = useState(false);
+  const [viewType, setViewType] = useState<'lectures' | 'universityWork'>('lectures');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-    return Object.values(groupedData).map(group => ({
-      ...group,
-      lectureHours: group.lectureHours / group.count,
-      workHours: group.workHours / group.count,
-      mentalHealthPercentage: (group.mentalHealthCount / group.count) * 100
-    }));
-  }, [data]);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleViewChange = (type: 'lectures' | 'universityWork') => {
+    setViewType(type);
+    handleClose();
+  };
+
+  const chartData = React.useMemo(() => {
+    const studentTypes = ['Home student', 'International student', 'European student'];
+    return studentTypes.map(type => {
+      const typeData = data.filter(d => d.student_type_location === type);
+      const totalType = typeData.length;
+      const pred0Data = typeData.filter(d => d.predictions === 0);
+      const pred1Data = typeData.filter(d => d.predictions === 1);
+
+      return {
+        name: type,
+        'No MH': (pred0Data.reduce((sum, curr) => sum + (viewType === 'lectures' ? curr.hours_per_week_lectures : curr.hours_per_week_university_work), 0) / totalType) * 100,
+        'MH': (pred1Data.reduce((sum, curr) => sum + (viewType === 'lectures' ? curr.hours_per_week_lectures : curr.hours_per_week_university_work), 0) / totalType) * 100
+      };
+    });
+  }, [data, viewType]);
 
   return (
     <Paper sx={{ p: 2, height: '100%' }}>
-      <Typography variant="h6" gutterBottom>
-        Student Type: Lecture vs University Work
-      </Typography>
-      <Box sx={{ height: 300 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h6">
+          {viewType === 'lectures' ? 'Lecture Hours Distribution' : 'University Work Hours Distribution'}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControlLabel
+            control={<Switch checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />}
+            label="Show Values"
+          />
+          <IconButton onClick={handleClick}>
+            <MoreVertIcon />
+          </IconButton>
+        </Box>
+      </Box>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+        <MenuItem onClick={() => handleViewChange('lectures')}>Lecture Hours</MenuItem>
+        <MenuItem onClick={() => handleViewChange('universityWork')}>University Work Hours</MenuItem>
+      </Menu>
+
+      <Box sx={{ height: 500 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="studentType" />
-            <YAxis />
-            <Tooltip
-              formatter={(value: number, name: string) => [
-                `${value.toFixed(1)} hours`,
-                name
-              ]}
-            />
+            <XAxis dataKey="name" />
+            <YAxis label={{ value: 'Percentage', angle: -90, position: 'insideLeft' }} />
+            <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
             <Legend />
-            <Bar
-              dataKey="lectureHours"
-              name="Lecture Hours"
-              fill="#4CAF50"
-              opacity={0.8}
-            />
-            <Bar
-              dataKey="workHours"
-              name="University Work"
-              fill="#2196F3"
-              opacity={0.8}
-            />
+            <Bar dataKey="No MH" fill="#82ca9d" name="No Mental Health Issues">
+              {showLabels && <LabelList position="inside" formatter={(value: number) => `${value.toFixed(2)}%`} />}
+            </Bar>
+            <Bar dataKey="MH" fill="#ff6b6b" name="Mental Health Issues">
+              {showLabels && <LabelList position="inside" formatter={(value: number) => `${value.toFixed(2)}%`} />}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </Box>

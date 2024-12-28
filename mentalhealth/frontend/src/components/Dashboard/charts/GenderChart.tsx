@@ -1,6 +1,8 @@
-import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Switch, FormControlLabel, Menu, MenuItem, IconButton } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
+  ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
@@ -8,63 +10,126 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  LabelList
 } from 'recharts';
-import type { MentalHealthData } from '../../../types/dashboard';
+import type { DashboardData } from '@/types/dashboard';
 
 interface Props {
-  data: MentalHealthData[];
+  data: DashboardData[];
 }
 
 export const GenderChart: React.FC<Props> = ({ data }) => {
-  const chartData = React.useMemo(() => {
-    const groupedData = data.reduce((acc, curr) => {
-      const ageGroup = Math.floor(curr.age / 5) * 5; // Group ages in 5-year intervals
-      const key = `${curr.gender}-${ageGroup}`;
-      if (!acc[key]) {
-        acc[key] = {
-          gender: curr.gender,
-          ageGroup: `${ageGroup}-${ageGroup + 4}`,
-          count: 0,
-          familyEarningClass: {
-            low: 0,
-            medium: 0,
-            high: 0
-          },
-          mentalHealthCount: 0
-        };
-      }
-      acc[key].count += 1;
-      acc[key].familyEarningClass[curr.family_earning_class.toLowerCase()] += 1;
-      if (curr.mental_health_status) acc[key].mentalHealthCount += 1;
-      return acc;
-    }, {} as Record<string, any>);
+  const [showLabels, setShowLabels] = useState(false);
+  const [viewType, setViewType] = useState<'gender' | 'earningClass'>('gender');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-    return Object.values(groupedData).map(group => ({
-      ...group,
-      mentalHealthRate: (group.mentalHealthCount / group.count) * 100,
-      lowIncome: (group.familyEarningClass.low / group.count) * 100,
-      mediumIncome: (group.familyEarningClass.medium / group.count) * 100,
-      highIncome: (group.familyEarningClass.high / group.count) * 100
-    }));
-  }, [data]);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleViewChange = (type: 'gender' | 'earningClass') => {
+    setViewType(type);
+    handleClose();
+  };
+
+  const chartData = React.useMemo(() => {
+    if (viewType === 'gender') {
+      const groupedData = data.reduce((acc, curr) => {
+        const gender = curr.gender;
+        if (!acc[gender]) {
+          acc[gender] = {
+            gender,
+            'No MH': 0,
+            'MH': 0,
+            totalAge: 0,
+            count: 0
+          };
+        }
+
+        const key = curr.predictions === 1 ? 'MH' : 'No MH';
+        acc[gender][key] += 1;
+        acc[gender].totalAge += curr.age;
+        acc[gender].count += 1;
+        
+        return acc;
+      }, {} as Record<string, any>);
+
+      return Object.values(groupedData).map(group => ({
+        gender: group.gender,
+        'No MH': group['No MH'],
+        'MH': group['MH'],
+        averageAge: group.totalAge / group.count
+      }));
+    } else {
+      const groupedData = data.reduce((acc, curr) => {
+        const earningClass = curr.family_earning_class;
+        if (!acc[earningClass]) {
+          acc[earningClass] = {
+            earningClass,
+            'No MH': 0,
+            'MH': 0,
+            totalAge: 0,
+            count: 0
+          };
+        }
+
+        const key = curr.predictions === 1 ? 'MH' : 'No MH';
+        acc[earningClass][key] += 1;
+        acc[earningClass].totalAge += curr.age;
+        acc[earningClass].count += 1;
+        
+        return acc;
+      }, {} as Record<string, any>);
+
+      return Object.values(groupedData).map(group => ({
+        earningClass: group.earningClass,
+        'No MH': group['No MH'],
+        'MH': group['MH'],
+        averageAge: group.totalAge / group.count
+      }));
+    }
+  }, [data, viewType]);
 
   return (
     <Paper sx={{ p: 2, height: '100%' }}>
-      <Typography variant="h6" gutterBottom>
-        Gender & Age Analysis
-      </Typography>
-      <Box sx={{ height: 300 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h6">
+          {viewType === 'gender' ? 'Gender vs Age' : 'Family Earning Class vs Age'}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControlLabel
+            control={<Switch checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />}
+            label="Show Values"
+          />
+          <IconButton onClick={handleClick}>
+            <MoreVertIcon />
+          </IconButton>
+        </Box>
+      </Box>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+        <MenuItem onClick={() => handleViewChange('gender')}>Gender</MenuItem>
+        <MenuItem onClick={() => handleViewChange('earningClass')}>Family Earning Class</MenuItem>
+      </Menu>
+
+      <Box sx={{ height: 500 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="ageGroup" />
-            <YAxis />
+            <XAxis dataKey={viewType === 'gender' ? 'gender' : 'earningClass'} />
+            <YAxis label={{ value: 'Average Age', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="lowIncome" name="Low Income %" stackId="income" fill="#ff9999" />
-            <Bar dataKey="mediumIncome" name="Medium Income %" stackId="income" fill="#99ff99" />
-            <Bar dataKey="highIncome" name="High Income %" stackId="income" fill="#9999ff" />
+            <Bar dataKey="No MH" fill="#82ca9d" name="No Mental Health Issues">
+              {showLabels && <LabelList position="inside" />}
+            </Bar>
+            <Bar dataKey="MH" fill="#ff6b6b" name="Mental Health Issues">
+              {showLabels && <LabelList position="inside" />}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </Box>

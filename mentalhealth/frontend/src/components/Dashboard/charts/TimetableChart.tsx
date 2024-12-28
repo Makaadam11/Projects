@@ -1,5 +1,6 @@
-import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Switch, FormControlLabel, Menu, MenuItem, IconButton } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   BarChart,
   Bar,
@@ -8,74 +9,91 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  LabelList
 } from 'recharts';
-import type { MentalHealthData } from '../../../types/dashboard';
+import type { DashboardData } from '@/types/dashboard';
 
 interface Props {
-  data: MentalHealthData[];
+  data: DashboardData[];
 }
 
 export const TimetableChart: React.FC<Props> = ({ data }) => {
-  const chartData = React.useMemo(() => {
-    const groupedData = data.reduce((acc, curr) => {
-      const key = curr.timetable_preference;
-      if (!acc[key]) {
-        acc[key] = {
-          preference: key,
-          hoursBetweenLectures: 0,
-          tsImpactCount: 0,
-          count: 0,
-          mentalHealthCount: 0
-        };
-      }
-      acc[key].hoursBetweenLectures += curr.hours_between_lectures;
-      acc[key].tsImpactCount += curr.ts_impact === 'High' ? 1 : 0;
-      acc[key].count += 1;
-      if (curr.mental_health_status) acc[key].mentalHealthCount += 1;
-      return acc;
-    }, {} as Record<string, any>);
+  const [showLabels, setShowLabels] = useState(false);
+  const [viewType, setViewType] = useState<'preference' | 'impact'>('preference');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-    return Object.values(groupedData).map(group => ({
-      preference: group.preference,
-      avgHoursBetween: group.hoursBetweenLectures / group.count,
-      tsImpactRate: (group.tsImpactCount / group.count) * 100,
-      mentalHealthRate: (group.mentalHealthCount / group.count) * 100
-    }));
-  }, [data]);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleViewChange = (type: 'preference' | 'impact') => {
+    setViewType(type);
+    handleClose();
+  };
+
+  const chartData = React.useMemo(() => {
+    if (viewType === 'preference') {
+      return ['Compact', 'Spread'].map(preference => ({
+        name: preference,
+        'No MH': data.filter(d => d.timetable_preference.toLowerCase().includes(preference.toLowerCase()) && d.predictions === 0).reduce((sum, curr) => sum + curr.hours_between_lectures, 0) / data.filter(d => d.timetable_preference.toLowerCase().includes(preference.toLowerCase()) && d.predictions === 0).length,
+        'MH': data.filter(d => d.timetable_preference.toLowerCase().includes(preference.toLowerCase()) && d.predictions === 1).reduce((sum, curr) => sum + curr.hours_between_lectures, 0) / data.filter(d => d.timetable_preference.toLowerCase().includes(preference.toLowerCase()) && d.predictions === 1).length
+      }));
+    } else {
+      return ['Yes', 'No'].map(impact => ({
+        name: impact,
+        'No MH': data.filter(d => d.timetable_impact.includes(impact) && d.predictions === 0).reduce((sum, curr) => sum + curr.hours_between_lectures, 0) / data.filter(d => d.timetable_impact.includes(impact) && d.predictions === 0).length,
+        'MH': data.filter(d => d.timetable_impact.includes(impact) && d.predictions === 1).reduce((sum, curr) => sum + curr.hours_between_lectures, 0) / data.filter(d => d.timetable_impact.includes(impact) && d.predictions === 1).length
+      }));
+    }
+  }, [data, viewType]);
 
   return (
     <Paper sx={{ p: 2, height: '100%' }}>
-      <Typography variant="h6" gutterBottom>
-        Timetable Analysis
-      </Typography>
-      <Box sx={{ height: 300 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h6">
+          {viewType === 'preference' ? 'Timetable Preference vs Hours Between Lectures' : 'Timetable Impact vs Hours Between Lectures'}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControlLabel
+            control={<Switch checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />}
+            label="Show Values"
+          />
+          <IconButton onClick={handleClick}>
+            <MoreVertIcon />
+          </IconButton>
+        </Box>
+      </Box>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+        <MenuItem onClick={() => handleViewChange('preference')}>Timetable Preference</MenuItem>
+        <MenuItem onClick={() => handleViewChange('impact')}>Timetable Impact</MenuItem>
+      </Menu>
+
+      <Box sx={{ height: 500 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="preference" />
-            <YAxis yAxisId="left" />
-            <YAxis yAxisId="right" orientation="right" />
+            <XAxis dataKey="name" />
+            <YAxis 
+              label={{ 
+                value: 'Hours', 
+                angle: -90, 
+                position: 'insideLeft' 
+              }} 
+            />
             <Tooltip />
             <Legend />
-            <Bar
-              yAxisId="left"
-              dataKey="avgHoursBetween"
-              name="Avg Hours Between Lectures"
-              fill="#8884d8"
-            />
-            <Bar
-              yAxisId="right"
-              dataKey="tsImpactRate"
-              name="TS Impact Rate %"
-              fill="#82ca9d"
-            />
-            <Bar
-              yAxisId="right"
-              dataKey="mentalHealthRate"
-              name="Mental Health Issues %"
-              fill="#ffc658"
-            />
+            <Bar dataKey="No MH" fill="#82ca9d" name="No Mental Health Issues">
+              {showLabels && <LabelList position="inside" />}
+            </Bar>
+            <Bar dataKey="MH" fill="#ff6b6b" name="Mental Health Issues">
+              {showLabels && <LabelList position="inside" />}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </Box>

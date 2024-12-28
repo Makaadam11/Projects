@@ -1,5 +1,6 @@
-import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Switch, FormControlLabel, Menu, MenuItem, IconButton } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   BarChart,
   Bar,
@@ -8,57 +9,99 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  LabelList
 } from 'recharts';
-import type { MentalHealthData } from '../../../types/dashboard';
+import type { DashboardData } from '../../../types/dashboard';
 
 interface Props {
-  data: MentalHealthData[];
+  data: DashboardData[];
 }
 
 export const DietExerciseChart: React.FC<Props> = ({ data }) => {
-  const chartData = React.useMemo(() => {
-    const groupedData = data.reduce((acc, curr) => {
-      const key = `${curr.diet}-${curr.alcohol_consumption}`;
-      if (!acc[key]) {
-        acc[key] = {
-          category: `${curr.diet} (${curr.alcohol_consumption})`,
-          exerciseHours: 0,
-          wellHydrated: 0,
-          count: 0,
-          mentalHealthCount: 0
-        };
-      }
-      acc[key].exerciseHours += curr.exercise_per_week;
-      acc[key].wellHydrated += curr.well_hydrated ? 1 : 0;
-      acc[key].count += 1;
-      if (curr.mental_health_status) acc[key].mentalHealthCount += 1;
-      return acc;
-    }, {} as Record<string, any>);
+  const [showLabels, setShowLabels] = useState(false);
+  const [viewType, setViewType] = useState<'diet' | 'hydration' | 'alcohol'>('diet');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-    return Object.values(groupedData).map(group => ({
-      ...group,
-      exerciseHours: group.exerciseHours / group.count,
-      hydrationRate: (group.wellHydrated / group.count) * 100,
-      mentalHealthRate: (group.mentalHealthCount / group.count) * 100
-    }));
-  }, [data]);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleViewChange = (type: 'diet' | 'hydration' | 'alcohol') => {
+    setViewType(type);
+    handleClose();
+  };
+
+  const chartData = React.useMemo(() => {
+    if (viewType === 'diet') {
+      return ['Healthy', 'Unhealthy', 'Somewhat Inbetween'].map(type => ({
+        name: type,
+        'No MH': data.filter(d => d.diet === type && d.predictions === 0).reduce((sum, curr) => sum + curr.exercise_per_week, 0) / data.filter(d => d.diet === type && d.predictions === 0).length,
+        'MH': data.filter(d => d.diet === type && d.predictions === 1).reduce((sum, curr) => sum + curr.exercise_per_week, 0) / data.filter(d => d.diet === type && d.predictions === 1).length
+      }));
+    } else if (viewType === 'hydration') {
+      return ['Yes', 'No'].map(type => ({
+        name: type,
+        'No MH': data.filter(d => d.well_hydrated === type && d.predictions === 0).reduce((sum, curr) => sum + curr.exercise_per_week, 0) / data.filter(d => d.well_hydrated === type && d.predictions === 0).length,
+        'MH': data.filter(d => d.well_hydrated === type && d.predictions === 1).reduce((sum, curr) => sum + curr.exercise_per_week, 0) / data.filter(d => d.well_hydrated === type && d.predictions === 1).length
+      }));
+    } else {
+      return ['No Drinks', 'Below Moderate', 'Moderate', 'Above Moderate'].map(type => ({
+        name: type,
+        'No MH': data.filter(d => d.alcohol_consumption === type && d.predictions === 0).reduce((sum, curr) => sum + curr.exercise_per_week, 0) / data.filter(d => d.alcohol_consumption === type && d.predictions === 0).length,
+        'MH': data.filter(d => d.alcohol_consumption === type && d.predictions === 1).reduce((sum, curr) => sum + curr.exercise_per_week, 0) / data.filter(d => d.alcohol_consumption === type && d.predictions === 1).length
+      }));
+    }
+  }, [data, viewType]);
 
   return (
     <Paper sx={{ p: 2, height: '100%' }}>
-      <Typography variant="h6" gutterBottom>
-        Diet, Exercise & Wellness
-      </Typography>
-      <Box sx={{ height: 300 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h6">
+          {viewType === 'diet' ? 'Diet vs Exercise Hours' : 
+           viewType === 'hydration' ? 'Hydration vs Exercise Hours' : 'Alcohol Consumption vs Exercise Hours'}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControlLabel
+            control={<Switch checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />}
+            label="Show Values"
+          />
+          <IconButton onClick={handleClick}>
+            <MoreVertIcon />
+          </IconButton>
+        </Box>
+      </Box>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+        <MenuItem onClick={() => handleViewChange('diet')}>Diet</MenuItem>
+        <MenuItem onClick={() => handleViewChange('hydration')}>Hydration</MenuItem>
+        <MenuItem onClick={() => handleViewChange('alcohol')}>Alcohol Consumption</MenuItem>
+      </Menu>
+
+      <Box sx={{ height: 500 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical">
+          <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis dataKey="category" type="category" width={150} />
+            <XAxis dataKey="name" />
+            <YAxis 
+              label={{ 
+                value: 'Hours', 
+                angle: -90, 
+                position: 'insideLeft' 
+              }} 
+            />
             <Tooltip />
             <Legend />
-            <Bar dataKey="exerciseHours" name="Exercise (hrs/week)" fill="#82ca9d" />
-            <Bar dataKey="hydrationRate" name="Hydration %" fill="#8884d8" />
+            <Bar dataKey="No MH" fill="#82ca9d" name="No Mental Health Issues">
+              {showLabels && <LabelList position="inside" />}
+            </Bar>
+            <Bar dataKey="MH" fill="#ff6b6b" name="Mental Health Issues">
+              {showLabels && <LabelList position="inside" />}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </Box>

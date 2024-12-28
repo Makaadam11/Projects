@@ -1,5 +1,6 @@
-import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Switch, FormControlLabel, Menu, MenuItem, IconButton } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   BarChart,
   Bar,
@@ -8,59 +9,114 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  LabelList
 } from 'recharts';
-import type { MentalHealthData } from '../../../types/dashboard';
+import type { DashboardData } from '../../../types/dashboard';
 
 interface Props {
-  data: MentalHealthData[];
+  data: DashboardData[];
 }
 
 export const FinancialChart: React.FC<Props> = ({ data }) => {
-  const chartData = React.useMemo(() => {
-    const groupedData = data.reduce((acc, curr) => {
-      const key = curr.student_type_time;
-      if (!acc[key]) {
-        acc[key] = {
-          studentType: key,
-          avgCost: 0,
-          financialProblems: 0,
-          financialSupport: 0,
-          count: 0
-        };
-      }
-      acc[key].avgCost += curr.cost_of_study;
-      acc[key].financialProblems += curr.financial_problems ? 1 : 0;
-      acc[key].financialSupport += curr.financial_support ? 1 : 0;
-      acc[key].count += 1;
-      return acc;
-    }, {} as Record<string, any>);
+  const [showLabels, setShowLabels] = useState(false);
+  const [viewType, setViewType] = useState<'financialSupport' | 'financialProblems' | 'costOfStudy'>('financialSupport');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-    return Object.values(groupedData).map(group => ({
-      ...group,
-      avgCost: group.avgCost / group.count,
-      financialProblemsRate: (group.financialProblems / group.count) * 100,
-      financialSupportRate: (group.financialSupport / group.count) * 100
-    }));
-  }, [data]);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleViewChange = (type: 'financialSupport' | 'financialProblems' | 'costOfStudy') => {
+    setViewType(type);
+    handleClose();
+  };
+
+  const chartData = React.useMemo(() => {
+    const studentTypes = ['Full-time', 'Part-time'];
+    if (viewType === 'financialSupport') {
+      const supportTypes = [
+        'Self-paid', 'Parent (family) support', 'Student loan', 'Credit', 
+        'Scholarship', 'Sponsorship (Company/Organisation etc)', 'Degree Apprentice'
+      ];
+      return supportTypes.map(supportType => ({
+        name: supportType,
+        'No MH': (data.filter(d => d.financial_support === supportType && d.predictions === 0).length / data.length) * 100,
+        'MH': (data.filter(d => d.financial_support === supportType && d.predictions === 1).length / data.length) * 100
+      }));
+    } else {
+      return studentTypes.map(type => {
+        const typeData = data.filter(d => d.student_type_time === type);
+        const totalType = typeData.length;
+        const pred0Data = typeData.filter(d => d.predictions === 0);
+        const pred1Data = typeData.filter(d => d.predictions === 1);
+
+        if (viewType === 'financialProblems') {
+          return {
+            name: type,
+            'No MH': (pred0Data.filter(d => d.financial_problems === 'Yes').length / totalType) * 100,
+            'MH': (pred1Data.filter(d => d.financial_problems === 'Yes').length / totalType) * 100
+          };
+        } else {
+          return {
+            name: type,
+            'No MH': (pred0Data.reduce((sum, curr) => sum + curr.cost_of_study, 0) / totalType),
+            'MH': (pred1Data.reduce((sum, curr) => sum + curr.cost_of_study, 0) / totalType)
+          };
+        }
+      });
+    }
+  }, [data, viewType]);
+
 
   return (
     <Paper sx={{ p: 2, height: '100%' }}>
-      <Typography variant="h6" gutterBottom>
-        Financial Overview
-      </Typography>
-      <Box sx={{ height: 300 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h6">
+          {viewType === 'financialSupport' ? 'Financial Support vs Student Type Time' : 
+           viewType === 'financialProblems' ? 'Financial Problems vs Student Type Time' : 'Cost of Study vs Student Type Time'}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControlLabel
+            control={<Switch checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />}
+            label="Show Values"
+          />
+          <IconButton onClick={handleClick}>
+            <MoreVertIcon />
+          </IconButton>
+        </Box>
+      </Box>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+        <MenuItem onClick={() => handleViewChange('financialSupport')}>Financial Support</MenuItem>
+        <MenuItem onClick={() => handleViewChange('financialProblems')}>Financial Problems</MenuItem>
+        <MenuItem onClick={() => handleViewChange('costOfStudy')}>Cost of Study</MenuItem>
+      </Menu>
+
+      <Box sx={{ height: 500 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="studentType" />
-            <YAxis yAxisId="left" />
-            <YAxis yAxisId="right" orientation="right" />
-            <Tooltip />
+            <XAxis dataKey="name" />
+            <YAxis 
+              label={{ 
+                value: viewType === 'costOfStudy' ? 'Cost (£)' : 'Percentage', 
+                angle: -90, 
+                position: 'insideLeft' 
+              }} 
+            />
+            <Tooltip formatter={(value: number) => viewType === 'costOfStudy' ? `£${value.toFixed(2)}` : `${value.toFixed(2)}%`} />
             <Legend />
-            <Bar yAxisId="left" dataKey="avgCost" name="Avg. Cost" fill="#8884d8" />
-            <Bar yAxisId="right" dataKey="financialProblemsRate" name="Financial Problems %" fill="#82ca9d" />
-            <Bar yAxisId="right" dataKey="financialSupportRate" name="Financial Support %" fill="#ffc658" />
+            <Bar dataKey="No MH" fill="#82ca9d" name="No Mental Health Issues">
+              {showLabels && <LabelList position="inside" formatter={(value: number) => viewType === 'costOfStudy' ? `£${value.toFixed(2)}` : `${value.toFixed(2)}%`} />}
+            </Bar>
+            <Bar dataKey="MH" fill="#ff6b6b" name="Mental Health Issues">
+              {showLabels && <LabelList position="inside" formatter={(value: number) => viewType === 'costOfStudy' ? `£${value.toFixed(2)}` : `${value.toFixed(2)}%`} />}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </Box>

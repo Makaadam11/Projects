@@ -1,5 +1,6 @@
-import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Switch, FormControlLabel, Menu, MenuItem, IconButton } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   BarChart,
   Bar,
@@ -8,59 +9,99 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  LabelList
 } from 'recharts';
-import type { MentalHealthData } from '../../../types/dashboard';
+import type { DashboardData } from '../../../types/dashboard';
 
 interface Props {
-  data: MentalHealthData[];
+  data: DashboardData[];
 }
 
 export const EmploymentChart: React.FC<Props> = ({ data }) => {
-  const chartData = React.useMemo(() => {
-    const groupedData = data.reduce((acc, curr) => {
-      const key = curr.form_of_employment;
-      if (!acc[key]) {
-        acc[key] = {
-          employment: key,
-          workHours: 0,
-          stressLevel: 0,
-          feelAfraid: 0,
-          count: 0
-        };
-      }
-      acc[key].workHours += curr.work_hours_per_week;
-      acc[key].stressLevel += curr.stress_in_general;
-      acc[key].feelAfraid += curr.feel_afraid ? 1 : 0;
-      acc[key].count += 1;
-      return acc;
-    }, {} as Record<string, any>);
+  const [showLabels, setShowLabels] = useState(false);
+  const [viewType, setViewType] = useState<'employment' | 'afraid' | 'stress'>('employment');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-    return Object.values(groupedData).map(group => ({
-      ...group,
-      avgWorkHours: group.workHours / group.count,
-      avgStressLevel: group.stressLevel / group.count,
-      afraidRate: (group.feelAfraid / group.count) * 100
-    }));
-  }, [data]);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleViewChange = (type: 'employment' | 'afraid' | 'stress') => {
+    setViewType(type);
+    handleClose();
+  };
+
+  const chartData = React.useMemo(() => {
+    if (viewType === 'employment') {
+      return ['Full Time', 'Part Time', 'Unemployed', 'Self Employed'].map(type => ({
+        name: type,
+        'No MH': data.filter(d => d.form_of_employment === type && d.predictions === 0).reduce((sum, curr) => sum + curr.work_hours_per_week, 0) / data.filter(d => d.form_of_employment === type && d.predictions === 0).length,
+        'MH': data.filter(d => d.form_of_employment === type && d.predictions === 1).reduce((sum, curr) => sum + curr.work_hours_per_week, 0) / data.filter(d => d.form_of_employment === type && d.predictions === 1).length
+      }));
+    } else if (viewType === 'afraid') {
+      return ['Never', 'Very Rarely', 'Rarely', 'Occasionally', 'Very Frequently'].map(type => ({
+        name: type,
+        'No MH': data.filter(d => d.feel_afraid === type && d.predictions === 0).reduce((sum, curr) => sum + curr.work_hours_per_week, 0) / data.filter(d => d.feel_afraid === type && d.predictions === 0).length,
+        'MH': data.filter(d => d.feel_afraid === type && d.predictions === 1).reduce((sum, curr) => sum + curr.work_hours_per_week, 0) / data.filter(d => d.feel_afraid === type && d.predictions === 1).length
+      }));
+    } else {
+      return ['Yes', 'No'].map(type => ({
+        name: type,
+        'No MH': data.filter(d => d.stress_in_general.includes(type) && d.predictions === 0).reduce((sum, curr) => sum + curr.work_hours_per_week, 0) / data.filter(d => d.stress_in_general.includes(type) && d.predictions === 0).length,
+        'MH': data.filter(d => d.stress_in_general.includes(type) && d.predictions === 1).reduce((sum, curr) => sum + curr.work_hours_per_week, 0) / data.filter(d => d.stress_in_general.includes(type) && d.predictions === 1).length
+      }));
+    }
+  }, [data, viewType]);
 
   return (
     <Paper sx={{ p: 2, height: '100%' }}>
-      <Typography variant="h6" gutterBottom>
-        Employment & Stress
-      </Typography>
-      <Box sx={{ height: 300 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h6">
+          {viewType === 'employment' ? 'Form of Employment vs Work Hours per Week' : 
+           viewType === 'afraid' ? 'Feel Afraid vs Work Hours per Week' : 'Stress in General vs Work Hours per Week'}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControlLabel
+            control={<Switch checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />}
+            label="Show Values"
+          />
+          <IconButton onClick={handleClick}>
+            <MoreVertIcon />
+          </IconButton>
+        </Box>
+      </Box>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+        <MenuItem onClick={() => handleViewChange('employment')}>Form of Employment</MenuItem>
+        <MenuItem onClick={() => handleViewChange('afraid')}>Feel Afraid</MenuItem>
+        <MenuItem onClick={() => handleViewChange('stress')}>Stress in General</MenuItem>
+      </Menu>
+
+      <Box sx={{ height: 500 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="employment" />
-            <YAxis yAxisId="left" />
-            <YAxis yAxisId="right" orientation="right" />
+            <XAxis dataKey="name" />
+            <YAxis 
+              label={{ 
+                value: 'Hours', 
+                angle: -90, 
+                position: 'insideLeft' 
+              }} 
+            />
             <Tooltip />
             <Legend />
-            <Bar yAxisId="left" dataKey="avgWorkHours" name="Work Hours" fill="#8884d8" />
-            <Bar yAxisId="right" dataKey="avgStressLevel" name="Stress Level" fill="#82ca9d" />
-            <Bar yAxisId="right" dataKey="afraidRate" name="Anxiety Rate %" fill="#ffc658" />
+            <Bar dataKey="No MH" fill="#82ca9d" name="No Mental Health Issues">
+              {showLabels && <LabelList position="inside" />}
+            </Bar>
+            <Bar dataKey="MH" fill="#ff6b6b" name="Mental Health Issues">
+              {showLabels && <LabelList position="inside" />}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </Box>

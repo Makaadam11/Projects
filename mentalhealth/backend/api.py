@@ -2,10 +2,11 @@ from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List
 import pandas as pd
-from models import QuestionnaireDataModel
+from models import QuestionnaireDataModel, DashboardDataModel
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from data_processor import DataProcessor
+import numpy as np
 
 app = FastAPI()
 
@@ -157,3 +158,66 @@ async def delete_user(email: str):
     except Exception as e:
         print(f"Delete error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Delete error: {str(e)}")
+
+def process_excel_data(df: pd.DataFrame) -> pd.DataFrame:
+    # Create a copy of the DataFrame to avoid SettingWithCopyWarning
+    df = df.copy()
+    
+    # Define required columns and their types
+    numeric_columns = {
+        'hours_per_week_university_work': 0,
+        'exercise_per_week': 0,
+        'work_hours_per_week': 0,
+        'age': 0,
+        'total_device_hours': 0,
+        'hours_socialmedia': 0,
+        'hours_between_lectures': 0,
+        'hours_per_week_lectures': 0,
+        'hours_socialising': 0,
+        'cost_of_study': 0
+    }
+    
+    # Process numeric columns
+    for col, default in numeric_columns.items():
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(default).astype(int)
+        else:
+            df[col] = default
+    
+    # Replace NaN values with None for non-numeric columns
+    for col in df.columns:
+        if col not in numeric_columns:
+            df[col] = df[col].fillna('Not Provided')
+    
+    print("Processed columns:", df.columns.tolist())
+    print("Data types:", df.dtypes)
+    
+    return df
+
+@app.get("/api/dashboard")
+async def get_dashboard_data():
+    try:
+        file_path = "../data/merged/merged_data.xlsx"
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Data file not found")
+        
+        # Read Excel file
+        df = pd.read_excel(file_path, header=None)
+        print("Original columns:", df.columns.tolist())
+        column_ids = df.iloc[1].copy()     # Set IDs as column names
+        df_cleaned = df.iloc[2:] 
+        df_cleaned.columns = column_ids
+        # Process data
+        df_processed = process_excel_data(df_cleaned)
+        
+        # Convert to dictionary records
+        data = df_processed.to_dict('records')
+        
+        return {"data": data}
+        
+    except Exception as e:
+        print(f"Dashboard error: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail={"error": "Failed to fetch dashboard data", "details": str(e)}
+        )
