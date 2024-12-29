@@ -227,9 +227,3 @@ class Reports:
 
 
 # Usage
-try:
-    df = pd.read_excel("C:/Projects/mentalhealth/data/updated.xlsx")
-    reports = Reports(df)
-    reports.generate_pdf_report("C:/Projects/mentalhealth/data/Mental_Health_Report.pdf")
-except Exception as e:
-    print(f"Error generating report: {str(e)}")

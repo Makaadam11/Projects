@@ -28,6 +28,7 @@ export interface Question {
   min?: number;
   max?: number;
   step?: number;
+  showAboveMax?: boolean;
 }
 
 const countries = [
@@ -293,7 +294,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '3. How many hours do you spend on university/academic-related work, separate from your Course Timetable, per week during exams?',
       min: 0,
       max: 50,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'family_earning_class',
@@ -342,7 +344,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '10. How often do you exercise per week?',
       min: 0,
       max: 7,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'known_disabilities',
@@ -356,7 +359,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '12. How many hours per week do you work?',
       min: 0,
       max: 40,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'financial_support',
@@ -388,7 +392,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '17. What is your year of birth?',
       min: 1970,
       max: 2010,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'course_of_study',
@@ -431,7 +436,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '24. How many hours do you spend using technology devices per day (mobile, desktop, laptops, etc)?',
       min: 0,
       max: 24,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'hours_socialmedia',
@@ -439,7 +445,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '25. How many hours do you spend using social media per day (Instagram, Tiktok, Twitter, etc)?',
       min: 0,
       max: 24,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'level_of_study',
@@ -465,7 +472,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '29. How many hours do you normally have BETWEEN lectures per day?',
       min: 0,
       max: 12,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'hours_per_week_lectures',
@@ -473,7 +481,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '30. How many hours per week do you have active lectures? (Active means attending lectures)',
       min: 0,
       max: 40,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'hours_socialising',
@@ -481,13 +490,14 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '31. How many hours per week do you socialise? (Meeting other people, participating in social activities etc).',
       min: 0,
       max: 40,
-      step: 1
+      step: 1,
+      showAboveMax: true
     },
     {
       id: 'actual',
       type: 'single',
       question: '32. Would you classify yourself or have you been diagnosed with mental health issues by a professional?',
-      options: ['Yes', 'No', 'Prefer not to say']
+      options: ['Yes', 'No', "Prefer not to say / I don't know"]
     },
     {
       id: 'student_type_time',
@@ -507,7 +517,8 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       question: '35. What are the approximate costs for your studies? (tuition fee per year of study, in pound sterling £)',
       min: 0,
       max: 50000,
-      step: 1000
+      step: 1000,
+      showAboveMax: true
     },
     {
       id: 'sense_of_belonging',

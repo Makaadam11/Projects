@@ -39,7 +39,7 @@ export const CourseTreemap: React.FC<Props> = ({ data }) => {
       name: 'Courses',
       children: Object.values(groupedData).map(course => ({
         name: course.name,
-        fill: course.mhStudents / course.totalStudents > 0.5 ? '#ff6b6b' : '#82ca9d',
+        fill: course.mhStudents / course.totalStudents > 0.5 ? '#ff0000' : '#00ff00',
 
         value: course.value / course.totalStudents, // average cost
         totalStudents: course.totalStudents,
@@ -61,7 +61,7 @@ export const CourseTreemap: React.FC<Props> = ({ data }) => {
                 dataKey="totalStudents"
                 aspectRatio={1}  // Changed from 4/3 to 1 for more square-like rectangles
                 stroke="#fff"
-                fill="#8884d8"
+                fill="#82ca9d"
               >
             <Tooltip 
               content={({ payload }) => {

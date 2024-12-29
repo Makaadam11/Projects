@@ -1,4 +1,5 @@
 import { QuestionarieData } from '@/types/QuestionaireTypes';
+import { DashboardData } from '@/types/dashboard';
 import axios from 'axios';
 
 export const submitQuestionaire = async (data: QuestionarieData) => {
@@ -24,7 +25,6 @@ export const loadCourses = async (university: string): Promise<string[]> => {
   }
 };
 
-import { DashboardData } from '../types/dashboard';
 
 export async function getDashboardData(): Promise<DashboardData[]> {
     const response = await fetch('http://localhost:8000/api/dashboard');
@@ -35,3 +35,24 @@ export async function getDashboardData(): Promise<DashboardData[]> {
     
     return response.json();
 }
+
+export const generateReport = async (filteredData: any[], chartImages: any []) => {
+  try {
+    const response = await fetch('/api/reports', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: filteredData }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to generate report');
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error generating report:', error);
+    throw error;
+  }
+};

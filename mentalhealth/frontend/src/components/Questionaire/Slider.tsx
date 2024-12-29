@@ -6,10 +6,11 @@ interface SliderProps {
   max: number;
   step: number;
   value: number;
+  showAboveMax?: boolean;
   onValueChange: (value: number) => void;
 }
 
-export default function Slider({ question, min, max, step, value, onValueChange }: SliderProps) {
+export default function Slider({ question, min, max, step, value, showAboveMax, onValueChange }: SliderProps) {
   const [localValue, setLocalValue] = useState(value);
 
   useEffect(() => {
@@ -29,14 +30,16 @@ export default function Slider({ question, min, max, step, value, onValueChange 
           min={min}
           max={max}
           step={step}
-          value={localValue}
-          onChange={(e) => onValueChange(Number(e.target.value))}
+          value={localValue} // Original numeric value preserved
+          onChange={(e) => onValueChange(Number(e.target.value))} // Passes pure number
           onTouchStart={handleTouchStart}
           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer touch-none select-none"
         />
         <div className="flex justify-between mt-2 w-full">
           <span className="text-sm text-gray-600">{min}</span>
-          <span className="text-sm font-medium text-blue-600">Current: {localValue}</span>
+          <span className="text-sm font-medium text-blue-600">
+            Current: {localValue === max && showAboveMax ? `${localValue} and above` : localValue}
+          </span>
           <span className="text-sm text-gray-600">{max}</span>
         </div>
       </div>

@@ -99,7 +99,7 @@ export const DietExerciseChart: React.FC<Props> = ({ data }) => {
             <Bar dataKey="No MH" fill="#82ca9d" name="No Mental Health Issues">
               {showLabels && <LabelList position="inside" />}
             </Bar>
-            <Bar dataKey="MH" fill="#ff6b6b" name="Mental Health Issues">
+            <Bar dataKey="MH" fill="#ff0000" name="Mental Health Issues">
               {showLabels && <LabelList position="inside" />}
             </Bar>
           </BarChart>

@@ -7,8 +7,8 @@ import { Question, QuestionarieData, getQuestions, QuestionaireProps } from '../
 import MultiSelect from './Questionaire/MultiSelect'
 import DropdownSelect from './Questionaire/DropdownSelect'
 import { TextInput } from './Questionaire/TextInput'
-import { submitQuestionaire } from '../api/questionaire'
-import { loadCourses } from '../api/questionaire'
+import { submitQuestionaire } from '../api/data'
+import { loadCourses } from '../api/data'
 
 export default function Questionaire({ 
   university, 
@@ -87,6 +87,7 @@ export default function Questionaire({
               max={question.max || 100}
               step={question.step || 1}
               value={formData[question.id] || 0}
+              showAboveMax={question.showAboveMax}
               onValueChange={(value) => setFormData((prev: any) => ({...prev, [question.id]: value}))}
             />
           </div>

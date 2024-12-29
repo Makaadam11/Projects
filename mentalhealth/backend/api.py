@@ -1,7 +1,9 @@
+from datetime import datetime
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List
 import pandas as pd
+from reports import Reports
 from models import QuestionnaireDataModel, DashboardDataModel
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -45,10 +47,17 @@ async def submit_questionaire(university: str, data: QuestionnaireDataModel):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/reports")
-async def get_reports():
-    # Generate and return reports
-    return {"message": "Reports generated"}
+@app.post("/api/reports")
+async def generate_reports(data: List[dict]):
+    try:
+        df = pd.DataFrame(data)
+        reports = Reports(df)
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        reports.generate_pdf_report(f"../data/reports/Mental_Health_Report_{timestamp}.pdf")
+        return {"message": "Reports generated"}
+    except Exception as e:
+        print(f"Error generating report: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/courses/{university}", response_model=CourseResponse)
 async def get_courses(university: str):
