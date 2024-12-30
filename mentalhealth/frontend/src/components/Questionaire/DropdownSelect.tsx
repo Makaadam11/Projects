@@ -32,6 +32,7 @@ export default function DropdownSelect({
       <div className="relative">
         <select
           value={localValue}
+          required
           onChange={handleChange}
           className="w-full p-3 bg-[rgb(240,240,240)] border border-[rgba(200,200,200,1)] 
                    rounded appearance-none cursor-pointer hover:bg-[rgb(230,230,230)]"

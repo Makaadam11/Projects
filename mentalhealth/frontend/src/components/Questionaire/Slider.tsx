@@ -27,6 +27,7 @@ export default function Slider({ question, min, max, step, value, showAboveMax, 
       <div className="relative pt-1 select-none">
         <input
           type="range"
+          required
           min={min}
           max={max}
           step={step}

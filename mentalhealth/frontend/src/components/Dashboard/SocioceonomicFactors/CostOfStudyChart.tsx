@@ -21,13 +21,15 @@ export const CostOfStudyChart = ({ data }: CostOfStudyChartProps) => {
   }, [] as { cost_of_study: number; prediction_0: number; prediction_1: number }[]);
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <Treemap data={groupedData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="cost_of_study" />
-        <YAxis />
-        <Tooltip />
-      </Treemap>
-    </ResponsiveContainer>
+    <div className="flex flex-col items-center">
+      </div>
+    // <ResponsiveContainer width="100%" height={300}>
+    //   <Treemap data={{groupedData}}>
+    //     <CartesianGrid strokeDasharray="3 3" />
+    //     <XAxis dataKey="cost_of_study" />
+    //     <YAxis />
+    //     <Tooltip />
+    //   </Treemap>
+    // </ResponsiveContainer>
   );
 };

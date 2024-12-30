@@ -55,7 +55,7 @@ export const CourseTreemap: React.FC<Props> = ({ data }) => {
             Course Analysis: Cost and Mental Health Distribution
           </Typography>
           <Box sx={{ height: 500 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            {/* <ResponsiveContainer width="100%" height="100%">
               <Treemap
                 data={treeData.children}
                 dataKey="totalStudents"
@@ -79,7 +79,7 @@ export const CourseTreemap: React.FC<Props> = ({ data }) => {
               }}
             />
           </Treemap>
-        </ResponsiveContainer>
+        </ResponsiveContainer> */}
       </Box>
     </Paper>
   );

@@ -37,6 +37,7 @@ export default function SingleSelect({
           >
             <input
               type="radio"
+              required
               name={question} // Add unique name per question group
               value={option}
               checked={localValue === option}

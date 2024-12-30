@@ -34,6 +34,7 @@ export default function MultiSelect({ question, options, value = [], onValueChan
             className="flex items-center p-3 bg-[rgb(240,240,240)] rounded hover:bg-[rgb(230,230,230)] cursor-pointer transition-colors"
           >
             <input
+              required
               type="checkbox"
               checked={localValue.includes(option)}
               onChange={() => handleChange(option)}

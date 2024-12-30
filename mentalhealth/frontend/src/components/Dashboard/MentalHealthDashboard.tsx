@@ -29,13 +29,44 @@ const MentalHealthDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>({
-    studentType: [],
+    ethnic_group: [],
+    home_country: [],
+    age: [],
     gender: [],
-    ageRange: [18, 65],
-    courseCategory: [],
-    employmentStatus: [],
-    ethnicGroup: [],
+    student_type_location: [],
+    student_type_time: [],
+    course_of_study: [],
+    hours_between_lectures: [],
+    hours_per_week_lectures: [],
+    hours_per_week_university_work: [],
+    level_of_study: [],
+    timetable_preference: [],
+    timetable_reasons: [],
+    timetable_impact: [],
+    financial_support: [],
+    financial_problems: [],
+    family_earning_class: [],
+    form_of_employment: [],
+    work_hours_per_week: [],
+    cost_of_study: [],
+    diet: [],
+    well_hydrated: [],
+    exercise_per_week: [],
+    alcohol_consumption: [],
+    personality_type: [],
+    physical_activities: [],
+    mental_health_activities: [],
+    hours_socialmedia: [],
+    total_device_hours: [],
+    hours_socialising: [],
+    quality_of_life: [],
+    feel_afraid: [],
+    stress_in_general: [],
+    stress_before_exams: [],
+    known_disabilities: [],
+    sense_of_belonging: [],
   });
+
   const chartRefs = {
     studentType: useRef(null),
     personality: useRef(null),
@@ -109,27 +140,54 @@ const MentalHealthDashboard: React.FC = () => {
     if (!Array.isArray(data) || data.length === 0) {
       console.log("Invalid data array:", data);
       return [];
-  }
+    }
 
     return data.filter(item => {
       if (!item) return false;
 
-      const matchesStudentType = filters.studentType.length === 0 || 
-        filters.studentType.includes(item.student_type_location);
-      const matchesGender = filters.gender.length === 0 || 
-        filters.gender.includes(item.gender);
-      const matchesAge = typeof item.age === 'number' && 
-        item.age >= filters.ageRange[0] && 
-        item.age <= filters.ageRange[1];
-      const matchesCourse = filters.courseCategory.length === 0 || 
-        filters.courseCategory.includes(item.course_of_study);
-      const matchesEmployment = filters.employmentStatus.length === 0 || 
-        filters.employmentStatus.includes(item.form_of_employment);
-      const matchesEthnic = filters.ethnicGroup.length === 0 || 
-        filters.ethnicGroup.includes(item.ethnic_group);
+      const matchesFilter = (key: keyof FilterState, value: any) => {
+        if (filters[key].length === 0) return true;
+        return filters[key].includes(value);
+      };
 
-      return matchesStudentType && matchesGender && matchesAge && 
-        matchesCourse && matchesEmployment && matchesEthnic;
+      return (
+        matchesFilter('ethnic_group', item.ethnic_group) &&
+        matchesFilter('home_country', item.home_country) &&
+        matchesFilter('age', item.age) &&
+        matchesFilter('gender', item.gender) &&
+        matchesFilter('student_type_location', item.student_type_location) &&
+        matchesFilter('student_type_time', item.student_type_time) &&
+        matchesFilter('course_of_study', item.course_of_study) &&
+        matchesFilter('hours_between_lectures', item.hours_between_lectures) &&
+        matchesFilter('hours_per_week_lectures', item.hours_per_week_lectures) &&
+        matchesFilter('hours_per_week_university_work', item.hours_per_week_university_work) &&
+        matchesFilter('level_of_study', item.level_of_study) &&
+        matchesFilter('timetable_preference', item.timetable_preference) &&
+        matchesFilter('timetable_reasons', item.timetable_reasons) &&
+        matchesFilter('timetable_impact', item.timetable_impact) &&
+        matchesFilter('financial_support', item.financial_support) &&
+        matchesFilter('financial_problems', item.financial_problems) &&
+        matchesFilter('family_earning_class', item.family_earning_class) &&
+        matchesFilter('form_of_employment', item.form_of_employment) &&
+        matchesFilter('work_hours_per_week', item.work_hours_per_week) &&
+        matchesFilter('cost_of_study', item.cost_of_study) &&
+        matchesFilter('diet', item.diet) &&
+        matchesFilter('well_hydrated', item.well_hydrated) &&
+        matchesFilter('exercise_per_week', item.exercise_per_week) &&
+        matchesFilter('alcohol_consumption', item.alcohol_consumption) &&
+        matchesFilter('personality_type', item.personality_type) &&
+        matchesFilter('physical_activities', item.physical_activities) &&
+        matchesFilter('mental_health_activities', item.mental_health_activities) &&
+        matchesFilter('hours_socialmedia', item.hours_socialmedia) &&
+        matchesFilter('total_device_hours', item.total_device_hours) &&
+        matchesFilter('hours_socialising', item.hours_socialising) &&
+        matchesFilter('quality_of_life', item.quality_of_life) &&
+        matchesFilter('feel_afraid', item.feel_afraid) &&
+        matchesFilter('stress_in_general', item.stress_in_general) &&
+        matchesFilter('stress_before_exams', item.stress_before_exams) &&
+        matchesFilter('known_disabilities', item.known_disabilities) &&
+        matchesFilter('sense_of_belonging', item.sense_of_belonging)
+      );
     });
   }, [data, filters]);
 

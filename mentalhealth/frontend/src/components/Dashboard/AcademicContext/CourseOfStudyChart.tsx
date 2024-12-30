@@ -27,7 +27,7 @@ export const CourseOfStudyChart = ({ data }: CourseOfStudyChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Course of Study Distribution
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    {/* <ResponsiveContainer width="100%" height={300}>
       <Treemap
         data={groupedData}
         dataKey="prediction_1"
@@ -42,7 +42,7 @@ export const CourseOfStudyChart = ({ data }: CourseOfStudyChartProps) => {
         ))}
         <Tooltip />
       </Treemap>
-    </ResponsiveContainer>
+    </ResponsiveContainer> */}
     </Box>
   );
 };
