@@ -23,7 +23,7 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
         try {
           setLoading(prev => ({ ...prev, departments: true }));
           const response = await loadDepartments(selectedUniversity);
-          setDepartments({ [selectedDepartment]: response });
+          setDepartments(response); // Set entire departments object
         } catch (error) {
           console.error('Error loading departments:', error);
         } finally {
@@ -81,22 +81,36 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
     };
   }, [data, selectedDepartment, departments]);
 
+  const handleDepartmentChange = (event: any) => {
+    const department = event.target.value;
+    setSelectedDepartment(department);
+    
+    // Auto-select courses for the selected department
+    if (department && departments[department]) {
+      onFilterChange('course_of_study', departments[department]);
+    } else {
+      onFilterChange('course_of_study', []);
+    }
+  };
+
   const renderSelect = (key: string, values: any[]) => {
     const handleChange = async (event: any) => {
       const value = event.target.value as string[];
       setLoading(prev => ({ ...prev, [key]: true }));
       
       try {
-        if (value.includes('All')) {
-          // If current state has all values selected, unselect all
-          if (filters[key as keyof FilterState]?.length === values.length) {
-            onFilterChange(key as keyof FilterState, []);
-          } else {
-            // Otherwise select all values
-            onFilterChange(key as keyof FilterState, values);
-          }
+        if (key === 'departments') {
+          handleDepartmentChange(event);
         } else {
-          onFilterChange(key as keyof FilterState, value);
+          if (value.includes('All')) {
+            if (filters[key as keyof FilterState]?.length === values.length) {
+              onFilterChange(key as keyof FilterState, []);
+            } else {
+              onFilterChange(key as keyof FilterState, values);
+            }
+          } else {
+            onFilterChange(key as keyof FilterState, value);
+          }
         }
       } finally {
         setLoading(prev => ({ ...prev, [key]: false }));
@@ -171,12 +185,25 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
         </Select>
       </FormControl>
 
-      {selectedUniversity && (
+     {selectedUniversity && (
         <>
           <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
             Departments
           </Typography>
-          {renderSelect('departments', Object.keys(departments))}
+          <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+            <InputLabel>Department</InputLabel>
+            <Select
+              value={selectedDepartment ? selectedDepartment : ''}
+              onChange={handleDepartmentChange}
+              multiple={false}
+            >
+              {Object.keys(departments).map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </>
       )}
 

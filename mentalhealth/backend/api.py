@@ -86,35 +86,33 @@ async def get_courses(university: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/departments/{university}", response_model=DepartmentCoursesResponse)
-async def get_courses(university: str):
+async def get_departments(university: str):
     try:
-        # Construct file path
         file_path = f"../data/{university.lower()}/{university.lower()}_courses.xlsx"
         
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail=f"Course file not found for {university}")
         
-        # Read Excel file
         df = pd.read_excel(file_path)
-        
-        # Initialize department-course mapping
         department_course_map = {}
         current_department = None
         
-        # Iterate through rows
-        for _, row in df.iterrows():
-            department = row[0]
-            course = row[1]
+        for index, row in df.iterrows():
+            department = str(row[0]).strip() if pd.notna(row[0]) else None
+            course = str(row[1]).strip() if pd.notna(row[1]) else None
             
-            if pd.notna(department):
+            # If we find a new department, update current_department
+            if department and not department.lower().startswith('null'):
                 current_department = department
                 if current_department not in department_course_map:
                     department_course_map[current_department] = []
             
-            if pd.notna(course) and current_department:
+            # Add course to current department if course exists
+            if course and current_department and not course.lower().startswith('null'):
                 department_course_map[current_department].append(course)
         
         return {
+            "university": university,
             "departments": department_course_map
         }
     except Exception as e:
