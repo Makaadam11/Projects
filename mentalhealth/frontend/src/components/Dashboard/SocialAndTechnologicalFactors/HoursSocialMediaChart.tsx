@@ -7,6 +7,7 @@ interface HoursSocialMediaChartProps {
 }
 
 export const HoursSocialMediaChart = ({ data }: HoursSocialMediaChartProps) => {
+  data.sort((a, b) => a.hours_socialising - b.hours_socialising);
   const groupedData = data.reduce((acc, curr) => {
     if (curr.hours_social_media === 0) return acc;
     const group = acc.find(item => item.hours_socialmedia === curr.hours_socialmedia);

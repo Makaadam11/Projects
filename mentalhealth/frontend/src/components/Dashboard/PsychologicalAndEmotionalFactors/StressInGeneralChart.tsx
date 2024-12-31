@@ -7,17 +7,21 @@ interface StressInGeneralChartProps {
 }
 
 export const StressInGeneralChart = ({ data }: StressInGeneralChartProps) => {
+
   const groupedData = data.reduce((acc, curr) => {
-    if (!curr || !curr.stress_in_general || curr.stress_in_general.includes("Not Provided")) {
+    if (!curr || !curr.stress_in_general || curr.stress_in_general === "Not Provided") {
       return acc;
     }
     
-    const group = acc.find(item => item.stress_in_general === curr.stress_in_general);
+    // Check if any part of the response indicates stress
+    const hasStress = curr.stress_in_general.toLowerCase().includes('yes');
+    
+    const group = acc.find(item => item.stress_in_general === (hasStress ? "Yes" : "No"));
     if (group) {
       group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
     } else {
       acc.push({
-        stress_in_general: curr.stress_in_general,
+        stress_in_general: hasStress ? "Yes" : "No",
         prediction_0: curr.predictions === 0 ? 1 : 0,
         prediction_1: curr.predictions === 1 ? 1 : 0,
       });

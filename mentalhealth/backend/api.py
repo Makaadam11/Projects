@@ -1,3 +1,4 @@
+from typing import Dict
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
@@ -32,6 +33,9 @@ class LoginFormInputs(BaseModel):
 class CourseResponse(BaseModel):
     courses: List[str]
     university: str
+    
+class DepartmentCoursesResponse(BaseModel):
+    departments: Dict[str, List[str]]
 
 class FilePath(BaseModel):
     path: str
@@ -72,7 +76,7 @@ async def get_courses(university: str):
         df = pd.read_excel(file_path)
         
         # Convert to list of courses
-        courses = df.iloc[:, 0].tolist()
+        courses = df.iloc[:, 1].dropna().tolist()
         
         return {
             "courses": courses,
@@ -80,13 +84,47 @@ async def get_courses(university: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+@app.get("/api/departments/{university}", response_model=DepartmentCoursesResponse)
+async def get_courses(university: str):
+    try:
+        # Construct file path
+        file_path = f"../data/{university.lower()}/{university.lower()}_courses.xlsx"
+        
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail=f"Course file not found for {university}")
+        
+        # Read Excel file
+        df = pd.read_excel(file_path)
+        
+        # Initialize department-course mapping
+        department_course_map = {}
+        current_department = None
+        
+        # Iterate through rows
+        for _, row in df.iterrows():
+            department = row[0]
+            course = row[1]
+            
+            if pd.notna(department):
+                current_department = department
+                if current_department not in department_course_map:
+                    department_course_map[current_department] = []
+            
+            if pd.notna(course) and current_department:
+                department_course_map[current_department].append(course)
+        
+        return {
+            "departments": department_course_map
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 def get_user_data():
     file_path = "../data/login/login_data.xlsx"
     if os.path.exists(file_path):
         df = pd.read_excel(file_path, header=0)
-        print("userdata" , df)
+        # print("userdata" , df)
         return df
     else:
         return pd.DataFrame(columns=["email", "password", "isAdmin"])
@@ -112,7 +150,7 @@ async def login(data: LoginFormInputs):
             (df['password'].str.strip() == clean_password)
         ]
         
-        print("Matched user:", user)
+        # print("Matched user:", user)
         
         if not user.empty:
             return {"message": "Login successful", "isAdmin": bool(user.iloc[0]['isAdmin'])}
@@ -198,8 +236,8 @@ def process_excel_data(df: pd.DataFrame) -> pd.DataFrame:
         if col not in numeric_columns:
             df[col] = df[col].fillna('Not Provided')
     
-    print("Processed columns:", df.columns.tolist())
-    print("Data types:", df.dtypes)
+    # print("Processed columns:", df.columns.tolist())
+    # print("Data types:", df.dtypes)
     
     return df
 

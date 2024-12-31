@@ -1,7 +1,7 @@
-"use client"
-import React, { useMemo, useState } from 'react';
-import { Paper, Typography, FormControl, Select, MenuItem, InputLabel, Checkbox, ListItemText } from '@mui/material';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Paper, Typography, FormControl, Select, MenuItem, InputLabel, Checkbox, ListItemText, CircularProgress } from '@mui/material';
 import type { DashboardData, FilterState } from '../../types/dashboard';
+import { loadDepartments } from '../../api/data';
 
 interface FilterPanelProps {
   filters: FilterState;
@@ -11,6 +11,29 @@ interface FilterPanelProps {
 
 export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps) => {
   const [loading, setLoading] = useState<{[key: string]: boolean}>({});
+  const [departments, setDepartments] = useState<{ [key: string]: string[] }>({});
+  const [selectedUniversity, setSelectedUniversity] = useState<string>('');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+
+  const universities = ['UAL', 'SOL']; // Add more universities as needed
+
+  useEffect(() => {
+    if (selectedUniversity) {
+      const fetchDepartments = async () => {
+        try {
+          setLoading(prev => ({ ...prev, departments: true }));
+          const response = await loadDepartments(selectedUniversity);
+          setDepartments({ [selectedDepartment]: response });
+        } catch (error) {
+          console.error('Error loading departments:', error);
+        } finally {
+          setLoading(prev => ({ ...prev, departments: false }));
+        }
+      };
+
+      fetchDepartments();
+    }
+  }, [selectedUniversity]);
 
   const uniqueValues = useMemo(() => {
     return {
@@ -20,7 +43,7 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
       gender: [...new Set(data.filter(Boolean).map(item => item?.gender).filter(Boolean))],
       student_type_location: [...new Set(data.filter(Boolean).map(item => item?.student_type_location).filter(Boolean))],
       student_type_time: [...new Set(data.filter(Boolean).map(item => item?.student_type_time).filter(Boolean))],
-      course_of_study: [...new Set(data.filter(Boolean).map(item => item?.course_of_study).filter(Boolean))],
+      course_of_study: selectedDepartment ? departments[selectedDepartment] : [...new Set(data.filter(Boolean).map(item => item?.course_of_study).filter(Boolean))],
       hours_between_lectures: [...new Set(data.filter(Boolean).map(item => item?.hours_between_lectures).filter(Boolean))],
       hours_per_week_lectures: [...new Set(data.filter(Boolean).map(item => item?.hours_per_week_lectures).filter(Boolean))],
       hours_per_week_university_work: [...new Set(data.filter(Boolean).map(item => item?.hours_per_week_university_work).filter(Boolean))],
@@ -49,9 +72,14 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
       stress_in_general: [...new Set(data.filter(Boolean).map(item => item?.stress_in_general).filter(Boolean))],
       stress_before_exams: [...new Set(data.filter(Boolean).map(item => item?.stress_before_exams).filter(Boolean))],
       known_disabilities: [...new Set(data.filter(Boolean).map(item => item?.known_disabilities).filter(Boolean))],
-      sense_of_belonging: [...new Set(data.filter(Boolean).map(item => item?.sense_of_belonging).filter(Boolean))]
+      sense_of_belonging: [...new Set(data.filter(Boolean).map(item => item?.sense_of_belonging).filter(Boolean))],
+      captured_at: [...new Set(data.filter(Boolean).map(item => {
+        if (!item?.captured_at) return null;
+        const year = item.captured_at.split('.')[2]?.split(' ')[0];
+        return year;
+      }).filter(Boolean).sort())],
     };
-  }, [data]);
+  }, [data, selectedDepartment, departments]);
 
   const renderSelect = (key: string, values: any[]) => {
     const handleChange = async (event: any) => {
@@ -127,6 +155,41 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
       </Typography>
 
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
+        University
+      </Typography>
+      <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+        <InputLabel>University</InputLabel>
+        <Select
+          value={selectedUniversity}
+          onChange={(e) => setSelectedUniversity(e.target.value)}
+        >
+          {universities.map((university) => (
+            <MenuItem key={university} value={university}>
+              {university}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      {selectedUniversity && (
+        <>
+          <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
+            Departments
+          </Typography>
+          {renderSelect('departments', Object.keys(departments))}
+        </>
+      )}
+
+      {selectedDepartment && (
+        <>
+          <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
+            Courses
+          </Typography>
+          {renderSelect('course_of_study', departments[selectedDepartment] || [])}
+        </>
+      )}
+
+      <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
         Demographics
       </Typography>
       {renderSelect('ethnic_group', uniqueValues.ethnic_group.filter(value => value !== 'Not Provided'))}
@@ -139,7 +202,6 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
         Academic Context
       </Typography>
-      {renderSelect('course_of_study', uniqueValues.course_of_study.filter(value => value !== 'Not Provided'))}
       {renderSelect('hours_between_lectures', uniqueValues.hours_between_lectures.sort((a, b) => a - b))}
       {renderSelect('hours_per_week_lectures', uniqueValues.hours_per_week_lectures.sort((a, b) => a - b))}
       {renderSelect('hours_per_week_university_work', uniqueValues.hours_per_week_university_work.sort((a, b) => a - b))}

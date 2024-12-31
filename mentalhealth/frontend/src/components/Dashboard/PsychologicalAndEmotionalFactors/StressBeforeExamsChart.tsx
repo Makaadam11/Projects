@@ -8,13 +8,19 @@ interface StressBeforeExamsChartProps {
 
 export const StressBeforeExamsChart = ({ data }: StressBeforeExamsChartProps) => {
   const groupedData = data.reduce((acc, curr) => {
-    if (curr.stress_before_exams === "Not Provided") return acc;
-    const group = acc.find(item => item.stress_before_exams === curr.stress_before_exams);
+    if (!curr || !curr.stress_before_exams || curr.stress_before_exams === "Not Provided") {
+      return acc;
+    }
+    
+    // Check if any part of the response indicates stress
+    const hasStress = curr.stress_before_exams.toLowerCase().includes('yes');
+    
+    const group = acc.find(item => item.stress_before_exams === (hasStress ? "Yes" : "No"));
     if (group) {
       group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
     } else {
       acc.push({
-        stress_before_exams: curr.stress_before_exams,
+        stress_before_exams: hasStress ? "Yes" : "No",
         prediction_0: curr.predictions === 0 ? 1 : 0,
         prediction_1: curr.predictions === 1 ? 1 : 0,
       });

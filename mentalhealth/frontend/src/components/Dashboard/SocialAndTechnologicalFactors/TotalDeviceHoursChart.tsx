@@ -7,6 +7,7 @@ interface TotalDeviceHoursChartProps {
 }
 
 export const TotalDeviceHoursChart = ({ data }: TotalDeviceHoursChartProps) => {
+  data.sort((a, b) => a.total_device_hours - b.total_device_hours);
   const groupedData = data.reduce((acc, curr) => {
     if (curr.total_device_hours === 0) return acc;
     const group = acc.find(item => item.total_device_hours === curr.total_device_hours);

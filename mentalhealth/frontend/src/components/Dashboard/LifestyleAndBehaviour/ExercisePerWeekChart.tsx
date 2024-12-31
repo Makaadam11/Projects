@@ -7,6 +7,7 @@ interface ExercisePerWeekChartProps {
 }
 
 export const ExercisePerWeekChart = ({ data }: ExercisePerWeekChartProps) => {
+  data.sort((a, b) => a.exercise_per_week - b.exercise_per_week);
   const groupedData = data.reduce((acc, curr) => {
     if (curr.exercise_per_week === 0) return acc;
     const group = acc.find(item => item.exercise_per_week === curr.exercise_per_week);

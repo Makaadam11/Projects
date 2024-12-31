@@ -28,7 +28,13 @@ export const MentalHealthActivitiesChart = ({ data }: MentalHealthActivitiesChar
         Mental Health Activities
       </Typography>
     <ResponsiveContainer width="100%" height={300}>
-      <WordCloud data={words} />
+    <WordCloud 
+          data={words} 
+          fontSize={(word) => Math.max(12, Math.min(60, word.value * 8))}
+          padding={3}
+          spiral="rectangular"
+          rotate={0}
+        />
     </ResponsiveContainer>
     </Box>
   );

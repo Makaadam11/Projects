@@ -51,7 +51,7 @@ export const AcademicContext = ({ data }: AcademicContextProps) => {
       </Typography>
       <Grid container spacing={2}>
         {/* Row 1 */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={12}>
           <Paper sx={{ p: 2, height: '100%' }} ref={courseOfStudyRef}>
             <CourseOfStudyChart data={data} />
           </Paper>

@@ -7,43 +7,60 @@ interface CourseOfStudyChartProps {
 }
 
 export const CourseOfStudyChart = ({ data }: CourseOfStudyChartProps) => {
-  const groupedData = data.reduce((acc, curr) => {
-    if (curr.cost_of_study === null) return acc;
-    const group = acc.find(item => item.course_of_study === curr.course_of_study);
-    if (group) {
-      group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
-    } else {
-      acc.push({
-        course_of_study: curr.course_of_study,
-        prediction_0: curr.predictions === 0 ? 1 : 0,
-        prediction_1: curr.predictions === 1 ? 1 : 0,
-        key: `${curr.course_of_study}-${curr.predictions}`
-      });
-    }
-    return acc;
-  }, [] as { course_of_study: string; prediction_0: number; prediction_1: number; key: string }[]);
+  const groupedData = data
+    .filter(item => item && item.course_of_study && item.course_of_study !== "Not Provided")
+    .reduce((acc, curr) => {
+      const group = acc.find(item => item.name === curr.course_of_study);
+      if (group) {
+        group.value += 1;
+        group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
+      } else {
+        acc.push({
+          name: curr.course_of_study,
+          value: 1,
+          prediction_0: curr.predictions === 0 ? 1 : 0,
+          prediction_1: curr.predictions === 1 ? 1 : 0,
+        });
+      }
+      return acc;
+    }, [] as { name: string; value: number; prediction_0: number; prediction_1: number }[])
+    .map(item => ({
+      ...item,
+      fill: item.prediction_1 > item.prediction_0 ? '#ff0000' : '#82ca9d'
+    }))
+    .sort((a, b) => b.value - a.value);
 
   return (
     <Box>
       <Typography variant="h6" align="center" gutterBottom>
-        Course of Study Distribution
+        Course of Study
       </Typography>
-    {/* <ResponsiveContainer width="100%" height={300}>
-      <Treemap
-        data={groupedData}
-        dataKey="prediction_1"
-        nameKey="course_of_study"
-        stroke="#fff"
-      >
-        {groupedData.map((entry, index) => (
-          <Cell
-            key={`cell-${index}`}
-            fill={entry.prediction_1 > 0 ? '#ff0000' : '#00ff00'}
+      <ResponsiveContainer width="100%" height={300}>
+        <Treemap
+          data={groupedData}
+          dataKey="value"
+          nameKey="name"
+          stroke="#fff"
+        >
+          <Tooltip
+            formatter={(value: number, name: string, props: any) => [
+              `Total: ${value}\nNo MH Issue: ${props.payload.prediction_0}\nMH Issue: ${props.payload.prediction_1}`,
+              `Course: ${name}`
+            ]}
+            contentStyle={{ whiteSpace: 'pre-line' }}
           />
-        ))}
-        <Tooltip />
-      </Treemap>
-    </ResponsiveContainer> */}
+        </Treemap>
+      </ResponsiveContainer>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mr: 3 }}>
+          <Box sx={{ width: 16, height: 16, bgcolor: '#82ca9d', mr: 1 }} />
+          <Typography variant="body2">No MH Issue Dominant</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ width: 16, height: 16, bgcolor: '#ff0000', mr: 1 }} />
+          <Typography variant="body2">MH Issue Dominant</Typography>
+        </Box>
+      </Box>
     </Box>
   );
 };
