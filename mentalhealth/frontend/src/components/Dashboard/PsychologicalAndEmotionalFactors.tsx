@@ -7,9 +7,10 @@ import { StressInGeneralChart } from './PsychologicalAndEmotionalFactors/StressI
 import { StressBeforeExamsChart } from './PsychologicalAndEmotionalFactors/StressBeforeExamsChart';
 import { KnownDisabilitiesChart } from './PsychologicalAndEmotionalFactors/KnownDisabilitiesChart';
 import { SenseOfBelongingChart } from './PsychologicalAndEmotionalFactors/SenseOfBelongingChart';
+import { DashboardData } from '@/types/dashboard';
 
 interface PsychologicalAndEmotionalFactorsProps {
-  data: any;
+  data: DashboardData[];
 }
 
 export const PsychologicalAndEmotionalFactors = ({ data }: PsychologicalAndEmotionalFactorsProps) => {

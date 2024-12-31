@@ -308,19 +308,19 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'quality_of_life',
       type: 'single',
       question: '5. How would you define your quality of life? (as defined by the World Health Organization)',
-      options: ['Very Poor', 'Poor', 'Neither Poor nor Good', 'Good', 'Very Good']
+      options: ['Very Low', 'Low', 'Medium', 'High', 'Very High']
     },
     {
       id: 'alcohol_consumption',
       type: 'single',
       question: '6. How would you define your alcohol consumption?',
-      options: ['Never', 'Occasionally', 'Regularly', 'Frequently', 'Daily']
+      options: ['No Drinks', 'Below Moderate', 'Moderate', 'Above Moderate']
     },
     {
       id: 'personality_type',
       type: 'single',
       question: '7. Would you consider yourself an introvert or extrovert person? (Definitions from Oxford Languages)',
-      options: ['Introvert', 'Extrovert', 'Ambivert']
+      options: ['Introvert', 'Extrovert', 'Somewhat in-between']
     },
     {
       id: 'stress_in_general',
@@ -366,7 +366,7 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'financial_support',
       type: 'single',
       question: '13. What is your main financial support for your studies?',
-      options: ['Student loan', 'Parent support', 'Self-funded', 'Scholarship', 'Other']
+      options: ['Degree Apprentice', 'Parent (family) support', 'Scholarship', 'Self-paid', 'Siblings', 'Sponsorship (Company/Organisation etc)', 'Student loan']
     },
     {
       id: 'form_of_employment',
@@ -378,7 +378,7 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'financial_problems',
       type: 'single',
       question: '15. Do you normally encounter financial issues paying your fees?',
-      options: ['Yes', 'No', 'Sometimes']
+      options: ['Yes', 'No']
     },
     {
       id: 'home_country',
@@ -405,19 +405,19 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'stress_before_exams',
       type: 'single',
       question: '19. Do you normally feel stressed before exams?',
-      options: ['Yes', 'No', 'Sometimes']
+      options: ['Yes', 'No', "I don't have exams"]
     },
     {
       id: 'feel_afraid',
       type: 'single',
       question: '20. How often in the last week or two did you feel afraid that something awful might happen?',
-      options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Very Often']
+      options: ['Never','Very Rarely' , 'Rarely', 'Occasionally', 'Frequently','Very Frequently' ]
     },
     {
       id: 'timetable_preference',
       type: 'single',
-      question: '21. If your Course has less than 24 hours on Timetable, would you prefer your timetable to be spread or compact so you have less stress at university? (eg, 1-2 busy days or 3-4 days with less lectures)',
-      options: ['Spread (3-4 days with fewer lectures)', 'Compact (1-2 busy days)']
+      question: '21. If your Course has less than 24 hours on Timetable, would you prefer your timetable to be spread (3-4 days with fewer lectures) or compact (1-2 busy days) so you have less stress at university? (eg, 1-2 busy days or 3-4 days with less lectures)',
+      options: ['Spread', 'Compact']
     },
     {
       id: 'timetable_reasons',
@@ -428,7 +428,7 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'timetable_impact',
       type: 'single',
       question: '23. Do you feel your timetabling structure has any impact on your study, life and health?',
-      options: ['Yes', 'No', 'Sometimes']
+      options: [ 'No','Yes', 'Yes, on my studies', 'Yes, on my life and health', 'Yes, on my life, health and studies']
     },
     {
       id: 'total_device_hours',
@@ -452,7 +452,7 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'level_of_study',
       type: 'single',
       question: '26. What year of study are you in?',
-      options: ['First Year', 'Second Year', 'Third Year', 'Fourth Year', 'Postgraduate']
+      options: ['Level 4 (first year, undergraduate)', 'Level 5 (second year, undergraduate)', 'Level 6 (third year, undergraduate)', 'Level 7 (postgraduate)', 'Other']
     },
     {
       id: 'gender',
@@ -503,13 +503,13 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'student_type_time',
       type: 'single',
       question: '33. Are you full-time or part-time student?',
-      options: ['Full-time', 'Part-time']
+      options: ['Full-time', 'Part-time', 'Don’t know']
     },
     {
       id: 'student_type_location',
       type: 'single',
       question: '34. Are you a home student or an international student?',
-      options: ['Home student', 'International student', 'EU student']
+      options: ['Home student', 'International student', 'European student']
     },
     {
       id: 'cost_of_study',
@@ -524,7 +524,7 @@ export const getQuestions = async (university: string, courses: string[]): Promi
       id: 'sense_of_belonging',
       type: 'single',
       question: `36. Do you feel a sense of "belonging" at ${university.toUpperCase()}?`,
-      options: ['Very much', 'Somewhat', 'Not really', 'Not at all']
+      options: ['A little', "Don't know", 'Very much']
     },
     {
       id: 'mental_health_activities',

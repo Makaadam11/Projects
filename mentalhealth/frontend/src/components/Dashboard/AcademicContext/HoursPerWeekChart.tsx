@@ -9,7 +9,12 @@ interface HoursPerWeekChartProps {
 }
 
 export const HoursPerWeekChart = ({ data, dataKey, title }: HoursPerWeekChartProps) => {
+  data.sort((a, b) => (a[dataKey as keyof DashboardData] as number) - (b[dataKey as keyof DashboardData] as number));
   const groupedData = data.reduce((acc, curr) => {
+    // Filter out null values
+    if (curr[dataKey as keyof DashboardData] === 0) {
+      return acc;
+    }
     const group = acc.find(item => item.hours === curr[dataKey as keyof DashboardData]);
     if (group) {
       group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
@@ -26,7 +31,7 @@ export const HoursPerWeekChart = ({ data, dataKey, title }: HoursPerWeekChartPro
   return (
     <Box>
       <Typography variant="h6" align="center" gutterBottom>
-        Hours Per Week
+        {title}
       </Typography>
     <ResponsiveContainer width="100%" height={300}>
     <AreaChart data={groupedData}>
@@ -34,8 +39,8 @@ export const HoursPerWeekChart = ({ data, dataKey, title }: HoursPerWeekChartPro
       <XAxis dataKey="hours" />
       <YAxis />
       <Tooltip />
-      <Area type="monotone" dataKey="prediction_0" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-      <Area type="monotone" dataKey="prediction_1" stackId="1" stroke="#ff0000" fill="#ff0000" />
+      <Area type="monotone" dataKey="prediction_0" name="No MH Issues" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+      <Area type="monotone" dataKey="prediction_1" name="MH Issues" stackId="1" stroke="#ff0000" fill="#ff0000" />
     </AreaChart>
     </ResponsiveContainer>
     </Box>

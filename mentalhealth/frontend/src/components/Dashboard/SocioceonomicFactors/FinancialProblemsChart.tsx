@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DashboardData } from '@/types/dashboard';
+import { Box, Typography } from '@mui/material';
 
 interface FinancialProblemsChartProps {
   data: DashboardData[];
@@ -7,6 +8,7 @@ interface FinancialProblemsChartProps {
 
 export const FinancialProblemsChart = ({ data }: FinancialProblemsChartProps) => {
   const groupedData = data.reduce((acc, curr) => {
+    if (curr.financial_problems === 'Not Provided') return acc;
     const group = acc.find(item => item.financial_problems === curr.financial_problems);
     if (group) {
       group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
@@ -23,6 +25,10 @@ export const FinancialProblemsChart = ({ data }: FinancialProblemsChartProps) =>
   const COLORS = ['#82ca9d', '#ff0000'];
 
   return (
+    <Box>
+      <Typography variant="h6" align="center" gutterBottom>
+        Financial Problems
+      </Typography>
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
         <Pie
@@ -43,5 +49,6 @@ export const FinancialProblemsChart = ({ data }: FinancialProblemsChartProps) =>
         <Legend />
       </PieChart>
     </ResponsiveContainer>
+    </Box>
   );
 };

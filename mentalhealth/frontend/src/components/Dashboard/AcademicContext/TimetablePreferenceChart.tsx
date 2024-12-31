@@ -1,12 +1,15 @@
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DashboardData } from '@/types/dashboard';
+import { Box, Typography } from '@mui/material';
 
 interface TimetablePreferenceChartProps {
   data: DashboardData[];
 }
 
 export const TimetablePreferenceChart = ({ data }: TimetablePreferenceChartProps) => {
-  const groupedData = data.reduce((acc, curr) => {
+  const groupedData = data
+  .filter(item => item && item.timetable_preference && item.timetable_preference !== 'Not Provided')
+  .reduce((acc, curr) => {
     const group = acc.find(item => item.timetable_preference === curr.timetable_preference);
     if (group) {
       group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
@@ -19,10 +22,13 @@ export const TimetablePreferenceChart = ({ data }: TimetablePreferenceChartProps
     }
     return acc;
   }, [] as { timetable_preference: string; prediction_0: number; prediction_1: number }[]);
-
   const COLORS = ['#82ca9d', '#ff0000'];
 
   return (
+    <Box>
+    <Typography variant="h6" align="center" gutterBottom>
+      Timetable Preference
+      </Typography>
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
         <Pie
@@ -43,5 +49,6 @@ export const TimetablePreferenceChart = ({ data }: TimetablePreferenceChartProps
         <Legend />
       </PieChart>
     </ResponsiveContainer>
+    </Box>
   );
 };

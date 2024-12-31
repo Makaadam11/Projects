@@ -1,6 +1,6 @@
 "use client"
-import React, { useMemo } from 'react';
-import { Paper, Typography, FormControl, Select, MenuItem, InputLabel } from '@mui/material';
+import React, { useMemo, useState } from 'react';
+import { Paper, Typography, FormControl, Select, MenuItem, InputLabel, Checkbox, ListItemText } from '@mui/material';
 import type { DashboardData, FilterState } from '../../types/dashboard';
 
 interface FilterPanelProps {
@@ -10,6 +10,8 @@ interface FilterPanelProps {
 }
 
 export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps) => {
+  const [loading, setLoading] = useState<{[key: string]: boolean}>({});
+
   const uniqueValues = useMemo(() => {
     return {
       ethnic_group: [...new Set(data.filter(Boolean).map(item => item?.ethnic_group).filter(Boolean))],
@@ -51,26 +53,72 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
     };
   }, [data]);
 
-  const renderSelect = (key: string, values: any[]) => (
-    <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
-      <InputLabel>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</InputLabel>
-      <Select
-        multiple
-        value={filters[key as keyof FilterState] || []}
-        onChange={(e) => {
-          const value = e.target.value as string[];
+  const renderSelect = (key: string, values: any[]) => {
+    const handleChange = async (event: any) => {
+      const value = event.target.value as string[];
+      setLoading(prev => ({ ...prev, [key]: true }));
+      
+      try {
+        if (value.includes('All')) {
+          // If current state has all values selected, unselect all
+          if (filters[key as keyof FilterState]?.length === values.length) {
+            onFilterChange(key as keyof FilterState, []);
+          } else {
+            // Otherwise select all values
+            onFilterChange(key as keyof FilterState, values);
+          }
+        } else {
           onFilterChange(key as keyof FilterState, value);
-        }}
-        renderValue={(selected) => (selected as string[]).join(', ')}
-      >
-        {values.map((value) => (
-          <MenuItem key={value} value={value}>
-            {value}
+        }
+      } finally {
+        setLoading(prev => ({ ...prev, [key]: false }));
+      }
+    };
+
+    return (
+      <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+        <InputLabel>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</InputLabel>
+        <Select
+          multiple
+          value={filters[key as keyof FilterState] || []}
+          onChange={handleChange}
+          renderValue={(selected) => (selected as string[]).join(', ')}
+          MenuProps={{
+            PaperProps: {
+              style: {
+                maxHeight: 48 * 4.5,
+                width: 250,
+              },
+            },
+          }}
+        >
+          <MenuItem value="All">
+            {loading[key] ? (
+              <CircularProgress size={24} />
+            ) : (
+              <Checkbox 
+                checked={filters[key as keyof FilterState]?.length === values.length}
+                indeterminate={
+                  filters[key as keyof FilterState]?.length > 0 && 
+                  filters[key as keyof FilterState]?.length < values.length
+                }
+              />
+            )}
+            <ListItemText primary="Select All" />
           </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
+          {values.map((value) => (
+            <MenuItem key={value} value={value}>
+              <Checkbox 
+                checked={filters[key as keyof FilterState]?.includes(value)}
+                disabled={loading[key]}
+              />
+              <ListItemText primary={value} />
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    );
+  };
 
   return (
     <Paper sx={{ p: 2 }}>

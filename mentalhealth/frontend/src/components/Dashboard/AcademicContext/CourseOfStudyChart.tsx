@@ -8,6 +8,7 @@ interface CourseOfStudyChartProps {
 
 export const CourseOfStudyChart = ({ data }: CourseOfStudyChartProps) => {
   const groupedData = data.reduce((acc, curr) => {
+    if (curr.cost_of_study === null) return acc;
     const group = acc.find(item => item.course_of_study === curr.course_of_study);
     if (group) {
       group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;

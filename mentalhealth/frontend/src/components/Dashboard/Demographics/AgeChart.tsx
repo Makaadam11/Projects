@@ -32,8 +32,8 @@ export const AgeChart = ({ data }: AgeChartProps) => {
           <YAxis />
           <Tooltip />
           <Legend formatter={(value) => value === 'prediction_0' ? 'No MH Issues' : 'MH Issues'} />
-          <Bar dataKey="prediction_0" stackId="a" fill="#82ca9d" name="No MH Issues" />
-          <Bar dataKey="prediction_1" stackId="a" fill="#ff0000" name="MH Issues" />
+          <Bar dataKey="prediction_0"  name="No MH Issues" stackId="a" fill="#82ca9d" name="No MH Issues" />
+          <Bar dataKey="prediction_1" name="MH Issues" stackId="a" fill="#ff0000" name="MH Issues" />
         </BarChart>
       </ResponsiveContainer>
     </Box>

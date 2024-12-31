@@ -1,5 +1,6 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DashboardData } from '@/types/dashboard';
+import { Box, Typography } from '@mui/material';
 
 interface HoursSocialisingChartProps {
   data: DashboardData[];
@@ -7,6 +8,7 @@ interface HoursSocialisingChartProps {
 
 export const HoursSocialisingChart = ({ data }: HoursSocialisingChartProps) => {
   const groupedData = data.reduce((acc, curr) => {
+    if (curr.hours_socialising === 0) return acc;
     const group = acc.find(item => item.hours_socialising === curr.hours_socialising);
     if (group) {
       group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
@@ -21,15 +23,20 @@ export const HoursSocialisingChart = ({ data }: HoursSocialisingChartProps) => {
   }, [] as { hours_socialising: number; prediction_0: number; prediction_1: number }[]);
 
   return (
+    <Box>
+      <Typography variant="h6" align="center" gutterBottom>
+        Hours Socialising
+      </Typography>
     <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="hours_socialising" />
         <YAxis />
         <Tooltip />
-        <Area type="monotone" dataKey="prediction_0" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-        <Area type="monotone" dataKey="prediction_1" stackId="1" stroke="#ff0000" fill="#ff0000" />
+        <Area type="monotone" dataKey="prediction_0" name="No MH Issues" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+        <Area type="monotone" dataKey="prediction_1" name="MH Issues" stackId="1" stroke="#ff0000" fill="#ff0000" />
       </AreaChart>
     </ResponsiveContainer>
+    </Box>
   );
 };

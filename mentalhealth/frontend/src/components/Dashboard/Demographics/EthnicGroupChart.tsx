@@ -8,6 +8,7 @@ interface EthnicGroupChartProps {
 
 export const EthnicGroupChart = ({ data }: EthnicGroupChartProps) => {
   const groupedData = data.reduce((acc, curr) => {
+    if (curr.ethnic_group === "Not Provided") return acc;
     const group = acc.find(item => item.ethnic_group === curr.ethnic_group);
     if (group && curr.predictions !== undefined) {
       group[curr.predictions === 1 ? 'prediction_1' : 'prediction_0'] += 1;
