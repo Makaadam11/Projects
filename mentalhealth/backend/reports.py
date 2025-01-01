@@ -20,16 +20,31 @@ def clean_numeric_values(value):
 def preprocess_dataframe(df):
     df = df.copy()
     
+    # Rename columns
+    df.columns = [
+        "diet", "ethnic_group", "hours_per_week_university_work", "family_earning_class", 
+        "quality_of_life", "alcohol_consumption", "personality_type", "stress_in_general", 
+        "well_hydrated", "exercise_per_week", "known_disabilities", "work_hours_per_week", 
+        "financial_support", "form_of_employment", "financial_problems", "home_country", 
+        "age", "course_of_study", "stress_before_exams", "feel_afraid", 
+        "timetable_preference", "timetable_reasons", "timetable_impact", "total_device_hours", 
+        "hours_socialmedia", "level_of_study", "gender", "physical_activities", 
+        "hours_between_lectures", "hours_per_week_lectures", "hours_socialising", 
+        "actual", "student_type_time", "student_type_location", 
+        "cost_of_study", "sense_of_belonging", "mental_health_activities", 
+        "predictions", "captured_at"
+    ]
+    
     # Remove unnecessary columns
-    columns_to_drop = ['Unnamed: 0', 'sno', 'institution_country', 'Captured At']
+    columns_to_drop = ['actual', 'predictions', 'captured_at']
     df = df.drop(columns=columns_to_drop, errors='ignore')
     
     # Numeric columns
     numeric_columns = [
-        'year_of_birth', 'age', 'hours_per_week_university_work', 
-        'work_hours_per_week', 'hours_socialising', 'total_social_media_hours', 
-        'total_device_hours', 'cost_of_study', 'hours_per_week_lectures', 
-        'hours_between_lectures', 'exercise_per_week'
+        'age', 'hours_per_week_university_work', 'work_hours_per_week', 
+        'hours_socialising', 'hours_socialmedia', 'total_device_hours', 
+        'cost_of_study', 'hours_per_week_lectures', 'hours_between_lectures', 
+        'exercise_per_week'
     ]
     
     for col in numeric_columns:
@@ -41,19 +56,17 @@ def preprocess_dataframe(df):
     
     # Categorical columns
     categorical_columns = [
-        'home_country', 'ethnic_group', 'age_group', 'course_of_study', 
-        'course_category', 'financial_support', 'financial_problems', 
-        'family_earning_class', 'stress_before_exams', 'stress_in_general', 
-        'form_of_employment', 'quality_of_life', 'known_disabilities',
-        'alcohol_consumption', 'well_hydrated', 'diet', 'social_media_use', 
-        'personality_type', 'feel_afraid', 'timetable_preference', 
-        'ts_impact', 'ts_full', 'gender', 'student_type_location', 
-        'student_type_time', 'year_of_study'
+        'home_country', 'ethnic_group', 'course_of_study', 'financial_support', 
+        'financial_problems', 'family_earning_class', 'stress_before_exams', 
+        'stress_in_general', 'form_of_employment', 'quality_of_life', 'known_disabilities',
+        'alcohol_consumption', 'well_hydrated', 'diet', 'personality_type', 
+        'feel_afraid', 'timetable_preference', 'timetable_reasons', 'timetable_impact', 
+        'gender', 'student_type_location', 'student_type_time', 'level_of_study', 
+        'physical_activities', 'mental_health_activities', 'sense_of_belonging'
     ]
     
-    # Fill missing values in categorical columns
     for col in categorical_columns:
-        df[col].fillna('Unknown', inplace=True)
+        df[col] = df[col].astype('category')
     
     return df
 
@@ -75,8 +88,8 @@ class Reports:
         ]
         
         self.academic_cols = [
-            'course_of_study', 'course_category', 'year_of_study',
-            'cost_of_study', 'hours_per_week_lectures', 'hours_between_lectures'
+            'course_of_study', 'level_of_study', 'cost_of_study', 
+            'hours_per_week_lectures', 'hours_between_lectures'
         ]
         
         self.financial_cols = [
@@ -84,74 +97,14 @@ class Reports:
         ]
         
         self.lifestyle_cols = [
-            'stress_before_exams', 'stress_in_general', 
-            'work_hours_per_week', 'hours_socialising',
-            'total_social_media_hours', 'total_device_hours',
-            'diet', 'well_hydrated', 'alcohol_consumption',
-            'quality_of_life'
+            'stress_before_exams', 'stress_in_general', 'work_hours_per_week', 
+            'hours_socialising', 'hours_socialmedia', 'total_device_hours', 
+            'diet', 'well_hydrated', 'alcohol_consumption', 'quality_of_life'
         ]
         
         self.psychological_cols = [
-            'personality_type', 'exercise_per_week',
-            'feel_afraid', 'known_disabilities'
+            'personality_type', 'exercise_per_week', 'feel_afraid', 'known_disabilities'
         ]
-
-    def save_plot_to_bytes(self, fig):
-        buf = BytesIO()
-        fig.savefig(buf, format='png', bbox_inches='tight', dpi=300)
-        buf.seek(0)
-        return buf
-
-    def create_category_charts(self, category_cols, title):
-        try:
-            available_cols = [col for col in category_cols if col in self.df.columns]
-            if not available_cols:
-                print(f"No columns available for category: {title}")
-                return None
-                
-            n_cols = len(available_cols)
-            n_rows = (n_cols + 2) // 3  # 3 charts per row
-            
-            # Adjust figure size and spacing
-            plt.rcParams['figure.autolayout'] = False
-            fig, axes = plt.subplots(n_rows, 3, figsize=(15, 5*n_rows))
-            fig.subplots_adjust(hspace=0.5, bottom=0.2)
-            axes = axes.ravel()
-            
-            for idx, col in enumerate(available_cols):
-                if self.df[col].dtype in ['int64', 'float64']:
-                    self.df[col].hist(ax=axes[idx], bins=20)
-                else:
-                    value_counts = self.df[col].value_counts()
-                    if len(value_counts) > 10:
-                        value_counts = value_counts.head(10)
-                    value_counts.plot(kind='bar', ax=axes[idx])
-                    
-                    # Improve label positioning
-                    axes[idx].set_xticklabels(
-                        axes[idx].get_xticklabels(),
-                        rotation=45,
-                        ha='right',
-                        rotation_mode='anchor'
-                    )
-                
-                # Add title with better spacing
-                axes[idx].set_title(f'{col} Distribution', pad=20)
-                
-                # Adjust layout for better label visibility
-                axes[idx].tick_params(axis='x', pad=10)
-            
-            # Hide empty subplots
-            for idx in range(len(available_cols), len(axes)):
-                axes[idx].set_visible(False)
-                
-            plt.tight_layout()
-            plot_bytes = self.save_plot_to_bytes(fig)
-            plt.close(fig)
-            return plot_bytes
-        except Exception as e:
-            print(f"Error creating charts for {title}: {str(e)}")
-            return None
 
     def get_category_statistics(self, category_cols):
         stats = {}
@@ -167,7 +120,7 @@ class Reports:
                     stats[col] = self.df[col].value_counts().to_dict()
         return stats
 
-    def generate_pdf_report(self, output_path):
+    def generate_pdf_report(self, output_path, chart_images):
         # Initialize PDF
         self.pdf.add_page()
         self.pdf.set_font('Helvetica', 'B', 16)
@@ -207,23 +160,11 @@ class Reports:
         self.pdf.set_font('Helvetica', '', 12)
         self.pdf.multi_cell(0, 10, report_content)
 
-        # Add charts for each category
-        categories = [
-            (self.demographic_cols, "Demographic Factors"),
-            (self.academic_cols, "Academic Factors"),
-            (self.financial_cols, "Financial Factors"),
-            (self.lifestyle_cols, "Lifestyle Factors"),
-            (self.psychological_cols, "Psychological Factors")
-        ]
-
-        for cols, title in categories:
+        # Add provided chart images
+        for title, image in chart_images.items():
             self.pdf.add_page()
             self.pdf.set_font('Helvetica', 'B', 14)
-            self.pdf.cell(0, 10, title, new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
-            chart = self.create_category_charts(cols, title)
-            self.pdf.image(chart, x=10, y=30, w=190)
+            self.pdf.cell(0, 10, title.replace('_', ' ').title(), new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
+            self.pdf.image(image, x=10, y=30, w=190)
 
         self.pdf.output(output_path)
-
-
-# Usage

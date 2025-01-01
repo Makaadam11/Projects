@@ -20,8 +20,11 @@ class GroqClient:
             response = self.client.chat.completions.create(
                 max_tokens=4000,
                 temperature=0.7,
-                system="You are a professional report writer specializing in mental health analysis. Format your response in clear sections with headers.",
                 messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a professional report writer specializing in mental health analysis. Format your response in clear sections with headers."
+                    },
                     {
                         "role": "user",
                         "content": prompt

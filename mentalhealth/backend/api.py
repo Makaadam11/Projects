@@ -1,6 +1,12 @@
+import base64
+from io import BytesIO
+from PIL import Image
 from typing import Dict
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
+from pydantic import BaseModel, validator
+from typing import List, Dict, Union
+import logging
 from pydantic import BaseModel
 from typing import List
 import pandas as pd
@@ -21,6 +27,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 
 class RegisterFormInputs(BaseModel):
     email: str
@@ -51,17 +59,94 @@ async def submit_questionaire(university: str, data: QuestionnaireDataModel):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class DashboardData(BaseModel):
+    diet: str
+    ethnic_group: str
+    hours_per_week_university_work: float
+    family_earning_class: str
+    quality_of_life: str
+    alcohol_consumption: str
+    personality_type: str
+    stress_in_general: str
+    well_hydrated: str
+    exercise_per_week: float
+    known_disabilities: str
+    work_hours_per_week: float
+    financial_support: str
+    form_of_employment: str
+    financial_problems: str
+    home_country: str
+    age: float
+    course_of_study: str
+    stress_before_exams: str
+    feel_afraid: str
+    timetable_preference: str
+    timetable_reasons: str
+    timetable_impact: str
+    total_device_hours: float
+    hours_socialmedia: float
+    level_of_study: str
+    gender: str
+    physical_activities: str
+    hours_between_lectures: float
+    hours_per_week_lectures: float
+    hours_socialising: float
+    actual: str
+    student_type_time: str
+    student_type_location: str
+    cost_of_study: float
+    sense_of_belonging: str
+    mental_health_activities: str
+    predictions: float
+    captured_at: str
+
+class ReportRequest(BaseModel):
+    data: List[DashboardData]
+    charts: Dict[str, str]
+
+    @validator('charts')
+    def validate_charts(cls, v):
+        for key, value in v.items():
+            if not value.startswith('data:image'):
+                raise ValueError(f'Invalid image format for {key}')
+        return v
+
 @app.post("/api/reports")
-async def generate_reports(data: List[dict]):
+async def generate_reports(request: ReportRequest):
     try:
-        df = pd.DataFrame(data)
+        logger.info("Processing report generation request")
+        logger.info(f"Request data: {request.data}")
+        logger.info(f"Request charts: {request.charts}")
+        
+        df = pd.DataFrame([item.dict() for item in request.data])
         reports = Reports(df)
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
-        reports.generate_pdf_report(f"../data/reports/Mental_Health_Report_{timestamp}.pdf")
+        
+        # Decode chart images
+        chart_images = {}
+        for key, chart in request.charts.items():
+            image_data = base64.b64decode(chart.split(",")[1])
+            image = Image.open(BytesIO(image_data))
+            chart_images[key] = image
+        
+        reports.generate_pdf_report(f"../data/reports/Mental_Health_Report_{timestamp}.pdf", chart_images)
         return {"message": "Reports generated"}
     except Exception as e:
-        print(f"Error generating report: {str(e)}")
+        logger.error(f"Error generating report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.middleware("http")
+async def log_request(request: Request, call_next):
+    logger.info(f"Request URL: {request.url}")
+    logger.info(f"Request method: {request.method}")
+    logger.info(f"Request headers: {request.headers}")
+    body = await request.body()
+    logger.info(f"Request body: {body.decode('utf-8')}")
+    response = await call_next(request)
+    return response
 
 @app.get("/api/courses/{university}", response_model=CourseResponse)
 async def get_courses(university: str):
