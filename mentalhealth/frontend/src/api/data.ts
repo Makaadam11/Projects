@@ -105,3 +105,24 @@ export const generateReport = async (filteredData: DashboardData[], chartImages:
     throw new Error(`Failed to generate report: ${error.message}`);
   }
 };
+
+export const viewReport = async (timestamp: string): Promise<Blob> => {
+  try {
+    const response = await axios.get(`http://localhost:8000/api/reports/view/${timestamp}`, {
+      responseType: 'blob', // Important to handle binary data
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error viewing report:', error);
+    throw new Error(`Failed to view report: ${error.message}`);
+  }
+};
+
+export const deleteReport = async (timestamp: string): Promise<void> => {
+  try {
+    await axios.delete(`http://localhost:8000/api/reports/delete/${timestamp}`);
+  } catch (error) {
+    console.error('Error deleting report:', error);
+    throw new Error(`Failed to delete report: ${error.message}`);
+  }
+};

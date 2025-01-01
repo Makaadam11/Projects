@@ -4,6 +4,7 @@ from PIL import Image
 from typing import Dict
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, validator
 from typing import List, Dict, Union
 import logging
@@ -132,11 +133,33 @@ async def generate_reports(request: ReportRequest):
             image = Image.open(BytesIO(image_data))
             chart_images[key] = image
         
-        reports.generate_pdf_report(f"../data/reports/Mental_Health_Report_{timestamp}.pdf", chart_images)
-        return {"message": "Reports generated"}
+        # Generate PDF report and save it temporarily
+        report_path = f"../data/reports/Mental_Health_Report_{timestamp}.pdf"
+        reports.generate_pdf_report(report_path, chart_images)
+        
+        # Provide a link to view the report
+        return {"message": "Report generated", "report_url": f"/api/reports/view/{timestamp}"}
     except Exception as e:
         logger.error(f"Error generating report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/reports/view/{timestamp}")
+async def view_report(timestamp: str):
+    report_path = f"../data/reports/Mental_Health_Report_{timestamp}.pdf"
+    if os.path.exists(report_path):
+        return FileResponse(report_path, media_type='application/pdf', filename=f"Mental_Health_Report_{timestamp}.pdf")
+    else:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+@app.delete("/api/reports/delete/{timestamp}")
+async def delete_report(timestamp: str):
+    report_path = f"../data/reports/Mental_Health_Report_{timestamp}.pdf"
+    if os.path.exists(report_path):
+        os.remove(report_path)
+        return {"message": "Report deleted"}
+    else:
+        raise HTTPException(status_code=404, detail="Report not found")
+
 
 @app.middleware("http")
 async def log_request(request: Request, call_next):

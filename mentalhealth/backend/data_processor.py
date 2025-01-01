@@ -173,15 +173,14 @@ class DataProcessor:
             df_merged_evaluated = evaluate_data(df_copy)
 
             # Update predictions keeping ID headers
-            df_merged['predictions'] = df_merged_evaluated['predictions']
+            condition = df_merged['actual'].isin(["Prefer not to say", "I don't know"])
+            df_merged.loc[condition, 'predictions'] = df_merged_evaluated.loc[condition, 'predictions']
+
              # Format 'captured_at' column
             df_merged['captured_at'] = pd.to_datetime(df_merged['captured_at'], errors='coerce').dt.strftime('%d.%m.%Y %H:%M')
             
-            print("Before merged columns:", df_merged.columns)
-            print("After merged columns:", questions_row)
             # Create DataFrame with questions as new columns
             df_merged.columns = questions_row
-            print("After merged columns:", df_merged.columns)
             
             # Update source files
             for source in df_merged['Source'].unique():

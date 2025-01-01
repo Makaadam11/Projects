@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Box, Grid, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, Grid, Typography, CircularProgress, Alert, Button } from '@mui/material';
 import { FilterPanel } from './FilterPanel';
 import type { FilterState, DashboardData } from '../../types/dashboard';
 import { getDashboardData, generateReport } from '../../api/data';
@@ -16,6 +16,8 @@ const MentalHealthDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState(false); // New state for loading
   const [filters, setFilters] = useState<FilterState>({
     ethnic_group: [],
     home_country: [],
@@ -83,18 +85,22 @@ const MentalHealthDashboard: React.FC = () => {
   };
 
   const handleGenerateReport = async () => {
+    setGeneratingReport(true); // Set loading state to true
     try {
       const chartImages = await captureChartImages();
       console.log("data filtered: ", filteredData);
       console.log("chart images: ", chartImages);
-      await generateReport(filteredData, chartImages);
+      const response = await generateReport(filteredData, chartImages);
+      setReportUrl(response.report_url);
       alert('Report generated successfully');
     } catch (error) {
       console.error('Error generating report:', error);
       alert('Failed to generate report');
+    } finally {
+      setGeneratingReport(false); // Set loading state to false
     }
   };
-  
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -201,22 +207,34 @@ const MentalHealthDashboard: React.FC = () => {
         <Typography variant="h4" gutterBottom>
           Mental Health Dashboard
         </Typography>
+        
         <div className="flex gap-2">
-        <button 
-          onClick={handleGenerateReport}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          Generate Report
-        </button>
-        <button 
-          onClick={fetchData}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Refresh Data
-        </button>
-      </div>
+        {reportUrl && (
+        <button >
+          <a 
+            href={`/report?timestamp=${reportUrl.split('/').pop()}`} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            View Report
+          </a>
+        </button >
+      )}
+          <button 
+            onClick={handleGenerateReport}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            disabled={generatingReport} // Disable button when loading
+          >
+            {generatingReport ? <CircularProgress size={24} color="inherit" /> : 'Generate Report'}
+          </button>
+          <button 
+            onClick={fetchData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Refresh Data
+          </button>
+        </div>
+        
       </Box>
-      
       <Grid container spacing={3}>
         <Grid item xs={12} md={3} lg={2}>
           <FilterPanel 
