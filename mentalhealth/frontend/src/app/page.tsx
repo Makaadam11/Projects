@@ -5,9 +5,9 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center p-8">
           <div className="absolute top-4 right-4">
             <Link href="/login">
-              <a className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <div className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 Login
-              </a>
+              </div>
             </Link>
           </div>
           <div className="max-w-xl w-full bg-white rounded-lg shadow-lg p-8">
@@ -15,14 +15,14 @@ export default function Home() {
             <p className="text-lg mb-8 text-center">Please choose your university:</p>
             <div className="grid grid-cols-1 gap-4">
               <Link href="/ual">
-                <a className="block p-4 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <div className="block p-4 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                   University of the Arts London (UAL)
-                </a>
+                </div>
               </Link>
               <Link href="/sol">
-                <a className="block p-4 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <div className="block p-4 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                   Solent University (SOL)
-                </a>
+                </div>
               </Link>
             </div>
           </div>

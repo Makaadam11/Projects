@@ -159,6 +159,13 @@ class DataProcessor:
             # Read Excel
             df_merged = pd.read_excel(merged_excel_path, header=None)
 
+            # Store questions (first row) and set IDs as headers (second row)
+            questions_row = df_merged.iloc[0].copy()  # Store questions
+            column_ids = df_merged.iloc[1].copy()     # Set IDs as column names
+            df_merged = df_merged.iloc[2:]            # Keep only data rows
+
+            # Set column IDs for processing
+            df_merged = pd.read_excel(merged_excel_path, header=None)
 
             # Store questions (first row) and set IDs as headers (second row)
             questions_row = df_merged.iloc[0].copy()  # Store questions
@@ -173,12 +180,32 @@ class DataProcessor:
             df_merged_evaluated = evaluate_data(df_copy)
 
             # Update predictions keeping ID headers
-            condition = df_merged['actual'].isin(["Prefer not to say", "I don't know"])
-            df_merged.loc[condition, 'predictions'] = df_merged_evaluated.loc[condition, 'predictions']
+            # Ensure 'predictions' column exists in both DataFrames
+            # Update predictions keeping ID headers
+            if 'predictions' in df_merged.columns and 'predictions' in df_merged_evaluated.columns:
+                
+                condition = df_merged['actual'] == "Prefer not to say / I don't know"
+                
+                # Ensure predictions column is numeric
+                df_merged['predictions'] = pd.to_numeric(df_merged['predictions'], errors='coerce')
+                df_merged_evaluated['predictions'] = pd.to_numeric(df_merged_evaluated['predictions'], errors='coerce')
+                
+                # Update predictions with proper index alignment
+                matching_indices = df_merged.index[condition]
+                evaluated_indices = df_merged_evaluated.index[condition]
+                
+                if len(matching_indices) == len(evaluated_indices):
+                    df_merged.loc[matching_indices, 'predictions'] = df_merged_evaluated.loc[evaluated_indices, 'predictions'].values
+                    print(f"Updated predictions for {len(matching_indices)} rows")
+                else:
+                    print("Error: Index mismatch between DataFrames")
+                    
+            else:
+                print(f"df_merged_evaluated columns: {df_merged_evaluated.columns.tolist()}")
 
-             # Format 'captured_at' column
+            # Format 'captured_at' column
             df_merged['captured_at'] = pd.to_datetime(df_merged['captured_at'], errors='coerce').dt.strftime('%d.%m.%Y %H:%M')
-            
+
             # Create DataFrame with questions as new columns
             df_merged.columns = questions_row
             
@@ -219,7 +246,6 @@ class DataProcessor:
         except Exception as e:
             print(f"Error saving to Excel: {e}")
             return False
-        
 if __name__ == "__main__":
     processor = DataProcessor()
     processor.process_data()

@@ -1,40 +1,52 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 
 interface MultiSelectProps {
   question: string;
   options: string[];
-  value: string[];
   onValueChange: (value: string[]) => void;
+  initialValue?: string[];  // Add initial value prop
 }
 
-export default function MultiSelect({ question, options, value = [], onValueChange }: MultiSelectProps) {
-  const [localValue, setLocalValue] = useState<string[]>(value)
+const MultiSelect: React.FC<MultiSelectProps> = ({ 
+  question, 
+  options, 
+  onValueChange,
+  initialValue = [] 
+}) => {
+  const [localValue, setLocalValue] = useState<string[]>(initialValue);
+  const [showError, setShowError] = useState<boolean>(false);
 
   useEffect(() => {
-    setLocalValue(value)
-  }, [value])
+    if (initialValue.length > 0) {
+      setLocalValue(initialValue);
+    }
+  }, [initialValue]);
 
   const handleChange = (option: string) => {
     const newValue = localValue.includes(option)
       ? localValue.filter(v => v !== option)
-      : [...localValue, option]
-    setLocalValue(newValue)
-    onValueChange(newValue)
-  }
+      : [...localValue, option];
+    setLocalValue(newValue);
+    onValueChange(newValue);
+    setShowError(newValue.length === 0);
+  };
+
+  const handleBlur = () => {
+    setShowError(localValue.length === 0);
+  };
 
   return (
-    <div className="w-full  space-y-4">
+    <div className="w-full space-y-4">
       <h2 className="text-[#333333] text-lg font-medium">
         {question}
       </h2>
-      <div className="space-y-2 w-full">
+      <div className="space-y-2 w-full" onBlur={handleBlur}>
         {options.map((option) => (
           <label
             key={option}
             className="flex items-center p-3 bg-[rgb(240,240,240)] rounded hover:bg-[rgb(230,230,230)] cursor-pointer transition-colors"
           >
             <input
-              required
               type="checkbox"
               checked={localValue.includes(option)}
               onChange={() => handleChange(option)}
@@ -44,6 +56,11 @@ export default function MultiSelect({ question, options, value = [], onValueChan
           </label>
         ))}
       </div>
+      {showError && (
+        <p className="text-red-500 text-sm">Please select at least one option.</p>
+      )}
     </div>
   );
-}
+};
+
+export default MultiSelect;

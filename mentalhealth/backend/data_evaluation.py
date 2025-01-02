@@ -6,13 +6,16 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.impute import KNNImputer
-from sklearn.metrics import classification_report, roc_auc_score,roc_curve, auc, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import classification_report, roc_auc_score, roc_curve, auc, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 from imblearn.over_sampling import SMOTE
 import warnings
 from sklearn.model_selection import KFold
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib
+import joblib
+import os
+
 matplotlib.use('Agg')  # Set backend before importing pyplot
 
 def plot_model_metrics(y_true, y_pred_proba, model_name):
@@ -73,6 +76,35 @@ def plot_model_metrics(y_true, y_pred_proba, model_name):
     plt.savefig(f'metrics_{model_name}.png', backend='Agg')
     plt.close(fig)
 
+def train_and_save_model(X_train_resampled, y_train_resampled):
+    """Train the model and save it to a .sav file"""
+    # Define the parameter grid for RandomizedSearchCV
+    n_estimators = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
+    max_features = ['auto', 'sqrt']
+    max_depth = [int(x) for x in np.linspace(10, 110, num=11)]
+    max_depth.append(None)
+    min_samples_split = [2, 5, 10]
+    min_samples_leaf = [1, 2, 4]
+    bootstrap = [True, False]
+    random_grid = {
+        'n_estimators': n_estimators,
+        'max_features': max_features,
+        'max_depth': max_depth,
+        'min_samples_split': min_samples_split,
+        'min_samples_leaf': min_samples_leaf,
+        'bootstrap': bootstrap
+    }
+
+    # Perform RandomizedSearchCV to find the best parameters for RandomForest
+    rf = RandomForestClassifier()
+    rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, verbose=2, random_state=42, n_jobs=-1)
+    rf_random.fit(X_train_resampled, y_train_resampled)
+    best_rf = rf_random.best_estimator_
+
+    # Save the model to disk
+    joblib.dump(best_rf, 'RandomForest_model.sav')
+    print("Saved RandomForest model to RandomForest_model.sav")
+
 def clean_and_encode_data(df, numeric_features, categorical_features):
     """Clean and encode all data before splitting"""
     # Handle numeric features first
@@ -80,13 +112,8 @@ def clean_and_encode_data(df, numeric_features, categorical_features):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    # # Clean categorical features
-    # for col in categorical_features:
-    #     if col in df.columns:
-    #         df[col] = df[col].apply(lambda x: x.split(',')[0] if 'Yes' in str(x) else x)
-    
     # Convert actual to numeric for KNN imputer
-    df['actual'] = df['actual'].map({'Yes': 1, 'No': 0, 1: 1, 0: 0})
+    df['actual'] = df['actual'].map({'Yes': 1, 'No': 0, "Prefer not to say / I don't know": 0, 1: 1, 0: 0})
     df['actual'] = pd.to_numeric(df['actual'], errors='coerce')
     
     # Add actual to numeric features for imputation
@@ -109,9 +136,6 @@ def clean_and_encode_data(df, numeric_features, categorical_features):
             df[col] = le.fit_transform(df[col])
             encoders[col] = le
             
-    # Save encoded DataFrame to file
-    df.to_excel('encoded_data.xlsx', index=False)
-    
     return df, encoders
 
 def evaluate_data(df, suppress_warnings=True):
@@ -138,7 +162,7 @@ def evaluate_data(df, suppress_warnings=True):
         
         # Set new column names
         df.columns = correct_columns
-        
+        print("Column names set successfully.")
         
         # Verify no quotes remain
         if any("'" in col for col in df.columns):
@@ -149,7 +173,7 @@ def evaluate_data(df, suppress_warnings=True):
             'total_device_hours', 'hours_per_week_university_work',
             'exercise_per_week', 'work_hours_per_week',
             'hours_between_lectures', 'hours_per_week_lectures',
-            'cost_of_study'  # Removed 'actual' from here
+            'cost_of_study', 'actual'
         ]
         
         selected_categorical_features = [
@@ -171,21 +195,27 @@ def evaluate_data(df, suppress_warnings=True):
                          if col not in df.columns]
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
+        print("Required columns verified successfully.")
 
         # Handle 'actual' column before other processing
         if 'actual' in df.columns:
             print("Processing 'actual' column...")
-            df['actual'] = df['actual'].map({'Yes': 1, 'No': 0, 1: 1, 0: 0})
+            df['actual'] = df['actual'].map({'Yes': 1, 'No': 0, "Prefer not to say / I don't know": 0, 1: 1, 0: 0})
             df['actual'] = pd.to_numeric(df['actual'], errors='coerce')
+            print("Processed 'actual' column successfully.")
 
         # Exclude specific columns
         exclude_columns = ['mental_health_activities', 'timetable_reasons', 'source', 'captured_at']
         df = df.drop(columns=[col for col in exclude_columns if col in df.columns])
+        print("Excluded specific columns successfully.")
 
         # Preprocess entire dataset
         df, encoders = clean_and_encode_data(df, selected_numeric_features, selected_categorical_features)
+        print("Preprocessed dataset successfully.")
         
         df.to_excel('encoded_cleaned_data.xlsx', index=False)
+        print("Saved encoded and cleaned data to 'encoded_cleaned_data.xlsx'.")
+        
         # Split after preprocessing
         diagnosed = df[df['actual'] == 1].copy()
         undiagnosed = df[df['actual'] == 0].copy()
@@ -207,139 +237,73 @@ def evaluate_data(df, suppress_warnings=True):
             X, y, test_size=0.25, random_state=42, stratify=y
         )
         print(len(X_train), " xtrain", len(X_test), " xtest", len(y_train), " ytrain", len(y_test), " ytest")
+        
         # Scale features
         scaler = StandardScaler()
         X_train[selected_numeric_features] = scaler.fit_transform(X_train[selected_numeric_features])
         X_test[selected_numeric_features] = scaler.transform(X_test[selected_numeric_features])
+        print("Scaled features successfully.")
         
         # Apply SMOTE only to training data
         smote = SMOTE(random_state=42)
         X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+        print("Applied SMOTE to training data successfully.")
 
-        # Define the parameter grid for RandomizedSearchCV
-        n_estimators = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
-        max_features = ['auto', 'sqrt']
-        max_depth = [int(x) for x in np.linspace(10, 110, num=11)]
-        max_depth.append(None)
-        min_samples_split = [2, 5, 10]
-        min_samples_leaf = [1, 2, 4]
-        bootstrap = [True, False]
-        random_grid = {
-            'n_estimators': n_estimators,
-            'max_features': max_features,
-            'max_depth': max_depth,
-            'min_samples_split': min_samples_split,
-            'min_samples_leaf': min_samples_leaf,
-            'bootstrap': bootstrap
-        }
+        # Load the pre-trained model
+        model_filename = 'RandomForest_model.sav'
+        if os.path.exists(model_filename):
+            model = joblib.load(model_filename)
+            print(f"Loaded model from {model_filename}")
+        else:
+            raise FileNotFoundError(f"Model file {model_filename} not found. Please train the model first.")
 
-        # Perform RandomizedSearchCV to find the best parameters for RandomForest
-        # rf = RandomForestClassifier()
-        # rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, verbose=2, random_state=42, n_jobs=-1)
-        # rf_random.fit(X_train_resampled, y_train_resampled)
-        # best_rf = rf_random.best_estimator_
-
-        # Updated models with better parameters
-        models = {
-            # 'RandomForest': best_rf,
-            'NeuralNetwork': MLPClassifier(
-                hidden_layer_sizes=(400,150,50),  # Głębsza sieć
-                max_iter=20,
-                early_stopping=True,
-                random_state=42
-            ),
-            # 'SVM': SVC(
-            #     kernel='rbf',
-            #     C=5.0,  # Zwiększ C dla lepszego dopasowania
-            #     class_weight='balanced',
-            #     probability=True,
-            #     random_state=42
-            # )
-        }
-        
-        # Convert DataFrame to numpy array before splitting
-        X_array = X_train_resampled.to_numpy()
-        y_array = y_train_resampled
-        
-        # K-fold cross-validation
-        kf = KFold(n_splits=10, shuffle=True, random_state=42)
-        
-        for idx, (name, model) in enumerate(models.items()):
-            cv_scores = []
-            f1_scores = []
-            for train_idx, val_idx in kf.split(X_array):
-                X_fold_train, X_fold_val = X_array[train_idx], X_array[val_idx]
-                y_fold_train, y_fold_val = y_array[train_idx], y_array[val_idx]
-                
-                model.fit(X_fold_train, y_fold_train)
-                if hasattr(model, "predict_proba"):
-                    y_pred_proba = model.predict_proba(X_fold_val)[:, 1]
-                else:
-                    y_pred_proba = model.decision_function(X_fold_val)
-                    
-                cv_scores.append(roc_auc_score(y_fold_val, y_pred_proba))
-                y_fold_pred = model.predict(X_fold_val)
-                f1_scores.append(f1_score(y_fold_val, y_fold_pred))
-            
-            print(f"\n{name} Cross-validation ROC AUC: {np.mean(cv_scores):.3f} (+/- {np.std(cv_scores)*2:.3f})")
-            print(f"Fold F1 Score: {np.mean(f1_scores):.3f}")
-            
-            # Train final model and plot metrics
-            model.fit(X_train_resampled, y_train_resampled)
-            if hasattr(model, "predict_proba"):
-                test_pred_proba = model.predict_proba(X_test)[:, 1]
-            else:
-                test_pred_proba = model.decision_function(X_test)
-                
-            plot_model_metrics(y_test, test_pred_proba, name)
-        
         # Initialize predictions array for undiagnosed cases
-        predictions = np.zeros((len(undiagnosed), len(models)))
+        predictions = np.zeros((len(undiagnosed), 1))
         
         # Train and predict with metrics
-        for idx, (name, model) in enumerate(models.items()):
-            print(f"\nTraining and evaluating {name}...")
-            
-            # Cross-validation scores
-            cv_scores = cross_val_score(model, X_train_resampled, y_train_resampled, cv=5)
-            print(f"Cross-validation accuracy: {cv_scores.mean():.2f} (+/- {cv_scores.std() * 2:.2f})")
-            
-            # Train model
-            model.fit(X_train_resampled, y_train_resampled)
-            
-            # Predictions on test set
-            test_pred = model.predict(X_test)
-            
-            # Calculate metrics
-            print("\nTest Set Metrics:")
-            print(f"Accuracy: {accuracy_score(y_test, test_pred):.2f}")
-            print(f"Precision: {precision_score(y_test, test_pred):.2f}")
-            print(f"Recall: {recall_score(y_test, test_pred):.2f}")
-            print(f"F1 Score: {f1_score(y_test, test_pred):.2f}")
-            print("\nConfusion Matrix:")
-            print(confusion_matrix(y_test, test_pred))
-            print("\nClassification Report:")
-            print(classification_report(y_test, test_pred))
-            
-            # Calculate training metrics
-            train_pred = model.predict(X_train_resampled)
-            print("\nTraining Set Metrics:")
-            print(f"Accuracy: {accuracy_score(y_train_resampled, train_pred):.2f}")
-            print(f"Precision: {precision_score(y_train_resampled, train_pred):.2f}")
-            print(f"Recall: {recall_score(y_train_resampled, train_pred):.2f}")
-            print(f"F1 Score: {f1_score(y_train_resampled, train_pred):.2f}")
-            print("\nConfusion Matrix:")
-            print(confusion_matrix(y_train_resampled, train_pred))
-            print("\nClassification Report:")
-            print(classification_report(y_train_resampled, train_pred))
-            
-            # Predict undiagnosed cases
-            X_undiagnosed = undiagnosed[selected_numeric_features + selected_categorical_features]
-            predictions[:, idx] = model.predict(X_undiagnosed)
-            predicted_positive = sum(predictions[:, idx] == 1)
-            print(f"\nPredictions for Undiagnosed Cases:")
-            print(f"Predicted positive cases: {predicted_positive} ({predicted_positive/len(undiagnosed)*100:.2f}%)")
-            
+        print(f"\nEvaluating {model_filename}...")
+        
+        # Cross-validation scores
+        cv_scores = cross_val_score(model, X_train_resampled, y_train_resampled, cv=5)
+        print(f"Cross-validation accuracy: {cv_scores.mean():.2f} (+/- {cv_scores.std() * 2:.2f})")
+        
+        # Train model
+        model.fit(X_train_resampled, y_train_resampled)
+        print("Trained model successfully.")
+        
+        # Predictions on test set
+        test_pred = model.predict(X_test)
+        
+        # Calculate metrics
+        print("\nTest Set Metrics:")
+        print(f"Accuracy: {accuracy_score(y_test, test_pred):.2f}")
+        print(f"Precision: {precision_score(y_test, test_pred):.2f}")
+        print(f"Recall: {recall_score(y_test, test_pred):.2f}")
+        print(f"F1 Score: {f1_score(y_test, test_pred):.2f}")
+        print("\nConfusion Matrix:")
+        print(confusion_matrix(y_test, test_pred))
+        print("\nClassification Report:")
+        print(classification_report(y_test, test_pred))
+        
+        # Calculate training metrics
+        train_pred = model.predict(X_train_resampled)
+        print("\nTraining Set Metrics:")
+        print(f"Accuracy: {accuracy_score(y_train_resampled, train_pred):.2f}")
+        print(f"Precision: {precision_score(y_train_resampled, train_pred):.2f}")
+        print(f"Recall: {recall_score(y_train_resampled, train_pred):.2f}")
+        print(f"F1 Score: {f1_score(y_train_resampled, train_pred):.2f}")
+        print("\nConfusion Matrix:")
+        print(confusion_matrix(y_train_resampled, train_pred))
+        print("\nClassification Report:")
+        print(classification_report(y_train_resampled, train_pred))
+        
+        # Predict undiagnosed cases
+        X_undiagnosed = undiagnosed[selected_numeric_features + selected_categorical_features]
+        predictions[:, 0] = model.predict(X_undiagnosed)
+        predicted_positive = sum(predictions[:, 0] == 1)
+        print(f"\nPredictions for Undiagnosed Cases:")
+        print(f"Predicted positive cases: {predicted_positive} ({predicted_positive/len(undiagnosed)*100:.2f}%)")
+        
         # Ensemble predictions for undiagnosed cases
         final_predictions = np.where(predictions.mean(axis=1) >= 0.5, 1, 0)
         
@@ -358,6 +322,4 @@ def evaluate_data(df, suppress_warnings=True):
 
     except Exception as e:
         print(f"Error in model evaluation: {str(e)}")
-        raise   
-
-
+        raise
