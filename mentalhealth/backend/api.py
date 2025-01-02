@@ -233,7 +233,7 @@ def get_user_data():
         # print("userdata" , df)
         return df
     else:
-        return pd.DataFrame(columns=["email", "password", "isAdmin"])
+        return pd.DataFrame(columns=["email", "password", "isAdmin", "university"])
 
 @app.post("/api/login")
 async def login(data: LoginFormInputs):
@@ -245,6 +245,7 @@ async def login(data: LoginFormInputs):
         # Convert values to string and handle NaN
         df['email'] = df['email'].fillna('').astype(str)
         df['password'] = df['password'].fillna('').astype(str)
+        df['university'] = df['university'].fillna('').astype(str)
         
         # Clean input data
         clean_email = str(data.email).strip()
@@ -259,7 +260,11 @@ async def login(data: LoginFormInputs):
         # print("Matched user:", user)
         
         if not user.empty:
-            return {"message": "Login successful", "isAdmin": bool(user.iloc[0]['isAdmin'])}
+            return {
+                "message": "Login successful",
+                "isAdmin": bool(user.iloc[0]['isAdmin']),
+                "university": user.iloc[0]['university']
+            }
         else:
             raise HTTPException(status_code=401, detail="Invalid credentials")
             

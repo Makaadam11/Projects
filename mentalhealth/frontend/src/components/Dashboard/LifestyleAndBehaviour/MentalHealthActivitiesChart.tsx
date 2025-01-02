@@ -34,6 +34,8 @@ export const MentalHealthActivitiesChart = ({ data }: MentalHealthActivitiesChar
           padding={3}
           spiral="rectangular"
           rotate={0}
+          font="Arial"
+          fontWeight="bold"
         />
     </ResponsiveContainer>
     </Box>

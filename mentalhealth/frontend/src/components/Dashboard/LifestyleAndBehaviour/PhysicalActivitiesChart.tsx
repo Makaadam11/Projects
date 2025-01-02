@@ -27,7 +27,7 @@ export const PhysicalActivitiesChart = ({ data }: PhysicalActivitiesChartProps) 
       <Typography variant="h6" align="center" gutterBottom>
         Physical Activities
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={335}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="physical_activities" />

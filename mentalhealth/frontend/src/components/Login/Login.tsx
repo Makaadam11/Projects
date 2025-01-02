@@ -1,4 +1,5 @@
-"use client"
+'use client';
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { saveLoginData } from '../../api/login';
@@ -15,6 +16,9 @@ export default function Login() {
   const onSubmit = async (data: LoginFormInputs) => {
     try {
       const response = await saveLoginData(data);
+      // Store user data in local storage or context
+      localStorage.setItem('isAdmin', JSON.stringify(response.isAdmin));
+      localStorage.setItem('university', response.university);
       // Redirect to dashboard based on user role
       if (response.isAdmin) {
         window.location.href = '/admin';

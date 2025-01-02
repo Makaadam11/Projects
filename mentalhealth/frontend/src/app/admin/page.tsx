@@ -1,7 +1,7 @@
 "use client"
 import React from 'react';
 import Link from 'next/link';
-import AdminPanel from "@/components/Admin/Admin";
+import {AdminPanel} from "@/components/Admin/Admin";
 
 export default function AdminPage() {
   return (

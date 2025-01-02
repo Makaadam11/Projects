@@ -1,26 +1,29 @@
-export async function saveLoginData(data: { email: string; password: string }) {
-    const response = await fetch('http://localhost:8000/api/login', {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-        throw new Error('Invalid credentials.');
-    }
-
-    return response.json();
-}
-
 interface ApiResponse {
     message: string;
+    isAdmin: boolean;
+    university: string;
+  }
+  
+  export async function saveLoginData(data: { email: string; password: string }): Promise<ApiResponse> {
+    const response = await fetch('http://localhost:8000/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+  
+    if (!response.ok) {
+      throw new Error('Invalid credentials.');
+    }
+  
+    return response.json();
 }
 
 interface RegisterFormData {
     email: string;
     password: string;
+    university: string;
     isAdmin: boolean;
 }
 
@@ -35,6 +38,7 @@ export async function registerUser(data: RegisterFormData): Promise<ApiResponse>
         body: JSON.stringify({
             email: data.email.trim(),
             password: data.password.trim(),
+            university: data.university.trim(),
             isAdmin: Boolean(data.isAdmin)
         }),
         });
@@ -71,3 +75,4 @@ export async function deleteUser(email: string): Promise<ApiResponse> {
         throw error;
     }
 }
+

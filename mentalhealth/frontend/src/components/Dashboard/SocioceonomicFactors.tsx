@@ -48,7 +48,7 @@ export const SocioceonomicFactors = ({ data }: SocioceonomicFactorsProps) => {
       </Typography>
       <Grid container spacing={2}>
         {/* Row 1 */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={12}>
           <Paper sx={{ p: 2, height: '100%' }} ref={financialSupportRef}>
             <FinancialSupportChart data={data} />
           </Paper>
@@ -77,7 +77,7 @@ export const SocioceonomicFactors = ({ data }: SocioceonomicFactorsProps) => {
             <WorkHoursPerWeekChart data={data} />
           </Paper>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={12}>
           <Paper sx={{ p: 2, height: '100%' }} ref={costOfStudyRef}>
             <CostOfStudyChart data={data} />
           </Paper>

@@ -33,7 +33,7 @@ export const StudentTypeTimeChart = ({ data }: StudentTypeTimeChartProps) => {
   return (
     <Box>
       <Typography variant="h6" align="center" gutterBottom>
-        Studnet Type Time Chart
+      Student Type Time Chart
       </Typography>
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>

@@ -12,8 +12,10 @@ interface FilterPanelProps {
 export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps) => {
   const [loading, setLoading] = useState<{[key: string]: boolean}>({});
   const [departments, setDepartments] = useState<{ [key: string]: string[] }>({});
-  const [selectedUniversity, setSelectedUniversity] = useState<string>('');
+  const [selectedUniversity, setSelectedUniversity] = useState<string>(localStorage.getItem('university') || '');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<string>('2024');
+
 
   const universities = ['UAL', 'SOL']; // Add more universities as needed
 
@@ -169,6 +171,23 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
       </Typography>
 
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
+        Year
+      </Typography>
+      <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+        <InputLabel>Year</InputLabel>
+        <Select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+        >
+          {uniqueValues.captured_at.filter(year => year !== null).map((year) => (
+            <MenuItem key={year} value={year}>
+              {year}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
         University
       </Typography>
       <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
@@ -176,6 +195,7 @@ export const FilterPanel = ({ data, filters, onFilterChange }: FilterPanelProps)
         <Select
           value={selectedUniversity}
           onChange={(e) => setSelectedUniversity(e.target.value)}
+          disabled
         >
           {universities.map((university) => (
             <MenuItem key={university} value={university}>

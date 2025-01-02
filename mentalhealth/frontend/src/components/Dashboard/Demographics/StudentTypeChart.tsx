@@ -25,7 +25,7 @@ export const StudentTypeLocationChart = ({ data }: StudentTypeLocationChartProps
   return (
     <Box>
       <Typography variant="h6" align="center" gutterBottom>
-        Studnet Type Location Chart
+        Student Type Location Chart
       </Typography>
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={groupedData}>

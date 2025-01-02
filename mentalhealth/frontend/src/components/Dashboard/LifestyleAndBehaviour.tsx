@@ -52,7 +52,7 @@ export const LifestyleAndBehaviour = ({ data }: LifestyleAndBehaviourProps) => {
       </Typography>
       <Grid container spacing={2}>
         {/* Row 1 */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={12}>
           <Paper sx={{ p: 2, height: '100%' }} ref={dietChartRef}>
             <DietChart data={data} />
           </Paper>

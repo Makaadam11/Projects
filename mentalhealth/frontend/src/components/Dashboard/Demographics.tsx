@@ -7,6 +7,7 @@ import { GenderChart } from './Demographics/GenderChart';
 import { StudentTypeLocationChart } from './Demographics/StudentTypeChart';
 import { StudentTypeTimeChart } from './Demographics/StudentTypeTimeChart';
 import { DashboardData } from '@/types/dashboard';
+import { CountryMap } from './Demographics/CountryMap';
 
 interface DemographicsProps {
   data: DashboardData[];
@@ -18,6 +19,7 @@ export const Demographics = ({ data }: DemographicsProps) => {
   const genderChartRef = useRef(null);
   const studentTypeLocationRef = useRef(null);
   const studentTypeTimeRef = useRef(null);
+  const countryMapRef = useRef(null);
 
   const captureCharts = async () => {
     const charts = [
@@ -26,6 +28,7 @@ export const Demographics = ({ data }: DemographicsProps) => {
       { ref: genderChartRef, name: 'GenderChart' },
       { ref: studentTypeLocationRef, name: 'StudentTypeLocationChart' },
       { ref: studentTypeTimeRef, name: 'StudentTypeTimeChart' },
+      { ref: countryMapRef, name: 'CountryMap' },
     ];
 
     const capturedImages: { [key: string]: string } = {};
@@ -71,9 +74,14 @@ export const Demographics = ({ data }: DemographicsProps) => {
         </Grid>
 
         {/* Row 3 */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={12}>
           <Paper sx={{ p: 2, height: '100%' }} ref={studentTypeTimeRef}>
             <StudentTypeTimeChart data={data} />
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={12}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={countryMapRef}>
+            <CountryMap data={data} />
           </Paper>
         </Grid>
       </Grid>

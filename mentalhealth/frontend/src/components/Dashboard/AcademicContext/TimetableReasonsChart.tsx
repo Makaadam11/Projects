@@ -8,28 +8,41 @@ interface TimetableReasonsChartProps {
 }
 
 export const TimetableReasonsChart = ({ data }: TimetableReasonsChartProps) => {
-  const words = data.reduce((acc, curr) => {
-    if (curr.timetable_reasons === "Not Provided") return acc;
-    const reasons = curr.timetable_reasons.split(', ');
-    reasons.forEach(reason => {
-      const word = acc.find(item => item.text === reason);
-      if (word) {
-        word.value += 1;
-      } else {
-        acc.push({ text: reason, value: 1 });
-      }
-    });
-    return acc;
-  }, [] as { text: string; value: number }[]);
+  const words = data
+    .reduce((acc, curr) => {
+      if (curr.timetable_reasons === "Not Provided") return acc;
+      const reasons = curr.timetable_reasons.split(', ');
+      reasons.forEach(reason => {
+        const word = acc.find(item => item.text === reason);
+        if (word) {
+          word.value += 1;
+        } else {
+          acc.push({ text: reason, value: 1 });
+        }
+      });
+      return acc;
+    }, [] as { text: string; value: number }[])
+    .sort((a, b) => b.value - a.value) // Sort by frequency
+    .slice(0, 20); // Get top 10
 
   return (
-    <Box>
-    <Typography variant="h6" align="center" gutterBottom>
-      Timetable Reasons
+    <Box sx={{ width: '100%', height: '100%' }}>
+      <Typography variant="h6" align="center" gutterBottom>
+        Top 10 Timetable Reasons
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
-      <WordCloud data={words} />
-    </ResponsiveContainer>
+      <ResponsiveContainer width="100%" height={330}>
+        <WordCloud
+          data={words}
+          width={300}
+          height={300}
+          font="Arial"
+          fontStyle="normal"
+          fontWeight="bold"
+          fontSize={(word) => Math.max(12, Math.min(40, word.value * 5))}
+          rotate={0}
+          padding={2}
+        />
+      </ResponsiveContainer>
     </Box>
   );
 };
