@@ -37,6 +37,7 @@ export interface DashboardData {
   sense_of_belonging: string;
   mental_health_activities: string;
   predictions: number;
+  source: string;
   captured_at: string;
 }
 

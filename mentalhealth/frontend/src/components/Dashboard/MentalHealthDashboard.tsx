@@ -15,6 +15,7 @@ import { SocialAndTechnologicalFactors } from './SocialAndTechnologicalFactors';
 const MentalHealthDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState<string>('2024'); // Default year
   const [error, setError] = useState<string | null>(null);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false); // New state for loading
@@ -126,6 +127,10 @@ const MentalHealthDashboard: React.FC = () => {
     }
   };
 
+  const handleYearChange = (year: string) => {
+    setSelectedYear(year);
+  };
+
   const handleFilterChange = useCallback((key: keyof FilterState, value: string[]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
@@ -205,7 +210,7 @@ const MentalHealthDashboard: React.FC = () => {
     <Box sx={{ p: 3 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" gutterBottom>
-          Mental Health Dashboard
+          Mental Health Dashboard - {selectedYear}
         </Typography>
         
         <div className="flex gap-2">
@@ -241,6 +246,7 @@ const MentalHealthDashboard: React.FC = () => {
             filters={filters} 
             onFilterChange={handleFilterChange}
             data={data}
+            onYearChange={handleYearChange}
           />
         </Grid>
         
