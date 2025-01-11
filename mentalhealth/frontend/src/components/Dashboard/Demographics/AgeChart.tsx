@@ -28,7 +28,7 @@ export const AgeChart = ({ data }: AgeChartProps) => {
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={groupedData}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="age_group" />
+          <XAxis dataKey="age_group" angle={75} dy={20} height={100} interval={0} />
           <YAxis />
           <Tooltip />
           <Legend formatter={(value) => value === 'prediction_0' ? 'No MH Issues' : 'MH Issues'} />

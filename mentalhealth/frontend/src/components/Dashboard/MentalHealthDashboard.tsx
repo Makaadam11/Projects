@@ -58,28 +58,29 @@ const MentalHealthDashboard: React.FC = () => {
     sense_of_belonging: [],
   });
 
-  const demographicsRef = useRef(null);
-  const academicContextRef = useRef(null);
-  const socioeconomicFactorsRef = useRef(null);
-  const lifestyleAndBehaviourRef = useRef(null);
-  const socialAndTechnologicalFactorsRef = useRef(null);
-  const psychologicalAndEmotionalFactorsRef = useRef(null);
+  const demographicsRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+  const academicContextRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+  const socioeconomicFactorsRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+  const lifestyleAndBehaviourRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+  const socialAndTechnologicalFactorsRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+  const psychologicalAndEmotionalFactorsRefs = [useRef(null), useRef(null), useRef(null), useRef(null), useRef(null), useRef(null)];
 
   const captureChartImages = async () => {
-    const chartRefs = {
-      demographics: demographicsRef,
-      academicContext: academicContextRef,
-      socioeconomicFactors: socioeconomicFactorsRef,
-      lifestyleAndBehaviour: lifestyleAndBehaviourRef,
-      socialAndTechnologicalFactors: socialAndTechnologicalFactorsRef,
-      psychologicalAndEmotionalFactors: psychologicalAndEmotionalFactorsRef,
-    };
+    const allChartRefs = [
+      ...demographicsRefs,
+      ...academicContextRefs,
+      ...socioeconomicFactorsRefs,
+      ...lifestyleAndBehaviourRefs,
+      ...socialAndTechnologicalFactorsRefs,
+      ...psychologicalAndEmotionalFactorsRefs,
+    ];
+  
     const chartImages: { [key: string]: string } = {};
     let canvas: HTMLCanvasElement;
-    for (const [key, ref] of Object.entries(chartRefs)) {
+    for (const ref of allChartRefs) {
       if (ref.current) {
-        canvas = await html2canvas(ref.current, {allowTaint: true, useCORS: true, logging: true});
-        chartImages[key] = canvas.toDataURL('image/png');
+        canvas = await html2canvas(ref.current, { allowTaint: true, useCORS: true, logging: true });
+        chartImages[ref.current.id || `chart-${Object.keys(chartImages).length + 1}`] = canvas.toDataURL('image/png');
       }
     }
     return chartImages;
@@ -89,11 +90,10 @@ const MentalHealthDashboard: React.FC = () => {
     setGeneratingReport(true); // Set loading state to true
     try {
       const chartImages = await captureChartImages();
-      console.log("data filtered: ", filteredData);
-      console.log("chart images: ", chartImages);
+      console.log(`Number of charts being sent: ${Object.keys(chartImages).length}`);
       const response = await generateReport(filteredData, chartImages);
-      setReportUrl(response.report_url);
       alert('Report generated successfully');
+      setReportUrl(response?.report_url);
     } catch (error) {
       console.error('Error generating report:', error);
       alert('Failed to generate report');
@@ -258,23 +258,23 @@ const MentalHealthDashboard: React.FC = () => {
               </Grid>
             ) : (
                 <>
-              <Grid item xs={12} md={6} ref={demographicsRef}>
-                <Demographics data={filteredData} />
+              <Grid item xs={12} md={6} ref={demographicsRefs[0]}>
+                <Demographics data={filteredData} chartRefs={demographicsRefs}/>
               </Grid>
-              <Grid item xs={12} md={6} ref={academicContextRef}>
-                <AcademicContext data={filteredData} />
+              <Grid item xs={12} md={6} ref={academicContextRefs[0]}>
+                <AcademicContext data={filteredData} chartRefs={academicContextRefs} />
               </Grid>
-              <Grid item xs={12} md={6} ref={socioeconomicFactorsRef}>
-                <SocioceonomicFactors data={filteredData} />
+              <Grid item xs={12} md={6} ref={socioeconomicFactorsRefs[0]}>
+                <SocioceonomicFactors data={filteredData} chartRefs={socialAndTechnologicalFactorsRefs}/>
               </Grid>
-              <Grid item xs={12} md={6} ref={lifestyleAndBehaviourRef}>
-                <LifestyleAndBehaviour data={filteredData} />
+              <Grid item xs={12} md={6} ref={lifestyleAndBehaviourRefs[0]}>
+                <LifestyleAndBehaviour data={filteredData} chartRefs={lifestyleAndBehaviourRefs}/>
               </Grid>
-              <Grid item xs={12} md={6} ref={socialAndTechnologicalFactorsRef}>
-                <SocialAndTechnologicalFactors data={filteredData} />
+              <Grid item xs={12} md={6} ref={socialAndTechnologicalFactorsRefs[0]}>
+                <SocialAndTechnologicalFactors data={filteredData} chartRefs={socialAndTechnologicalFactorsRefs}/>
               </Grid>
-              <Grid item xs={12} md={6} ref={psychologicalAndEmotionalFactorsRef}>
-                <PsychologicalAndEmotionalFactors data={filteredData} />
+              <Grid item xs={12} md={6} ref={psychologicalAndEmotionalFactorsRefs[0]}>
+                <PsychologicalAndEmotionalFactors data={filteredData} chartRefs={psychologicalAndEmotionalFactorsRefs} />
               </Grid>
             </>
             )}

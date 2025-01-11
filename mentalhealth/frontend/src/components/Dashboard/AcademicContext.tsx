@@ -10,9 +10,10 @@ import { TimetableImpactChart } from './AcademicContext/TimetableImpactChart';
 
 interface AcademicContextProps {
   data: any;
+  chartRefs: React.RefObject<HTMLDivElement>[];
 }
 
-export const AcademicContext = ({ data }: AcademicContextProps) => {
+export const AcademicContext = ({ data, chartRefs }: AcademicContextProps) => {
   const courseOfStudyRef = useRef(null);
   const hoursPerWeekLecturesRef = useRef(null);
   const hoursPerWeekUniversityWorkRef = useRef(null);
@@ -52,43 +53,43 @@ export const AcademicContext = ({ data }: AcademicContextProps) => {
       <Grid container spacing={2}>
         {/* Row 1 */}
         <Grid item xs={12} md={12}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={courseOfStudyRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[0]}>
             <CourseOfStudyChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={hoursPerWeekLecturesRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[1]}>
             <HoursPerWeekChart data={data} dataKey="hours_per_week_lectures" title="Hours per Week (Lectures)" />
           </Paper>
         </Grid>
 
         {/* Row 2 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={hoursPerWeekUniversityWorkRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[2]}>
             <HoursPerWeekChart data={data} dataKey="hours_per_week_university_work" title="Hours per Week (University Work)" />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={levelOfStudyRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[3]}>
             <LevelOfStudyChart data={data} />
           </Paper>
         </Grid>
 
         {/* Row 3 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={timetablePreferenceRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[4]}>
             <TimetablePreferenceChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={timetableReasonsRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[5]}>
             <TimetableReasonsChart data={data} />
           </Paper>
         </Grid>
 
         {/* Row 4 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={timetableImpactRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[6]}>
             <TimetableImpactChart data={data} />
           </Paper>
         </Grid>

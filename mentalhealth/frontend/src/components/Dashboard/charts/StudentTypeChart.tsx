@@ -78,7 +78,7 @@ export const StudentTypeChart: React.FC<Props> = ({ data }) => {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
+            <XAxis dataKey="name" angle={75} dy={20} height={100} interval={0}/>
             <YAxis label={{ value: 'Percentage', angle: -90, position: 'insideLeft' }} />
             <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
             <Legend />

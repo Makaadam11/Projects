@@ -118,9 +118,9 @@ class ReportRequest(BaseModel):
 @app.post("/api/reports")
 async def generate_reports(request: ReportRequest):
     try:
-        logger.info("Processing report generation request")
-        logger.info(f"Request data: {request.data}")
-        logger.info(f"Request charts: {request.charts}")
+        # logger.info("Processing report generation request")
+        # logger.info(f"Request data: {request.data}")
+        # logger.info(f"Request charts: {request.charts}")
         
         df = pd.DataFrame([item.dict() for item in request.data])
         reports = Reports(df)
@@ -129,9 +129,8 @@ async def generate_reports(request: ReportRequest):
         # Decode chart images
         chart_images = {}
         for key, chart in request.charts.items():
-            image_data = base64.b64decode(chart.split(",")[1])
-            image = Image.open(BytesIO(image_data))
-            chart_images[key] = image
+            if isinstance(chart, str) and chart.startswith("data:image/png;base64,"):
+                chart_images[key] = chart
         
         # Generate PDF report and save it temporarily
         report_path = f"../data/reports/Mental_Health_Report_{timestamp}.pdf"
@@ -142,7 +141,7 @@ async def generate_reports(request: ReportRequest):
     except Exception as e:
         logger.error(f"Error generating report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
+    
 @app.get("/api/reports/view/{timestamp}")
 async def view_report(timestamp: str):
     report_path = f"../data/reports/Mental_Health_Report_{timestamp}.pdf"

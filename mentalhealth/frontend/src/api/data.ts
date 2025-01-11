@@ -85,6 +85,8 @@ export const generateReport = async (filteredData: DashboardData[], chartImages:
       charts: processedChartImages
     };
 
+    // Debug: Print the number of charts being sent
+    console.log(`Number of charts being sent: ${Object.keys(processedChartImages).length}`);
     console.log('Sending payload:', JSON.stringify(payload, null, 2));
 
     const response = await fetch('http://localhost:8000/api/reports', {

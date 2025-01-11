@@ -30,7 +30,7 @@ const groupedData = data.reduce((acc, curr) => {
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="gender" />
+        <XAxis dataKey="gender" angle={75} dy={20} height={100} interval={0}/>
         <YAxis />
         <Tooltip />
         <Legend />

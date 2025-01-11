@@ -30,7 +30,7 @@ export const FeelAfraidChart = ({ data }: FeelAfraidChartProps) => {
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="feel_afraid" />
+        <XAxis dataKey="feel_afraid" angle={75} dy={20} height={100} interval={0}/>
         <YAxis />
         <Tooltip />
         <Legend />

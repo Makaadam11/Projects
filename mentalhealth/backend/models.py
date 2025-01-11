@@ -23,7 +23,7 @@ class GroqClient:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a professional report writer specializing in mental health analysis. Format your response in clear sections with headers."
+                        "content": "You are a professional report writer specializing in mental health analysis. Format your response in clear sections with headers. Focus on analyzing the data based on the prediction values (0 or 1) indicating mental health issues."
                     },
                     {
                         "role": "user",

@@ -10,9 +10,10 @@ import { Box, Grid, Paper, Typography } from '@mui/material';
 
 interface SocioceonomicFactorsProps {
   data: any;
+  chartRefs: React.RefObject<HTMLDivElement>[];
 }
 
-export const SocioceonomicFactors = ({ data }: SocioceonomicFactorsProps) => {
+export const SocioceonomicFactors = ({ data, chartRefs }: SocioceonomicFactorsProps) => {
   const financialSupportRef = useRef(null);
   const financialProblemsRef = useRef(null);
   const familyEarningClassRef = useRef(null);
@@ -49,36 +50,36 @@ export const SocioceonomicFactors = ({ data }: SocioceonomicFactorsProps) => {
       <Grid container spacing={2}>
         {/* Row 1 */}
         <Grid item xs={12} md={12}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={financialSupportRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[0]}>
             <FinancialSupportChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={financialProblemsRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[1]}>
             <FinancialProblemsChart data={data} />
           </Paper>
         </Grid>
 
         {/* Row 2 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={familyEarningClassRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[2]}>
             <FamilyEarningClassChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={formOfEmploymentRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[3]}>
             <FormOfEmploymentChart data={data} />
           </Paper>
         </Grid>
 
         {/* Row 3 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={workHoursPerWeekRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[4]}>
             <WorkHoursPerWeekChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={12}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={costOfStudyRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[5]}>
             <CostOfStudyChart data={data} />
           </Paper>
         </Grid>

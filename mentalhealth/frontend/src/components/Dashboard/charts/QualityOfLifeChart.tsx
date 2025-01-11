@@ -147,7 +147,7 @@ export const QualityOfLifeChart: React.FC<Props> = ({ data }) => {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={viewType.includes('quality') ? 'qualityOfLife' : viewType.includes('disability') ? 'disability' : 'afraid'} />
+            <XAxis dataKey={viewType.includes('quality') ? 'qualityOfLife' : viewType.includes('disability') ? 'disability' : 'afraid'} angle={75} dy={20} height={100} interval={0} />
             <YAxis label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />

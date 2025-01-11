@@ -11,9 +11,10 @@ import { CountryMap } from './Demographics/CountryMap';
 
 interface DemographicsProps {
   data: DashboardData[];
+  chartRefs: React.RefObject<HTMLDivElement>[];
 }
 
-export const Demographics = ({ data }: DemographicsProps) => {
+export const Demographics = ({ data , chartRefs}: DemographicsProps) => {
   const ethnicGroupRef = useRef(null);
   const ageChartRef = useRef(null);
   const genderChartRef = useRef(null);
@@ -51,36 +52,36 @@ export const Demographics = ({ data }: DemographicsProps) => {
       <Grid container spacing={2}>
         {/* Row 1 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={ethnicGroupRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[0]}>
             <EthnicGroupChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={ageChartRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[1]}>
             <AgeChart data={data} />
           </Paper>
         </Grid>
 
         {/* Row 2 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={genderChartRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[2]}>
             <GenderChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={studentTypeLocationRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[3]}>
             <StudentTypeLocationChart data={data} />
           </Paper>
         </Grid>
 
         {/* Row 3 */}
         <Grid item xs={12} md={12}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={studentTypeTimeRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[4]}>
             <StudentTypeTimeChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={12}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={countryMapRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[5]}>
             <CountryMap data={data} />
           </Paper>
         </Grid>

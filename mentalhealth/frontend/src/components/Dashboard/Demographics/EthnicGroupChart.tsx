@@ -27,10 +27,10 @@ export const EthnicGroupChart = ({ data }: EthnicGroupChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Ethnic Group
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={400}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="ethnic_group" />
+        <XAxis dataKey="ethnic_group" angle={75} dy={20} height={100} interval={0} />
         <YAxis />
         <Tooltip />
         <Legend />

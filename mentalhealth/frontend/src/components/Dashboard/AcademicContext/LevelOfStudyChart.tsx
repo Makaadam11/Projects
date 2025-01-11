@@ -29,9 +29,9 @@ export const LevelOfStudyChart = ({ data }: LevelOfStudyChartProps) => {
       Level of Study
       </Typography>
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={groupedData}>
+      <BarChart data={groupedData} >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="level_of_study" />
+        <XAxis dataKey="level_of_study" angle={70} dy={50} height={100} interval={1}/>
         <YAxis />
         <Tooltip />
         <Legend />

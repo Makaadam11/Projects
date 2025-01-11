@@ -11,9 +11,10 @@ import { DashboardData } from '@/types/dashboard';
 
 interface PsychologicalAndEmotionalFactorsProps {
   data: DashboardData[];
+  chartRefs: React.RefObject<HTMLDivElement>[];
 }
 
-export const PsychologicalAndEmotionalFactors = ({ data }: PsychologicalAndEmotionalFactorsProps) => {
+export const PsychologicalAndEmotionalFactors = ({ data, chartRefs }: PsychologicalAndEmotionalFactorsProps) => {
   const qualityOfLifeRef = useRef(null);
   const feelAfraidRef = useRef(null);
   const stressInGeneralRef = useRef(null);
@@ -51,36 +52,34 @@ export const PsychologicalAndEmotionalFactors = ({ data }: PsychologicalAndEmoti
       <Grid container spacing={2}>
         {/* Row 1 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={qualityOfLifeRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[0]}>
             <QualityOfLifeChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={feelAfraidRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[1]}>
             <FeelAfraidChart data={data} />
           </Paper>
         </Grid>
-
         {/* Row 2 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={stressInGeneralRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[2]}>
             <StressInGeneralChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={stressBeforeExamsRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[3]}>
             <StressBeforeExamsChart data={data} />
           </Paper>
         </Grid>
-
         {/* Row 3 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={knownDisabilitiesRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[4]}>
             <KnownDisabilitiesChart data={data} />
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={senseOfBelongingRef}>
+          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[5]}>
             <SenseOfBelongingChart data={data} />
           </Paper>
         </Grid>

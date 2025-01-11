@@ -30,7 +30,7 @@ export const SenseOfBelongingChart = ({ data }: SenseOfBelongingChartProps) => {
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="sense_of_belonging" />
+        <XAxis dataKey="sense_of_belonging" angle={75} dy={20} height={100} interval={0}/>
         <YAxis />
         <Tooltip />
         <Bar dataKey="prediction_0"  name="No MH Issues" stackId="a" fill="#82ca9d" />
