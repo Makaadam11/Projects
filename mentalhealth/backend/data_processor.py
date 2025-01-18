@@ -175,6 +175,21 @@ class DataProcessor:
             # Set column IDs for processing
             df_merged.columns = column_ids
 
+            # Print predictions count before evaluation
+            print("Predictions count before evaluation:")
+            print(df_merged['predictions'].value_counts())
+
+            # Print count of predictions equal to 0 and 1
+            print("Count of predictions equal to 0:", (df_merged['predictions'] == 0).sum())
+            print("Count of predictions equal to 1:", (df_merged['predictions'] == 1).sum())
+
+            # Print count of actual values equal to 0 and 1
+            if 'actual' in df_merged.columns:
+                print("Count of actual values equal to 0:", (df_merged['actual'] == 0).sum())
+                print("Count of actual values equal to 1:", (df_merged['actual'] == 1).sum())
+            else:
+                print("Column 'actual' not found in df_merged")
+
             # Process data with ID headers
             df_copy = pd.read_excel(merged_excel_path, header=[0,1])
             df_merged_evaluated = evaluate_data(df_copy)
@@ -202,6 +217,21 @@ class DataProcessor:
                     
             else:
                 print(f"df_merged_evaluated columns: {df_merged_evaluated.columns.tolist()}")
+
+            # Print predictions count after evaluation
+            print("Predictions count after evaluation:")
+            print(df_merged['predictions'].value_counts())
+
+            # Print count of predictions equal to 0 and 1
+            print("Count of predictions equal to 0:", (df_merged['predictions'] == 0).sum())
+            print("Count of predictions equal to 1:", (df_merged['predictions'] == 1).sum())
+
+            # Print count of actual values equal to 0 and 1
+            if 'actual' in df_merged.columns:
+                print("Count of actual values equal to 0:", (df_merged['actual'] == 0).sum())
+                print("Count of actual values equal to 1:", (df_merged['actual'] == 1).sum())
+            else:
+                print("Column 'actual' not found in df_merged")
 
             # Format 'captured_at' column
             df_merged['captured_at'] = pd.to_datetime(df_merged['captured_at'], errors='coerce').dt.strftime('%d.%m.%Y %H:%M')

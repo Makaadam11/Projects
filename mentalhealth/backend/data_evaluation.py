@@ -53,9 +53,12 @@ def plot_model_metrics(y_true, y_pred_proba, model_name):
     
     # Gain Chart
     plt.subplot(2, 2, 3)
-    percentile = np.arange(0, 100, 1)
-    gain = np.percentile(y_pred_proba, percentile)
-    plt.plot(percentile, gain, label=f'Gain = {gain[-1]:.2f}')
+    sorted_indices = np.argsort(y_pred_proba)
+    sorted_proba = y_pred_proba[sorted_indices]
+    sorted_true = y_true[sorted_indices]
+    cumulative_true = np.cumsum(sorted_true)
+    gain = cumulative_true / cumulative_true[-1]
+    plt.plot(np.linspace(0, 100, len(gain)), gain, label=f'Gain = {gain[-1]:.2f}')
     plt.plot([0, 100], [0, 1], 'k--')
     plt.xlabel('Population %')
     plt.ylabel('Gain')
@@ -64,8 +67,8 @@ def plot_model_metrics(y_true, y_pred_proba, model_name):
     
     # Lift Chart
     plt.subplot(2, 2, 4)
-    lift = gain / (percentile / 100)
-    plt.plot(percentile, lift, label=f'Lift = {lift[-1]:.2f}')
+    lift = gain / (np.linspace(0, 100, len(gain)) / 100)
+    plt.plot(np.linspace(0, 100, len(lift)), lift, label=f'Lift = {lift[-1]:.2f}')
     plt.xlabel('Population %')
     plt.ylabel('Lift')
     plt.title('Lift Chart')
@@ -76,34 +79,68 @@ def plot_model_metrics(y_true, y_pred_proba, model_name):
     plt.savefig(f'metrics_{model_name}.png', backend='Agg')
     plt.close(fig)
 
-def train_and_save_model(X_train_resampled, y_train_resampled):
+def train_and_save_model(X_train, y_train, model_type='RandomForest'):
     """Train the model and save it to a .sav file"""
-    # Define the parameter grid for RandomizedSearchCV
-    n_estimators = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
-    max_features = ['auto', 'sqrt']
-    max_depth = [int(x) for x in np.linspace(10, 110, num=11)]
-    max_depth.append(None)
-    min_samples_split = [2, 5, 10]
-    min_samples_leaf = [1, 2, 4]
-    bootstrap = [True, False]
-    random_grid = {
-        'n_estimators': n_estimators,
-        'max_features': max_features,
-        'max_depth': max_depth,
-        'min_samples_split': min_samples_split,
-        'min_samples_leaf': min_samples_leaf,
-        'bootstrap': bootstrap
-    }
+    if model_type == 'RandomForest':
+        # Define the parameter grid for RandomizedSearchCV
+        n_estimators = [int(x) for x in np.linspace(start=100, stop=1000, num=10)]
+        max_features = ['auto', 'sqrt', 'log2']
+        max_depth = [int(x) for x in np.linspace(10, 110, num=11)]
+        max_depth.append(None)
+        min_samples_split = [2, 5, 10]
+        min_samples_leaf = [1, 2, 4]
+        bootstrap = [True, False]
+        random_grid = {
+            'n_estimators': n_estimators,
+            'max_features': max_features,
+            'max_depth': max_depth,
+            'min_samples_split': min_samples_split,
+            'min_samples_leaf': min_samples_leaf,
+            'bootstrap': bootstrap
+        }
 
-    # Perform RandomizedSearchCV to find the best parameters for RandomForest
-    rf = RandomForestClassifier()
-    rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, verbose=2, random_state=42, n_jobs=-1)
-    rf_random.fit(X_train_resampled, y_train_resampled)
-    best_rf = rf_random.best_estimator_
+        # Perform RandomizedSearchCV to find the best parameters for RandomForest
+        rf = RandomForestClassifier()
+        model_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, verbose=2, random_state=42, n_jobs=-1)
+    elif model_type == 'NeuralNetwork':
+        # Define the parameter grid for RandomizedSearchCV
+        hidden_layer_sizes = [(50,50,50), (50,100,50), (100,), (150, 100, 50)]
+        activation = ['tanh', 'relu']
+        solver = ['sgd', 'adam']
+        alpha = [0.0001, 0.05, 0.01]
+        learning_rate = ['constant','adaptive']
+        random_grid = {
+            'hidden_layer_sizes': hidden_layer_sizes,
+            'activation': activation,
+            'solver': solver,
+            'alpha': alpha,
+            'learning_rate': learning_rate
+        }
+
+        # Perform RandomizedSearchCV to find the best parameters for MLPClassifier
+        model = MLPClassifier(max_iter=300)
+        model_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=3, verbose=2, random_state=42, n_jobs=-1)
+    elif model_type == 'SVM':
+        # Define the parameter grid for RandomizedSearchCV
+        C = [0.1, 1, 10, 100, 1000]
+        gamma = [1, 0.1, 0.01, 0.001, 0.0001]
+        kernel = ['rbf', 'poly', 'sigmoid']
+        random_grid = {
+            'C': C,
+            'gamma': gamma,
+            'kernel': kernel
+        }
+
+        # Perform RandomizedSearchCV to find the best parameters for SVC
+        model = SVC(probability=True)
+        model_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=3, verbose=2, random_state=42, n_jobs=-1)
+
+    model_random.fit(X_train, y_train)
+    best_model = model_random.best_estimator_
 
     # Save the model to disk
-    joblib.dump(best_rf, 'RandomForest_model.sav')
-    print("Saved RandomForest model to RandomForest_model.sav")
+    joblib.dump(best_model, f'{model_type}_model.sav')
+    print(f"Saved {model_type} model to {model_type}_model.sav")
 
 def clean_and_encode_data(df, numeric_features, categorical_features):
     """Clean and encode all data before splitting"""
@@ -220,6 +257,7 @@ def evaluate_data(df, suppress_warnings=True):
         diagnosed = df[df['actual'] == 1].copy()
         undiagnosed = df[df['actual'] == 0].copy()
         
+        
         print(f"\nInitial statistics:")
         print(f"Total cases: {len(df)}")
         print(f"Diagnosed cases (actual=1): {len(diagnosed)} ({len(diagnosed)/len(df)*100:.2f}%)")
@@ -248,75 +286,84 @@ def evaluate_data(df, suppress_warnings=True):
         smote = SMOTE(random_state=42)
         X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
         print("Applied SMOTE to training data successfully.")
+        print(f"Original training data size: {len(X_train)}, Resampled training data size: {len(X_train_resampled)}")
+        
+        
 
-        # Load the pre-trained model
-        model_filename = 'RandomForest_model.sav'
-        if os.path.exists(model_filename):
-            model = joblib.load(model_filename)
-            print(f"Loaded model from {model_filename}")
-        else:
-            raise FileNotFoundError(f"Model file {model_filename} not found. Please train the model first.")
-
-        # Initialize predictions array for undiagnosed cases
-        predictions = np.zeros((len(undiagnosed), 1))
-        
-        # Train and predict with metrics
-        print(f"\nEvaluating {model_filename}...")
-        
-        # Cross-validation scores
-        cv_scores = cross_val_score(model, X_train_resampled, y_train_resampled, cv=5)
-        print(f"Cross-validation accuracy: {cv_scores.mean():.2f} (+/- {cv_scores.std() * 2:.2f})")
-        
-        # Train model
-        model.fit(X_train_resampled, y_train_resampled)
-        print("Trained model successfully.")
-        
-        # Predictions on test set
-        test_pred = model.predict(X_test)
-        
-        # Calculate metrics
-        print("\nTest Set Metrics:")
-        print(f"Accuracy: {accuracy_score(y_test, test_pred):.2f}")
-        print(f"Precision: {precision_score(y_test, test_pred):.2f}")
-        print(f"Recall: {recall_score(y_test, test_pred):.2f}")
-        print(f"F1 Score: {f1_score(y_test, test_pred):.2f}")
-        print("\nConfusion Matrix:")
-        print(confusion_matrix(y_test, test_pred))
-        print("\nClassification Report:")
-        print(classification_report(y_test, test_pred))
-        
-        # Calculate training metrics
-        train_pred = model.predict(X_train_resampled)
-        print("\nTraining Set Metrics:")
-        print(f"Accuracy: {accuracy_score(y_train_resampled, train_pred):.2f}")
-        print(f"Precision: {precision_score(y_train_resampled, train_pred):.2f}")
-        print(f"Recall: {recall_score(y_train_resampled, train_pred):.2f}")
-        print(f"F1 Score: {f1_score(y_train_resampled, train_pred):.2f}")
-        print("\nConfusion Matrix:")
-        print(confusion_matrix(y_train_resampled, train_pred))
-        print("\nClassification Report:")
-        print(classification_report(y_train_resampled, train_pred))
-        
-        # Predict undiagnosed cases
-        X_undiagnosed = undiagnosed[selected_numeric_features + selected_categorical_features]
-        predictions[:, 0] = model.predict(X_undiagnosed)
-        predicted_positive = sum(predictions[:, 0] == 1)
-        print(f"\nPredictions for Undiagnosed Cases:")
-        print(f"Predicted positive cases: {predicted_positive} ({predicted_positive/len(undiagnosed)*100:.2f}%)")
-        
-        # Ensemble predictions for undiagnosed cases
-        final_predictions = np.where(predictions.mean(axis=1) >= 0.5, 1, 0)
-        
-        # Combine results
-        undiagnosed['predictions'] = final_predictions
-        diagnosed['predictions'] = 1  # All diagnosed cases remain positive
-        
-        result_df = pd.concat([diagnosed, undiagnosed])
-        
-        print(f"\nFinal Results:")
-        print(f"Original diagnosed cases: {len(diagnosed)}")
-        print(f"Newly identified potential cases: {sum(final_predictions == 1)}")
-        print(f"Total identified cases: {len(diagnosed) + sum(final_predictions == 1)}")
+        # Train and evaluate models
+        models = ['RandomForest', 'NeuralNetwork']
+        # Initialize predictions array
+        predictions = np.zeros((len(undiagnosed), len(models)))
+        for model_type in models:
+            print(f"\nTraining and evaluating {model_type} model...")
+            train_and_save_model(X_train_resampled, y_train_resampled, model_type=model_type)
+            
+            # Load the trained model
+            model_filename = f'{model_type}_model.sav'
+            if os.path.exists(model_filename):
+                model = joblib.load(model_filename)
+                print(f"Loaded model from {model_filename}")
+            else:
+                raise FileNotFoundError(f"Model file {model_filename} not found. Please train the model first.")
+            
+            # Cross-validation scores
+            cv_scores = cross_val_score(model, X_train_resampled, y_train_resampled, cv=5)
+            print(f"Cross-validation accuracy for {model_type}: {cv_scores.mean():.2f} (+/- {cv_scores.std() * 2:.2f})")
+            
+            # Train model
+            model.fit(X_train_resampled, y_train_resampled)
+            print(f"Trained {model_type} model successfully.")
+            
+            # Predictions on test set
+            test_pred = model.predict(X_test)
+            
+            # Calculate metrics
+            print(f"\nTest Set Metrics for {model_type}:")
+            print(f"Accuracy: {accuracy_score(y_test, test_pred):.2f}")
+            print(f"Precision: {precision_score(y_test, test_pred):.2f}")
+            print(f"Recall: {recall_score(y_test, test_pred):.2f}")
+            print(f"F1 Score: {f1_score(y_test, test_pred):.2f}")
+            print("\nConfusion Matrix:")
+            print(confusion_matrix(y_test, test_pred))
+            print("\nClassification Report:")
+            print(classification_report(y_test, test_pred))
+            
+            # Calculate training metrics
+            train_pred = model.predict(X_train_resampled)
+            print(f"\nTraining Set Metrics for {model_type}:")
+            print(f"Accuracy: {accuracy_score(y_train_resampled, train_pred):.2f}")
+            print(f"Precision: {precision_score(y_train_resampled, train_pred):.2f}")
+            print(f"Recall: {recall_score(y_train_resampled, train_pred):.2f}")
+            print(f"F1 Score: {f1_score(y_train_resampled, train_pred):.2f}")
+            print("\nConfusion Matrix:")
+            print(confusion_matrix(y_train_resampled, train_pred))
+            print("\nClassification Report:")
+            print(classification_report(y_train_resampled, train_pred))
+            
+            # Plot and save metrics charts
+            y_test_proba = model.predict_proba(X_test)[:, 1]
+            plot_model_metrics(y_test, y_test_proba, model_type)
+            
+            # Predict undiagnosed cases
+            X_undiagnosed = undiagnosed[selected_numeric_features + selected_categorical_features]
+            predictions[:, 0] = model.predict(X_undiagnosed)
+            predicted_positive = sum(predictions[:, 0] == 1)
+            print(f"\nPredictions for Undiagnosed Cases with {model_type}:")
+            print(f"Predicted positive cases: {predicted_positive} ({predicted_positive/len(undiagnosed)*100:.2f}%)")
+            
+            # Ensemble predictions for undiagnosed cases
+            final_predictions = np.where(predictions.mean(axis=1) >= 0.5, 1, 0)
+            
+            # Combine results
+            undiagnosed['predictions'] = final_predictions
+            diagnosed['predictions'] = 1  # All diagnosed cases remain positive
+            
+            result_df = pd.concat([diagnosed, undiagnosed])
+            
+            print(f"\nFinal Results for {model_type}:")
+            print(f"Original diagnosed cases: {len(diagnosed)}")
+            print(f"Newly identified potential cases: {sum(final_predictions == 1)}")
+            print(f"Total identified cases: {len(diagnosed) + sum(final_predictions == 1)}")
         
         return result_df
 

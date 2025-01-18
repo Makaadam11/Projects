@@ -44,7 +44,7 @@ export const SocioceonomicFactors = ({ data, chartRefs }: SocioceonomicFactorsPr
 
   return (
     <div>
-    <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+    <Box sx={{ p: 2, border: '8px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#ffff' }}>
         Socio-Economic Factors
       </Typography>
