@@ -35,6 +35,7 @@ export const SocialAndTechnologicalFactors = ({ data, chartRefs }: SocialAndTech
   };
 
   return (
+    <div>
     <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#ffff' }}>
         Social and Technological Factors
@@ -60,5 +61,6 @@ export const SocialAndTechnologicalFactors = ({ data, chartRefs }: SocialAndTech
         </Grid>
       </Grid>
     </Box>
+    </div>
   );
 };

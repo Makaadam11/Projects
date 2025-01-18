@@ -55,7 +55,7 @@ export const CostOfStudyChart = ({ data }: CostOfStudyChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Cost of Study
       </Typography>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={350}>
         <Treemap
           data={groupedData}
           dataKey="value"

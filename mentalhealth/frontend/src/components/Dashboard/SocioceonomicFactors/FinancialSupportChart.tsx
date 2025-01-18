@@ -21,16 +21,20 @@ export const FinancialSupportChart = ({ data }: FinancialSupportChartProps) => {
     }
     return acc;
   }, [] as { financial_support: string; prediction_0: number; prediction_1: number }[]);
-
+ 
+  const truncateLabel = (label: string, maxLength: number) => {
+    return label.length > maxLength ? `${label.substring(0, maxLength)}..` : label;
+  };
   return (
     <Box>
       <Typography variant="h6" align="center" gutterBottom>
         Financial Support
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="financial_support" />
+        <XAxis dataKey="financial_support" angle={75} dy={35} height={80} dx={10} interval={0} 	tickFormatter={(label) => truncateLabel(label, 9)}
+        />
         <YAxis />
         <Tooltip />
         <Bar dataKey="prediction_0" name="No MH Issues" stackId="a" fill="#82ca9d" />

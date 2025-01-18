@@ -35,7 +35,7 @@ export const StudentTypeTimeChart = ({ data }: StudentTypeTimeChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
       Student Type Time Chart
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <PieChart>
         <Pie
           data={groupedData}

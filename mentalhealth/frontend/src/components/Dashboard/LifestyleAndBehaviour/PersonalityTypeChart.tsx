@@ -29,13 +29,13 @@ export const PersonalityTypeChart = ({ data }: PersonalityTypeChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Personality Type
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <PieChart>
         <Pie
           data={groupedData}
           dataKey="prediction_1"
           nameKey="personality_type"
-          cx="50%"
+          cx="52%"
           cy="50%"
           outerRadius={80}
           fill="#82ca9d"

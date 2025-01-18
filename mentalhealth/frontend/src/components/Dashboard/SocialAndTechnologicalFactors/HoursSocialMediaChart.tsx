@@ -33,12 +33,13 @@ export const HoursSocialMediaChart = ({ data }: HoursSocialMediaChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Daily Social Media Usage (Hours)
       </Typography>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={350}>
         <AreaChart data={groupedData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
             dataKey="hours_socialmedia"
             label={{ value: 'Hours', position: 'bottom' }}
+            angle={75} dy={20} height={50} interval={1}
           />
           <YAxis 
             label={{ value: 'Number of Students', angle: -90, position: 'insideLeft' }}

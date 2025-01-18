@@ -27,13 +27,15 @@ export const loadCourses = async (university: string): Promise<string[]> => {
 
 export const loadDepartments = async (university: string): Promise<string[]> => {
   try {
-    const response = await fetch(`http://localhost:8000/api/departments/${university}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch courses: ${response.statusText}`);
+    if (university != 'All'){
+      const response = await fetch(`http://localhost:8000/api/departments/${university}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch departments: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return data.departments;
     }
-    const data = await response.json();
-    console.log(data.departments);
-    return data.departments;
+    return [];
   } catch (error) {
     console.error('Error loading courses:', error);
     return [];

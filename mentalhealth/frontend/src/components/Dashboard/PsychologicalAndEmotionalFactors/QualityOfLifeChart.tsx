@@ -27,10 +27,10 @@ export const QualityOfLifeChart = ({ data }: QualityOfLifeChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Quality of Life
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="quality_of_life" angle={75} dy={20} height={100} interval={0}/>
+        <XAxis dataKey="quality_of_life" angle={75} dy={30} dx={10} height={80} interval={0}/>
         <YAxis />
         <Tooltip />
         <Bar dataKey="prediction_0" name="No MH Issues" stackId="a" fill="#82ca9d" />

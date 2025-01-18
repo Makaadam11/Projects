@@ -23,15 +23,20 @@ export const TimetableImpactChart = ({ data }: TimetableImpactChartProps) => {
     return acc;
   }, [] as { timetable_impact: string; prediction_0: number; prediction_1: number }[]);
 
+  const truncateLabel = (label: string, maxLength: number) => {
+    return label.length > maxLength ? `${label.substring(0, maxLength)}..` : label;
+  };
+ 
   return (
     <Box>
     <Typography variant="h6" align="center" gutterBottom>
       Timetable Impact
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="timetable_impact" angle={75} dy={20} height={100} interval={0}/>
+        <XAxis dataKey="timetable_impact" angle={75} dy={80} dx={15} height={150} interval={0} 	tickFormatter={(label) => truncateLabel(label, 20)}
+        />
         <YAxis />
         <Tooltip />
         <Legend />

@@ -34,10 +34,10 @@ export const StressInGeneralChart = ({ data }: StressInGeneralChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Stress In General
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="stress_in_general" angle={75} dy={20} height={100} interval={0}/>
+        <XAxis dataKey="stress_in_general" angle={75} dy={20} height={50} interval={0}/>
         <YAxis />
         <Tooltip />
         <Legend />

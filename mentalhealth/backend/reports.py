@@ -81,9 +81,12 @@ class Reports:
         self.pdf = FPDF()
         
         # Add Unicode font
+        font_path = Path("fonts/DejaVuLGCSans.ttf")
+        self.pdf.add_font('DejaVuLGCSans', '', str(font_path), uni=True)
+        
         font_path = Path("fonts/DejaVuLGCSans-Bold.ttf")
         self.pdf.add_font('DejaVuLGCSans-Bold', '', str(font_path), uni=True)
-        self.pdf.set_font('DejaVuLGCSans-Bold', '', 12)
+        self.pdf.set_font('DejaVuLGCSans', '', 12)
         
         # Print available columns after preprocessing
         print("Available columns after preprocessing:", self.df.columns.tolist())
@@ -129,15 +132,29 @@ class Reports:
 
     def add_image_with_text(self, image_data, text):
         print(f"Adding image with text: {text}")
-        self.pdf.add_page()
         image_data_base64 = image_data.split(",")[1]  # Correctly split the image data
         image = Image.open(BytesIO(base64.b64decode(image_data_base64)))
         image_path = self.output_dir / f"{text}.png"
         image.save(image_path)
-        self.pdf.image(str(image_path), x=10, y=10, w=190)
-        self.pdf.ln(100)  # Move below the image
-        self.pdf.set_font('DejaVuLGCSans-Bold', '', 12)
-        self.pdf.multi_cell(0, 10, text)
+
+        # Calculate the appropriate width and height while maintaining aspect ratio
+        max_width = 190
+        max_height = 150
+        width, height = image.size
+        aspect_ratio = width / height
+
+        if height > max_height:
+            height = max_height
+            width = height * aspect_ratio
+
+        if width > max_width:
+            width = max_width
+            height = width / aspect_ratio
+
+        self.pdf.image(str(image_path), x=10, y=10, w=width, h=height)
+        self.pdf.set_xy(10, 10 + height + 10)  # Adjust the position for the text
+        self.pdf.set_font('DejaVuLGCSans', '', 12)
+        self.pdf.multi_cell(190, 9)
         print(f"Image with text added: {text}")
 
     def generate_pdf_report(self, output_path, chart_images):
@@ -250,7 +267,7 @@ class Reports:
         # Add content to PDF
         self.pdf.cell(200, 10, "Student Mental Health Analysis", 
                     new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
-        self.pdf.set_font('DejaVuLGCSans-Bold', '', 12)
+        self.pdf.set_font('DejaVuLGCSans', '', 12)
         self.pdf.multi_cell(0, 10, report_content)
 
         # Debug: Print the number of charts to be processed
@@ -262,6 +279,7 @@ class Reports:
                 # Generate a meaningful title or use a default title
                 chart_title = title if title != "[object HTMLDivElement]" else "Chart"
                 print(f"Adding chart image for: {chart_title}")
+                self.pdf.add_page()
                 self.add_image_with_text(image, f"Analysis for {chart_title.replace('_', ' ').title()}")
 
         self.pdf.output(output_path)

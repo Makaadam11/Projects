@@ -45,6 +45,7 @@ export const Demographics = ({ data , chartRefs}: DemographicsProps) => {
   };
 
   return (
+    <div>
     <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#ffff' }}>
         Demographics
@@ -81,11 +82,12 @@ export const Demographics = ({ data , chartRefs}: DemographicsProps) => {
           </Paper>
         </Grid>
         <Grid item xs={12} md={12}>
-          <Paper sx={{ p: 2, height: '100%' }} ref={chartRefs[5]}>
+          <Paper sx={{  height: '100%' }} ref={chartRefs[5]}>
             <CountryMap data={data} />
           </Paper>
         </Grid>
       </Grid>
     </Box>
+    </div>
   );
 };

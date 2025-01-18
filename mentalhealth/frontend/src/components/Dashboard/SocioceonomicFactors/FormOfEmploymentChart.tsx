@@ -22,15 +22,20 @@ export const FormOfEmploymentChart = ({ data }: FormOfEmploymentChartProps) => {
     return acc;
   }, [] as { form_of_employment: string; prediction_0: number; prediction_1: number }[]);
 
+ 
+  const truncateLabel = (label: string, maxLength: number) => {
+    return label.length > maxLength ? `${label.substring(0, maxLength)}..` : label;
+  };
   return (
     <Box>
       <Typography variant="h6" align="center" gutterBottom>
         Form of Employment
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="form_of_employment" />
+        <XAxis dataKey="form_of_employment" angle={75} dy={40} dx={10} height={100} interval={0} 	tickFormatter={(label) => truncateLabel(label, 8)}
+        />
         <YAxis />
         <Tooltip />
         <Legend />

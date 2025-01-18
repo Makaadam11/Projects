@@ -46,6 +46,7 @@ export const AcademicContext = ({ data, chartRefs }: AcademicContextProps) => {
   };
 
   return (
+    <div>
     <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#ffff' }}>
         Academic Context
@@ -95,5 +96,6 @@ export const AcademicContext = ({ data, chartRefs }: AcademicContextProps) => {
         </Grid>
       </Grid>
     </Box>
+    </div>
   );
 };

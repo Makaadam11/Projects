@@ -182,8 +182,8 @@ async def get_courses(university: str):
         # Read Excel file
         df = pd.read_excel(file_path)
         
-        # Convert to list of courses
-        courses = df.iloc[:, 1].dropna().tolist()
+        # Convert to list of unique courses
+        courses = df['Courses'].dropna().unique().tolist()
         
         return {
             "courses": courses,
@@ -194,6 +194,7 @@ async def get_courses(university: str):
 
 @app.get("/api/departments/{university}", response_model=DepartmentCoursesResponse)
 async def get_departments(university: str):
+    print(university )
     try:
         file_path = f"../data/{university.lower()}/{university.lower()}_courses.xlsx"
         
@@ -202,21 +203,15 @@ async def get_departments(university: str):
         
         df = pd.read_excel(file_path)
         department_course_map = {}
-        current_department = None
         
         for index, row in df.iterrows():
-            department = str(row[0]).strip() if pd.notna(row[0]) else None
-            course = str(row[1]).strip() if pd.notna(row[1]) else None
+            department = str(row['Departments']).strip() if pd.notna(row['Departments']) else None
+            course = str(row['Courses']).strip() if pd.notna(row['Courses']) else None
             
-            # If we find a new department, update current_department
-            if department and not department.lower().startswith('null'):
-                current_department = department
-                if current_department not in department_course_map:
-                    department_course_map[current_department] = []
-            
-            # Add course to current department if course exists
-            if course and current_department and not course.lower().startswith('null'):
-                department_course_map[current_department].append(course)
+            if department and course:
+                if department not in department_course_map:
+                    department_course_map[department] = []
+                department_course_map[department].append(course)
         
         return {
             "university": university,

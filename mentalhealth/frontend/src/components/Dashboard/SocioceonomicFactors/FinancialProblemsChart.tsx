@@ -23,13 +23,16 @@ export const FinancialProblemsChart = ({ data }: FinancialProblemsChartProps) =>
   }, [] as { financial_problems: string; prediction_0: number; prediction_1: number }[]);
 
   const COLORS = ['#82ca9d', '#ff0000'];
+  const truncateLabel = (label: string, maxLength: number) => {
+    return label.length > maxLength ? `${label.substring(0, maxLength)}..` : label;
+  };
 
   return (
     <Box>
       <Typography variant="h6" align="center" gutterBottom>
         Financial Problems
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <PieChart>
         <Pie
           data={groupedData}

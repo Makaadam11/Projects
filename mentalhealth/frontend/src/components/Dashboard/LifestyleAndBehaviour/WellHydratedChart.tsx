@@ -27,10 +27,10 @@ export const WellHydratedChart = ({ data }: WellHydratedChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Hydration Level
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="well_hydrated" angle={75} dy={20} height={100} interval={0}/>
+        <XAxis dataKey="well_hydrated" angle={75} dy={30} dx={10} height={80} interval={0}/>
         <YAxis />
         <Tooltip />
         <Legend />

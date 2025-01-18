@@ -2,6 +2,7 @@ interface ApiResponse {
     message: string;
     isAdmin: boolean;
     university: string;
+    token: string;
   }
   
   export async function saveLoginData(data: { email: string; password: string }): Promise<ApiResponse> {

@@ -27,11 +27,11 @@ export const DietChart = ({ data }: DietChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Diet
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart layout="vertical" data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis type="number" angle={75} dy={20} height={100} interval={0}/>
-        <YAxis type="category" dataKey="diet" />
+        <XAxis type="number" angle={75} dy={20} height={50} interval={0}/>
+        <YAxis type="category" dataKey="diet" width={80}/>
         <Tooltip />
         <Bar dataKey="prediction_0" name="No MH Issues" stackId="a" fill="#82ca9d" />
         <Bar dataKey="prediction_1" name="MH Issues" stackId="a" fill="#ff0000" />

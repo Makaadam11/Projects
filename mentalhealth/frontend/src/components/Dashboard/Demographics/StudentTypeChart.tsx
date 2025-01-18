@@ -22,15 +22,19 @@ export const StudentTypeLocationChart = ({ data }: StudentTypeLocationChartProps
     return acc;
   }, [] as { student_type_location: string; prediction_0: number; prediction_1: number }[]);
 
+  const truncateLabel = (label: string, maxLength: number) => {
+    return label.length > maxLength ? `${label.substring(0, maxLength)}..` : label;
+  };
+
   return (
     <Box>
       <Typography variant="h6" align="center" gutterBottom>
         Student Type Location Chart
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="student_type_location" angle={75} dy={20} height={100} interval={0}/>
+        <XAxis dataKey="student_type_location" angle={75} dy={30} dx={5} height={60} interval={0} tickFormatter={(label) => truncateLabel(label, 5)}/>
         <YAxis />
         <Tooltip />
         <Legend />

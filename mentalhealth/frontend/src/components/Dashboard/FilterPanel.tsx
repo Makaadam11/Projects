@@ -21,11 +21,18 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
   const universities = ['UAL', 'SOL']; // Add more universities as needed
 
   useEffect(() => {
+    if (localStorage.getItem('university') == 'All')
+      {
+        setSelectedUniversity('UAL');
+      }; // Restore selected university from localStorage
+  }, []);
+  useEffect(() => {
     if (selectedUniversity) {
       const fetchDepartments = async () => {
         try {
           setLoading(prev => ({ ...prev, departments: true }));
           const response = await loadDepartments(selectedUniversity);
+          console.log(response);
           setDepartments(response); // Set entire departments object
         } catch (error) {
           console.error('Error loading departments:', error);
@@ -42,11 +49,40 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
     onYearChange(selectedYear); // Call the callback when the year changes
   }, [selectedYear, onYearChange]);
 
+  const getFilteredCount = (data: DashboardData[], key: string, value: any, currentFilters: FilterState) => {
+  return data.filter(item => {
+    // Apply hierarchical filters
+    const matchesUniversity = !selectedUniversity || item.source === selectedUniversity;
+    const matchesDepartment = !selectedDepartment.length || selectedDepartment.some(dept => 
+      departments[dept]?.includes(item.course_of_study)
+    );
+    const matchesYear = !selectedYear || item.captured_at?.includes(selectedYear);
+    
+    // Check current filter value
+    const matchesValue = item[key as keyof DashboardData] === value;
+    
+    return matchesUniversity && matchesDepartment && matchesYear && matchesValue;
+  }).length;
+};
   const uniqueValues = useMemo(() => {
     const filteredData = data.filter(item => 
       (!selectedUniversity || item.source === selectedUniversity) &&
       (!filters.course_of_study.length || filters.course_of_study.includes(item.course_of_study))
     );
+
+    const getUniqueWithCounts = (key: string, filter?: (value: any) => boolean) => {
+      const values = [...new Set(filteredData.map(item => item?.[key]).filter(Boolean))];
+      if (filter) {
+        return values.filter(filter).map(value => ({
+          value,
+          count: getFilteredCount(data, key, value, filters)
+        }));
+      }
+      return values.map(value => ({
+        value,
+        count: getFilteredCount(data, key, value, filters)
+      }));
+    };
 
     return {
       ethnic_group: [...new Set(filteredData.map(item => item?.ethnic_group).filter(Boolean))],
@@ -164,13 +200,15 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
             />
             <ListItemText primary="Select All" />
           </MenuItem>
-          {values.map((value) => (
-            <MenuItem key={value} value={value}>
+          {values.map((value, index) => (
+            <MenuItem key={`${value}-${index}`} value={value}>
               <Checkbox 
                 checked={filters[key as keyof FilterState]?.includes(value)}
                 disabled={loading[key]}
               />
-              <ListItemText primary={value} />
+              <ListItemText
+                primary={`(${getFilteredCount(data, key, value, filters)}) ${value} `}
+              />
             </MenuItem>
           ))}
         </Select>
@@ -179,11 +217,28 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
   };
 
   return (
+    <div>
     <Paper sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
         Filters
       </Typography>
 
+      <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
+        Year
+      </Typography>
+      <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+        <InputLabel>Year</InputLabel>
+        <Select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+        >
+          {uniqueValues.captured_at.filter(year => year !== null).map((year) => (
+            <MenuItem key={year} value={year}>
+              {year}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
         University
       </Typography>
@@ -192,7 +247,7 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
         <Select
           value={selectedUniversity}
           onChange={(e) => setSelectedUniversity(e.target.value)}
-          disabled
+          disabled={localStorage.getItem('university') !== 'All'}
         >
           {universities.map((university) => (
             <MenuItem key={university} value={university}>
@@ -323,5 +378,6 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
         {renderSelect('sense_of_belonging', uniqueValues.sense_of_belonging.filter(value => value !== 'Not Provided'))}
       </Collapse>
     </Paper>
+    </div>
   );
 };

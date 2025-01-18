@@ -28,10 +28,10 @@ export const WorkHoursPerWeekChart = ({ data }: WorkHoursPerWeekChartProps) => {
       <Typography variant="h6" align="center" gutterBottom>
         Work Hours per Week
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <AreaChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="work_hours_per_week" />
+        <XAxis dataKey="work_hours_per_week" angle={75} dy={20} height={70} interval={2}/>
         <YAxis />
         <Tooltip />
         <Area type="monotone" dataKey="prediction_0" name="No MH Issues" stackId="1" stroke="#82ca9d" fill="#82ca9d" />

@@ -23,15 +23,20 @@ export const LevelOfStudyChart = ({ data }: LevelOfStudyChartProps) => {
     return acc;
   }, [] as { level_of_study: string; prediction_0: number; prediction_1: number }[]);
 
+  const truncateLabel = (label: string, maxLength: number) => {
+    return label.length > maxLength ? `${label.substring(0, maxLength)}..` : label;
+  };
+
   return (
     <Box>
     <Typography variant="h6" align="center" gutterBottom>
       Level of Study
       </Typography>
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData} >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="level_of_study" angle={70} dy={50} height={100} interval={1}/>
+        <XAxis dataKey="level_of_study" angle={70} dy={30} dx={10} height={70} interval={0} 	tickFormatter={(label) => truncateLabel(label, 8)}
+        />
         <YAxis />
         <Tooltip />
         <Legend />

@@ -27,10 +27,10 @@ export const PhysicalActivitiesChart = ({ data }: PhysicalActivitiesChartProps) 
       <Typography variant="h6" align="center" gutterBottom>
         Physical Activities
       </Typography>
-    <ResponsiveContainer width="100%" height={335}>
+    <ResponsiveContainer width="100%" height={385}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="physical_activities" angle={75} dy={20} height={100} interval={0}/>
+        <XAxis dataKey="physical_activities" angle={75} dy={32} dx={10} height={80} interval={0}/>
         <YAxis />
         <Tooltip />
         <Legend />
