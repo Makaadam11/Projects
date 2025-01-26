@@ -22,10 +22,14 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
   const universities = ['UAL', 'SOL'];
 
   useEffect(() => {
-    if (localStorage.getItem('university') == 'All') {
-      setSelectedUniversity('UAL');
+    if (localStorage.getItem('university') === 'All') {
+      const defaultUniversity = 'UAL';
+      setSelectedUniversity(defaultUniversity);
+      onUniversityChange(defaultUniversity);
     } else {
-      setSelectedUniversity(localStorage.getItem('university') || 'All');
+      const savedUniversity = localStorage.getItem('university') || 'All';
+      setSelectedUniversity(savedUniversity);
+      onUniversityChange(savedUniversity);
     }
   }, []);
 
@@ -145,14 +149,9 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
       stress_before_exams: [...new Set(filteredData.map(item => item?.stress_before_exams).filter(Boolean))],
       known_disabilities: [...new Set(filteredData.map(item => item?.known_disabilities).filter(Boolean))],
       sense_of_belonging: [...new Set(filteredData.map(item => item?.sense_of_belonging).filter(Boolean))],
-      captured_at: [...new Set(filteredData.map(item => {
+      captured_at: [...new Set(data.map(item => {
         if (!item?.captured_at) return null;
-        const date = new Date(item.captured_at);
-        if (isNaN(date.getTime())) return null;
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const academicYear = month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
-        return academicYear;
+        return getAcademicYear(item.captured_at);
       }).filter(Boolean))].sort((a, b) => {
         const [yearA] = a.split('-').map(Number);
         const [yearB] = b.split('-').map(Number);
@@ -165,20 +164,20 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
   const getDepartmentCounts = () => {
     const counts: { [key: string]: number } = {};
     
-    // Count records for each department
-    enhancedData.forEach(item => {
-      if (
-        item.department &&
-        item.source === selectedUniversity
-      ) {
-        counts[item.department] = (counts[item.department] || 0) + 1;
-      }
-    });
+    enhancedData
+      .filter(item => item.source === selectedUniversity)
+      .forEach(item => {
+        if (item.department) {
+          counts[item.department] = (counts[item.department] || 0) + 1;
+        }
+      });
   
-    console.log('Department counts:', counts);
     return counts;
   };
-
+  
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
   
   const handleDepartmentChange = (event: any) => {
     const value = event.target.value;
@@ -196,6 +195,7 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
       onFilterChange('course_of_study', value.flatMap((dept: string) => departments[selectedUniversity]?.[dept] || []));
     }
   };
+
 
   
     const renderSelect = (key: string, values: any[]) => {
@@ -261,7 +261,7 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
           </Select>
         </FormControl>
       );
-    };
+    }
 
   return (
     <div>
@@ -292,16 +292,22 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
       <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
         <InputLabel>University</InputLabel>
         <Select
-          value={selectedUniversity}
-          onChange={(e) => setSelectedUniversity(e.target.value)}
-          disabled={localStorage.getItem('university') !== 'All'}
-        >
-          {universities.map((university) => (
-            <MenuItem key={university} value={university}>
-              {university}
-            </MenuItem>
-          ))}
-        </Select>
+            value={selectedUniversity}
+            onChange={(e) => {
+              const newUniversity = e.target.value;
+              setSelectedUniversity(newUniversity);
+              onUniversityChange(newUniversity);
+              setSelectedDepartment([]); // Reset selected departments
+              onFilterChange('course_of_study', []); // Reset course filter
+            }}
+            disabled={localStorage.getItem('university') !== 'All'}
+          >
+            {universities.map((university) => (
+              <MenuItem key={university} value={university}>
+                {university}
+              </MenuItem>
+            ))}
+          </Select>
       </FormControl>
 
       {selectedUniversity && (
