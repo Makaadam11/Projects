@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Grid, Typography, CircularProgress, Alert, Button } from '@mui/material';
 import { FilterPanel } from './FilterPanel';
 import type { FilterState, DashboardData } from '../../types/dashboard';
@@ -15,7 +15,15 @@ import { SocialAndTechnologicalFactors } from './SocialAndTechnologicalFactors';
 const MentalHealthDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState<string>('2024'); // Default year
+  const getCurrentAcademicYear = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    return month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+  };
+  
+  const [selectedYear, setSelectedYear] = useState(getCurrentAcademicYear());
+  
   const [error, setError] = useState<string | null>(null);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false); // New state for loading
@@ -134,6 +142,7 @@ const MentalHealthDashboard: React.FC = () => {
   };
 
   const handleYearChange = (year: string) => {
+    console.log('Year changing to:', year);
     setSelectedYear(year);
   };
 
@@ -145,62 +154,112 @@ const MentalHealthDashboard: React.FC = () => {
     setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const filteredData = React.useMemo(() => {
-    if (!Array.isArray(data) || data.length === 0) {
-      return [];
-    }
+// 1. Add getAcademicYear helper
+const getAcademicYear = (dateString: string | undefined) => {
+  if (!dateString) {
+    console.error("Date string is undefined");
+    return null;
+  }
 
-    return data.filter(item => {
-      if (!item) return false;
+  // Handle date format dd.MM.yyyy HH:mm
+  const [datePart] = dateString.split(" ");
+  const [day, month, year] = datePart.split(".").map(Number);
+  console.log('Date parts:', { day, month, year });
 
-      const matchesFilter = (key: keyof FilterState, value: any) => {
-        if (filters[key].length === 0) return true;
-        return filters[key].includes(value);
-      };
+  if (isNaN(day) || isNaN(month) || isNaN(year)) {
+    console.error("Invalid date parts:", { day, month, year });
+    return null;
+  }
 
-      const matchesUniversity = selectedUniversity === 'All' || item.source === selectedUniversity;
+  const academicYear = month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+  console.log('Calculated academic year:', academicYear);
+  return academicYear;
+};
 
-      return (
-        matchesUniversity &&
-        matchesFilter('ethnic_group', item.ethnic_group) &&
-        matchesFilter('home_country', item.home_country) &&
-        matchesFilter('age', item.age) &&
-        matchesFilter('gender', item.gender) &&
-        matchesFilter('student_type_location', item.student_type_location) &&
-        matchesFilter('student_type_time', item.student_type_time) &&
-        matchesFilter('course_of_study', item.course_of_study) &&
-        matchesFilter('hours_between_lectures', item.hours_between_lectures) &&
-        matchesFilter('hours_per_week_lectures', item.hours_per_week_lectures) &&
-        matchesFilter('hours_per_week_university_work', item.hours_per_week_university_work) &&
-        matchesFilter('level_of_study', item.level_of_study) &&
-        matchesFilter('timetable_preference', item.timetable_preference) &&
-        matchesFilter('timetable_reasons', item.timetable_reasons) &&
-        matchesFilter('timetable_impact', item.timetable_impact) &&
-        matchesFilter('financial_support', item.financial_support) &&
-        matchesFilter('financial_problems', item.financial_problems) &&
-        matchesFilter('family_earning_class', item.family_earning_class) &&
-        matchesFilter('form_of_employment', item.form_of_employment) &&
-        matchesFilter('work_hours_per_week', item.work_hours_per_week) &&
-        matchesFilter('cost_of_study', item.cost_of_study) &&
-        matchesFilter('diet', item.diet) &&
-        matchesFilter('well_hydrated', item.well_hydrated) &&
-        matchesFilter('exercise_per_week', item.exercise_per_week) &&
-        matchesFilter('alcohol_consumption', item.alcohol_consumption) &&
-        matchesFilter('personality_type', item.personality_type) &&
-        matchesFilter('physical_activities', item.physical_activities) &&
-        matchesFilter('mental_health_activities', item.mental_health_activities) &&
-        matchesFilter('hours_socialmedia', item.hours_socialmedia) &&
-        matchesFilter('total_device_hours', item.total_device_hours) &&
-        matchesFilter('hours_socialising', item.hours_socialising) &&
-        matchesFilter('quality_of_life', item.quality_of_life) &&
-        matchesFilter('feel_afraid', item.feel_afraid) &&
-        matchesFilter('stress_in_general', item.stress_in_general) &&
-        matchesFilter('stress_before_exams', item.stress_before_exams) &&
-        matchesFilter('known_disabilities', item.known_disabilities) &&
-        matchesFilter('sense_of_belonging', item.sense_of_belonging)
-      );
+const filteredData = useMemo(() => {
+  console.log('Filtering data:', {
+    dataLength: data.length,
+    selectedYear,
+    selectedUniversity,
+    filters
+  });
+
+  if (!Array.isArray(data) || data.length === 0) {
+    console.log('No data to filter');
+    return [];
+  }
+
+  return data.filter(item => {
+    if (!item?.captured_at) return false;
+
+    const academicYear = getAcademicYear(item.captured_at);
+    console.log('Item year:', { date: item.captured_at, academicYear });
+
+    const matchesYear = academicYear === selectedYear;
+    const matchesUniversity = selectedUniversity === 'All' || item.source === selectedUniversity;
+
+    console.log('Item:', {
+      date: item.captured_at,
+      academicYear,
+      selectedYear,
+      matchesYear,
+      university: item.source,
+      matchesUniversity
     });
-  }, [data, filters, selectedUniversity]);
+
+    if (!matchesYear || !matchesUniversity) return false;
+
+    const matchesFilter = (key: keyof FilterState, value: any) => {
+      if (!filters[key] || filters[key].length === 0) return true;
+      const matches = filters[key].includes(value);
+      console.log(`Filter ${key}:`, { value, filterValues: filters[key], matches });
+      return matches;
+    };
+
+    return (
+      matchesFilter('ethnic_group', item.ethnic_group) &&
+      matchesFilter('home_country', item.home_country) &&
+      matchesFilter('age', item.age) &&
+      matchesFilter('gender', item.gender) &&
+      matchesFilter('student_type_location', item.student_type_location) &&
+      matchesFilter('student_type_time', item.student_type_time) &&
+      matchesFilter('course_of_study', item.course_of_study) &&
+      matchesFilter('hours_between_lectures', item.hours_between_lectures) &&
+      matchesFilter('hours_per_week_lectures', item.hours_per_week_lectures) &&
+      matchesFilter('hours_per_week_university_work', item.hours_per_week_university_work) &&
+      matchesFilter('level_of_study', item.level_of_study) &&
+      matchesFilter('timetable_preference', item.timetable_preference) &&
+      matchesFilter('timetable_reasons', item.timetable_reasons) &&
+      matchesFilter('timetable_impact', item.timetable_impact) &&
+      matchesFilter('financial_support', item.financial_support) &&
+      matchesFilter('financial_problems', item.financial_problems) &&
+      matchesFilter('family_earning_class', item.family_earning_class) &&
+      matchesFilter('form_of_employment', item.form_of_employment) &&
+      matchesFilter('work_hours_per_week', item.work_hours_per_week) &&
+      matchesFilter('cost_of_study', item.cost_of_study) &&
+      matchesFilter('diet', item.diet) &&
+      matchesFilter('well_hydrated', item.well_hydrated) &&
+      matchesFilter('exercise_per_week', item.exercise_per_week) &&
+      matchesFilter('alcohol_consumption', item.alcohol_consumption) &&
+      matchesFilter('personality_type', item.personality_type) &&
+      matchesFilter('physical_activities', item.physical_activities) &&
+      matchesFilter('mental_health_activities', item.mental_health_activities) &&
+      matchesFilter('hours_socialmedia', item.hours_socialmedia) &&
+      matchesFilter('total_device_hours', item.total_device_hours) &&
+      matchesFilter('hours_socialising', item.hours_socialising) &&
+      matchesFilter('quality_of_life', item.quality_of_life) &&
+      matchesFilter('feel_afraid', item.feel_afraid) &&
+      matchesFilter('stress_in_general', item.stress_in_general) &&
+      matchesFilter('stress_before_exams', item.stress_before_exams) &&
+      matchesFilter('known_disabilities', item.known_disabilities) &&
+      matchesFilter('sense_of_belonging', item.sense_of_belonging)
+    );
+  });
+
+  console.log('Filtered results:', filtered.length);
+  return filtered;
+}, [data, selectedYear, selectedUniversity, filters]);
+
 
   if (loading) {
     return (
@@ -264,6 +323,7 @@ const MentalHealthDashboard: React.FC = () => {
         onFilterChange={handleFilterChange}
         onYearChange={handleYearChange}
         onUniversityChange={handleUniversityChange}
+        selectedYear={selectedYear}
       />
       {loading && <p>Loading data...</p>}
       {error && <p>Error: {error}</p>}
@@ -280,28 +340,54 @@ const MentalHealthDashboard: React.FC = () => {
           <Grid container spacing={3}>
             {filteredData.length === 0 ? (
               <Grid item xs={12}>
-                <Alert severity="info">No data matches the selected filters</Alert>
-              </Grid>
+              <Alert severity="info">
+                No data for year {selectedYear}
+              </Alert>
+            </Grid>
             ) : (
                 <>
-              <Grid item xs={12} md={6} >
-                <Demographics data={filteredData} chartRefs={demographicsRefs}/>
-              </Grid>
-              <Grid item xs={12} md={6} >
-                <AcademicContext data={filteredData} chartRefs={academicContextRefs} />
-              </Grid>
-              <Grid item xs={12} md={6} >
-                <SocioceonomicFactors data={filteredData} chartRefs={socialAndTechnologicalFactorsRefs}/>
-              </Grid>
-              <Grid item xs={12} md={6} >
-                <LifestyleAndBehaviour data={filteredData} chartRefs={lifestyleAndBehaviourRefs}/>
-              </Grid>
-              <Grid item xs={12} md={6} >
-                <SocialAndTechnologicalFactors data={filteredData} chartRefs={socialAndTechnologicalFactorsRefs}/>
-              </Grid>
-              <Grid item xs={12} md={6} >
-                <PsychologicalAndEmotionalFactors data={filteredData} chartRefs={psychologicalAndEmotionalFactorsRefs} />
-              </Grid>
+              <Grid item xs={12} md={6}>
+          <Demographics 
+            key={`demographics-${selectedYear}-${filteredData.length}`}
+            data={filteredData} 
+            chartRefs={demographicsRefs}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <AcademicContext 
+            key={`demographics-${selectedYear}-${filteredData.length}`}
+            data={filteredData} 
+            chartRefs={academicContextRefs}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <SocioceonomicFactors 
+            key={`demographics-${selectedYear}-${filteredData.length}`}
+            data={filteredData} 
+            chartRefs={socioeconomicFactorsRefs}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <LifestyleAndBehaviour 
+            key={`demographics-${selectedYear}-${filteredData.length}`}
+            data={filteredData} 
+            chartRefs={lifestyleAndBehaviourRefs}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <SocialAndTechnologicalFactors 
+            key={`demographics-${selectedYear}-${filteredData.length}`}
+            data={filteredData} 
+            chartRefs={socialAndTechnologicalFactorsRefs}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <PsychologicalAndEmotionalFactors 
+            key={`demographics-${selectedYear}-${filteredData.length}`}
+            data={filteredData} 
+            chartRefs={psychologicalAndEmotionalFactorsRefs}
+          />
+        </Grid>
             </>
             )}
           </Grid>

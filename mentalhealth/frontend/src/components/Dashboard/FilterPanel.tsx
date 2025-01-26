@@ -9,17 +9,19 @@ interface FilterPanelProps {
   data: DashboardData[];
   onYearChange: (year: string) => void;
   onUniversityChange: (university: string) => void; // Add this prop
+  selectedYear: string; // Add this prop
 }
 
-export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUniversityChange }: FilterPanelProps) => {
+
+export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUniversityChange, selectedYear }: FilterPanelProps) => {
   const [loading, setLoading] = useState<{[key: string]: boolean}>({});
   const [departments, setDepartments] = useState<{ [key: string]: { [key: string]: string[] } }>({});
   const [selectedUniversity, setSelectedUniversity] = useState<string>(localStorage.getItem('university') || 'All');
   const [selectedDepartment, setSelectedDepartment] = useState<string[]>([]);
-  const [selectedYear, setSelectedYear] = useState<string>('2024');
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({});
   const [enhancedData, setEnhancedData] = useState<DashboardData[]>([]);
   const universities = ['UAL', 'SOL'];
+  const [yearRange, setYearRange] = useState<{ start: Date | null, end: Date | null }>({ start: null, end: null });
 
   useEffect(() => {
     if (localStorage.getItem('university') === 'All') {
@@ -31,7 +33,7 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
       setSelectedUniversity(savedUniversity);
       onUniversityChange(savedUniversity);
     }
-  }, []);
+  }, [onUniversityChange]);
 
   
   // Update loadDepartments effect
@@ -85,33 +87,95 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
     }
   }, [departments, selectedUniversity, data]);
 
-  const getAcademicYear = (dateString: string | undefined) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return null;
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
+  useEffect(() => {
+    if (selectedYear && /^\d{4}-\d{4}$/.test(selectedYear)) {
+      const [startYear, endYear] = selectedYear.split('-').map(Number);
+      const startDate = new Date(startYear, 8, 1); // Wrzesień 1
+      const endDate = new Date(endYear, 7, 31);   // Sierpień 31
+      setYearRange({ start: startDate, end: endDate });
+    } else {
+      console.error("Invalid selectedYear format:", selectedYear);
+      setYearRange({ start: null, end: null });
+    }
+  }, [selectedYear]);
+  
+
+
+    useEffect(() => {
+    console.log('Year Range:', yearRange);
+  }, [yearRange]);
+
+
+  const getCurrentAcademicYear = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
     return month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
   };
-
-  const getFilteredCount = (data: DashboardData[], key: string, value: any, currentFilters: FilterState) => {
-    return data.filter(item => {
-      const matchesUniversity = !selectedUniversity || item.source === selectedUniversity;
-      const matchesDepartment = !selectedDepartment.length || selectedDepartment.some(dept => 
-        departments[selectedUniversity]?.[dept]?.includes(item.course_of_study)
-      );
-      const matchesYear = !selectedYear || item.captured_at?.includes(selectedYear);
-      const matchesValue = item[key as keyof DashboardData] === value;
-      return matchesUniversity && matchesDepartment && matchesYear && matchesValue;
-    }).length;
+  
+  // Add getAcademicYearsList function
+  const getAcademicYearsList = (data: DashboardData[]) => {
+    // Get earliest year from data
+    const earliestDate = Math.min(...data
+      .map(item => new Date(item.captured_at).getFullYear())
+      .filter(year => !isNaN(year)));
+    
+    // Get current academic year
+    const currentYear = parseInt(getCurrentAcademicYear().split('-')[0]);
+    
+    // Generate list of academic years
+    const yearsList = [];
+    for (let year = earliestDate; year <= currentYear; year++) {
+      yearsList.push(`${year}-${year + 1}`);
+    }
+    
+    return yearsList;
   };
+  
+  const getAcademicYear = (dateString: string | undefined) => {
+    if (!dateString) {
+      console.error("Date string is undefined");
+      return null;
+    }
+  
+    const [datePart] = dateString.split(" ");
+    const [day, month, year] = datePart.split(".").map(Number);
+  
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+      console.error("Invalid date parts:", { day, month, year });
+      return null;
+    }
+  
+    return month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+  };
+  
+const getFilteredCount = (data: DashboardData[], key: string, value: any, currentFilters: FilterState) => {
+  const filteredItems = data.filter(item => {
+    const itemDate = item.captured_at ? new Date(item.captured_at.split('.').reverse().join('-')) : null;
+    const matchesYear = !yearRange.start || !yearRange.end || !itemDate ? true :
+      itemDate >= yearRange.start && itemDate <= yearRange.end;
 
-  const uniqueValues = useMemo(() => {
-    const filteredData = data.filter(item => 
-      (!selectedUniversity || item.source === selectedUniversity) &&
-      (!filters.course_of_study.length || filters.course_of_study.includes(item.course_of_study))
+    const matchesUniversity = !selectedUniversity || item.source === selectedUniversity;
+    const matchesDepartment = !selectedDepartment.length || selectedDepartment.some(dept => 
+      departments[selectedUniversity]?.[dept]?.includes(item.course_of_study)
     );
+    const matchesValue = item[key as keyof DashboardData] === value;
+    return matchesUniversity && matchesDepartment && matchesYear && matchesValue;
+  });
 
+  console.log(`Filtered Count for ${key}=${value}:`, filteredItems.length);
+  return filteredItems.length;
+};
+
+    const uniqueValues = useMemo(() => {
+    const filteredData = data.filter(item => {
+      const academicYear = getAcademicYear(item.captured_at);
+      const matchesYear = !selectedYear || academicYear === selectedYear;
+      return (!selectedUniversity || item.source === selectedUniversity) &&
+             (!filters.course_of_study.length || filters.course_of_study.includes(item.course_of_study)) &&
+             matchesYear;
+    });
+  
     return {
       ethnic_group: [...new Set(filteredData.map(item => item?.ethnic_group).filter(Boolean))],
       home_country: [...new Set(filteredData.map(item => item?.home_country).filter(Boolean))],
@@ -149,17 +213,9 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
       stress_before_exams: [...new Set(filteredData.map(item => item?.stress_before_exams).filter(Boolean))],
       known_disabilities: [...new Set(filteredData.map(item => item?.known_disabilities).filter(Boolean))],
       sense_of_belonging: [...new Set(filteredData.map(item => item?.sense_of_belonging).filter(Boolean))],
-      captured_at: [...new Set(data.map(item => {
-        if (!item?.captured_at) return null;
-        return getAcademicYear(item.captured_at);
-      }).filter(Boolean))].sort((a, b) => {
-        const [yearA] = a.split('-').map(Number);
-        const [yearB] = b.split('-').map(Number);
-        return yearA - yearB;
-      }),
+      captured_at: getAcademicYearsList(data),
     };
-  }, [data, selectedUniversity, selectedDepartment, filters]);
-
+  }, [data, selectedUniversity, selectedDepartment, filters, selectedYear]);
 
   const getDepartmentCounts = () => {
     const counts: { [key: string]: number } = {};
@@ -276,15 +332,19 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUni
       <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
         <InputLabel>Year</InputLabel>
         <Select
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(e.target.value)}
-        >
-          {uniqueValues.captured_at.filter(year => year !== null).map((year) => (
-            <MenuItem key={year} value={year}>
-              {year}
-            </MenuItem>
-          ))}
-        </Select>
+  value={selectedYear}
+  onChange={(e) => {
+    const newYear = e.target.value;
+    console.log('Year selected:', newYear);
+    onYearChange(newYear);
+  }}
+>
+  {getAcademicYearsList(data).map((year) => (
+    <MenuItem key={year} value={year}>
+      {year}
+    </MenuItem>
+  ))}
+</Select>
       </FormControl>
       <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
         University
