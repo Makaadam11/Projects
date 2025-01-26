@@ -19,6 +19,8 @@ const MentalHealthDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false); // New state for loading
+  const [selectedUniversity, setSelectedUniversity] = useState<string>('All');
+  
   const [filters, setFilters] = useState<FilterState>({
     ethnic_group: [],
     home_country: [],
@@ -92,7 +94,8 @@ const MentalHealthDashboard: React.FC = () => {
     try {
       // const chartImages = await captureChartImages();
       // console.log(`Number of charts being sent: ${Object.keys(chartImages).length}`);
-      const response = await generateReport(filteredData, []);
+      const chartImages = await captureChartImages();
+      const response = await generateReport(filteredData, chartImages);
       alert('Report generated successfully');
       setReportUrl(response?.report_url);
     } catch (error) {
@@ -110,7 +113,8 @@ const MentalHealthDashboard: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await getDashboardData();
+      console.log('Fetching data for all universities');
+      const response = await getDashboardData('All');
       const dashboardData = response?.data || [];
       
       if (!Array.isArray(dashboardData)) {
@@ -119,6 +123,7 @@ const MentalHealthDashboard: React.FC = () => {
       
       setData(dashboardData as DashboardData[]);
       setError(null);
+      console.log('Data fetched successfully:', dashboardData);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
@@ -130,6 +135,10 @@ const MentalHealthDashboard: React.FC = () => {
 
   const handleYearChange = (year: string) => {
     setSelectedYear(year);
+  };
+
+  const handleUniversityChange = (university: string) => {
+    setSelectedUniversity(university);
   };
 
   const handleFilterChange = useCallback((key: keyof FilterState, value: string[]) => {
@@ -149,7 +158,10 @@ const MentalHealthDashboard: React.FC = () => {
         return filters[key].includes(value);
       };
 
+      const matchesUniversity = selectedUniversity === 'All' || item.source === selectedUniversity;
+
       return (
+        matchesUniversity &&
         matchesFilter('ethnic_group', item.ethnic_group) &&
         matchesFilter('home_country', item.home_country) &&
         matchesFilter('age', item.age) &&
@@ -188,7 +200,7 @@ const MentalHealthDashboard: React.FC = () => {
         matchesFilter('sense_of_belonging', item.sense_of_belonging)
       );
     });
-  }, [data, filters]);
+  }, [data, filters, selectedUniversity]);
 
   if (loading) {
     return (
@@ -245,12 +257,23 @@ const MentalHealthDashboard: React.FC = () => {
       </Box>
       <Grid container spacing={3}>
         <Grid item xs={12} md={3} lg={2}>
-          <FilterPanel 
-            filters={filters} 
-            onFilterChange={handleFilterChange}
-            data={data}
-            onYearChange={handleYearChange}
-          />
+        <div>
+      <FilterPanel
+        data={data}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onYearChange={handleYearChange}
+        onUniversityChange={handleUniversityChange}
+      />
+      {loading && <p>Loading data...</p>}
+      {error && <p>Error: {error}</p>}
+      {!loading && !error && (
+        <div>
+          {/* Render your dashboard data here */}
+          <p>Data loaded successfully.</p>
+        </div>
+      )}
+    </div>
         </Grid>
         
         <Grid item xs={12} md={9} lg={10}>

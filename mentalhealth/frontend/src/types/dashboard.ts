@@ -39,6 +39,7 @@ export interface DashboardData {
   predictions: number;
   source: string;
   captured_at: string;
+  department?: string;
 }
 
 

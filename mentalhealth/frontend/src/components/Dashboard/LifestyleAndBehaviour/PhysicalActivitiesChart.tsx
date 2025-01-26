@@ -33,7 +33,6 @@ export const PhysicalActivitiesChart = ({ data }: PhysicalActivitiesChartProps) 
         <XAxis dataKey="physical_activities" angle={75} dy={32} dx={10} height={80} interval={0}/>
         <YAxis />
         <Tooltip />
-        <Legend />
         <Bar dataKey="prediction_0"  name="No MH Issues" stackId="a" fill="#82ca9d" />
         <Bar dataKey="prediction_1"  name="MH Issues"stackId="a" fill="#ff0000" />
       </BarChart>

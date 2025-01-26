@@ -38,7 +38,6 @@ export const FormOfEmploymentChart = ({ data }: FormOfEmploymentChartProps) => {
         />
         <YAxis />
         <Tooltip />
-        <Legend />
         <Bar dataKey="prediction_0" name="No MH Issues" stackId="a" fill="#82ca9d" />
         <Bar dataKey="prediction_1" name="MH Issues" stackId="a" fill="#ff0000" />
       </BarChart>

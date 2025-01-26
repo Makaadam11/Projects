@@ -36,10 +36,9 @@ export const StressBeforeExamsChart = ({ data }: StressBeforeExamsChartProps) =>
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="stress_before_exams" angle={75} dy={20} height={50} interval={0}/>
+        <XAxis dataKey="stress_before_exams" dy={10} height={50} interval={0}/>
         <YAxis />
         <Tooltip />
-        <Legend />
         <Bar dataKey="prediction_0"  name="No MH Issues" stackId="a" fill="#82ca9d" />
         <Bar dataKey="prediction_1" name="MH Issues" stackId="a" fill="#ff0000" />
       </BarChart>

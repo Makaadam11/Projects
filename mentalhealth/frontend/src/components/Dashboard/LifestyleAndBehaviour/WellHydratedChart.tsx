@@ -33,7 +33,6 @@ export const WellHydratedChart = ({ data }: WellHydratedChartProps) => {
         <XAxis dataKey="well_hydrated" angle={75} dy={30} dx={10} height={80} interval={0}/>
         <YAxis />
         <Tooltip />
-        <Legend />
         <Bar dataKey="prediction_0" name="No MH Issues" stackId="a" fill="#82ca9d" />
         <Bar dataKey="prediction_1" name="MH Issues" stackId="a" fill="#ff0000" />
       </BarChart>

@@ -39,7 +39,7 @@ export const HoursSocialMediaChart = ({ data }: HoursSocialMediaChartProps) => {
           <XAxis 
             dataKey="hours_socialmedia"
             label={{ value: 'Hours', position: 'bottom' }}
-            angle={75} dy={20} height={50} interval={1}
+            dy={10} height={50} interval={1}
           />
           <YAxis 
             label={{ value: 'Number of Students', angle: -90, position: 'insideLeft' }}

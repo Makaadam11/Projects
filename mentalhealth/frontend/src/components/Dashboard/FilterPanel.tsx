@@ -8,81 +8,105 @@ interface FilterPanelProps {
   onFilterChange: (key: keyof FilterState, value: string[]) => void;
   data: DashboardData[];
   onYearChange: (year: string) => void;
+  onUniversityChange: (university: string) => void; // Add this prop
 }
 
-export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: FilterPanelProps) => {
+export const FilterPanel = ({ data, filters, onFilterChange, onYearChange, onUniversityChange }: FilterPanelProps) => {
   const [loading, setLoading] = useState<{[key: string]: boolean}>({});
-  const [departments, setDepartments] = useState<{ [key: string]: string[] }>({});
-  const [selectedUniversity, setSelectedUniversity] = useState<string>(localStorage.getItem('university') || '');
+  const [departments, setDepartments] = useState<{ [key: string]: { [key: string]: string[] } }>({});
+  const [selectedUniversity, setSelectedUniversity] = useState<string>(localStorage.getItem('university') || 'All');
   const [selectedDepartment, setSelectedDepartment] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>('2024');
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({});
-
-  const universities = ['UAL', 'SOL']; // Add more universities as needed
+  const [enhancedData, setEnhancedData] = useState<DashboardData[]>([]);
+  const universities = ['UAL', 'SOL'];
 
   useEffect(() => {
-    if (localStorage.getItem('university') == 'All')
-      {
-        setSelectedUniversity('UAL');
-      }; // Restore selected university from localStorage
+    if (localStorage.getItem('university') == 'All') {
+      setSelectedUniversity('UAL');
+    } else {
+      setSelectedUniversity(localStorage.getItem('university') || 'All');
+    }
   }, []);
+
+  
+  // Update loadDepartments effect
   useEffect(() => {
     if (selectedUniversity) {
       const fetchDepartments = async () => {
         try {
           setLoading(prev => ({ ...prev, departments: true }));
           const response = await loadDepartments(selectedUniversity);
-          console.log(response);
-          setDepartments(response); // Set entire departments object
+          // Response has nested departments property
+          setDepartments({ [selectedUniversity]: response.departments });
         } catch (error) {
           console.error('Error loading departments:', error);
         } finally {
           setLoading(prev => ({ ...prev, departments: false }));
         }
       };
-
+  
       fetchDepartments();
     }
   }, [selectedUniversity]);
-
+  
+  // Update department mapping effect
   useEffect(() => {
-    onYearChange(selectedYear); // Call the callback when the year changes
-  }, [selectedYear, onYearChange]);
+    if (selectedUniversity && departments[selectedUniversity]) {
+      const departmentMapping: { [course: string]: string } = {};
+      
+      // Get departments object
+      const departmentsData = departments[selectedUniversity];
+      
+      // Map courses to departments
+      Object.entries(departmentsData).forEach(([department, courses]) => {
+        if (Array.isArray(courses)) {
+          courses.forEach(course => {
+            departmentMapping[course.toLowerCase()] = department;
+          });
+        }
+      });
+  
+      console.log('Department mapping:', departmentMapping);
+  
+      // Enhance data with departments
+      const newData = data.map(item => ({
+        ...item,
+        department: item.course_of_study ? 
+          departmentMapping[item.course_of_study.toLowerCase()] || 'Unknown' :
+          'Unknown'
+      }));
+  
+      setEnhancedData(newData);
+    }
+  }, [departments, selectedUniversity, data]);
+
+  const getAcademicYear = (dateString: string | undefined) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return null;
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    return month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+  };
 
   const getFilteredCount = (data: DashboardData[], key: string, value: any, currentFilters: FilterState) => {
-  return data.filter(item => {
-    // Apply hierarchical filters
-    const matchesUniversity = !selectedUniversity || item.source === selectedUniversity;
-    const matchesDepartment = !selectedDepartment.length || selectedDepartment.some(dept => 
-      departments[dept]?.includes(item.course_of_study)
-    );
-    const matchesYear = !selectedYear || item.captured_at?.includes(selectedYear);
-    
-    // Check current filter value
-    const matchesValue = item[key as keyof DashboardData] === value;
-    
-    return matchesUniversity && matchesDepartment && matchesYear && matchesValue;
-  }).length;
-};
+    return data.filter(item => {
+      const matchesUniversity = !selectedUniversity || item.source === selectedUniversity;
+      const matchesDepartment = !selectedDepartment.length || selectedDepartment.some(dept => 
+        departments[selectedUniversity]?.[dept]?.includes(item.course_of_study)
+      );
+      const matchesYear = !selectedYear || item.captured_at?.includes(selectedYear);
+      const matchesValue = item[key as keyof DashboardData] === value;
+      return matchesUniversity && matchesDepartment && matchesYear && matchesValue;
+    }).length;
+  };
+
   const uniqueValues = useMemo(() => {
     const filteredData = data.filter(item => 
       (!selectedUniversity || item.source === selectedUniversity) &&
       (!filters.course_of_study.length || filters.course_of_study.includes(item.course_of_study))
     );
-
-    const getUniqueWithCounts = (key: string, filter?: (value: any) => boolean) => {
-      const values = [...new Set(filteredData.map(item => item?.[key]).filter(Boolean))];
-      if (filter) {
-        return values.filter(filter).map(value => ({
-          value,
-          count: getFilteredCount(data, key, value, filters)
-        }));
-      }
-      return values.map(value => ({
-        value,
-        count: getFilteredCount(data, key, value, filters)
-      }));
-    };
 
     return {
       ethnic_group: [...new Set(filteredData.map(item => item?.ethnic_group).filter(Boolean))],
@@ -91,7 +115,7 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
       gender: [...new Set(filteredData.map(item => item?.gender).filter(Boolean))],
       student_type_location: [...new Set(filteredData.map(item => item?.student_type_location).filter(Boolean))],
       student_type_time: [...new Set(filteredData.map(item => item?.student_type_time).filter(Boolean))],
-      course_of_study: selectedDepartment.length > 0 ? selectedDepartment.flatMap(dept => departments[dept] || []) : [...new Set(filteredData.map(item => item?.course_of_study).filter(Boolean))],
+      course_of_study: selectedDepartment.length > 0 ? selectedDepartment.flatMap(dept => departments[selectedUniversity]?.[dept] || []) : [...new Set(filteredData.map(item => item?.course_of_study).filter(Boolean))],
       hours_between_lectures: [...new Set(filteredData.map(item => item?.hours_between_lectures).filter(Boolean))],
       hours_per_week_lectures: [...new Set(filteredData.map(item => item?.hours_per_week_lectures).filter(Boolean))],
       hours_per_week_university_work: [...new Set(filteredData.map(item => item?.hours_per_week_university_work).filter(Boolean))],
@@ -123,42 +147,64 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
       sense_of_belonging: [...new Set(filteredData.map(item => item?.sense_of_belonging).filter(Boolean))],
       captured_at: [...new Set(filteredData.map(item => {
         if (!item?.captured_at) return null;
-        const year = item.captured_at.split('.')[2]?.split(' ')[0];
-        return year;
-      }).filter(Boolean).sort())],
+        const date = new Date(item.captured_at);
+        if (isNaN(date.getTime())) return null;
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const academicYear = month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+        return academicYear;
+      }).filter(Boolean))].sort((a, b) => {
+        const [yearA] = a.split('-').map(Number);
+        const [yearB] = b.split('-').map(Number);
+        return yearA - yearB;
+      }),
     };
   }, [data, selectedUniversity, selectedDepartment, filters]);
 
+
+  const getDepartmentCounts = () => {
+    const counts: { [key: string]: number } = {};
+    
+    // Count records for each department
+    enhancedData.forEach(item => {
+      if (
+        item.department &&
+        item.source === selectedUniversity
+      ) {
+        counts[item.department] = (counts[item.department] || 0) + 1;
+      }
+    });
+  
+    console.log('Department counts:', counts);
+    return counts;
+  };
+
+  
   const handleDepartmentChange = (event: any) => {
     const value = event.target.value;
     if (value.includes('all')) {
-      if (selectedDepartment.length === Object.keys(departments).length) {
+      if (selectedDepartment.length === Object.keys(departments[selectedUniversity] || {}).length) {
         setSelectedDepartment([]);
         onFilterChange('course_of_study', []);
       } else {
-        setSelectedDepartment(Object.keys(departments));
-        onFilterChange('course_of_study', Object.keys(departments).flatMap(dept => departments[dept]));
+        const allDepartments = Object.keys(departments[selectedUniversity] || {});
+        setSelectedDepartment(allDepartments);
+        onFilterChange('course_of_study', allDepartments.flatMap(dept => departments[selectedUniversity]?.[dept] || []));
       }
     } else {
       setSelectedDepartment(value);
-      onFilterChange('course_of_study', value.flatMap((dept: string) => departments[dept]));
+      onFilterChange('course_of_study', value.flatMap((dept: string) => departments[selectedUniversity]?.[dept] || []));
     }
   };
 
-  const toggleSection = (section: string) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-
-  const renderSelect = (key: string, values: any[]) => {
-    const handleChange = async (event: any) => {
-      const value = event.target.value as string[];
-      setLoading(prev => ({ ...prev, [key]: true }));
-      
-      try {
-        if (key === 'departments') {
-          handleDepartmentChange(event);
-        } else {
-          if (value.includes('All')) {
+  
+    const renderSelect = (key: string, values: any[]) => {
+      const handleChange = async (event: any) => {
+        const value = event.target.value as string[];
+        setLoading(prev => ({ ...prev, [key]: true }));
+        
+        try {
+          if (value.includes('all')) {
             if (filters[key as keyof FilterState]?.length === values.length) {
               onFilterChange(key as keyof FilterState, []);
             } else {
@@ -167,54 +213,55 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
           } else {
             onFilterChange(key as keyof FilterState, value);
           }
+        } finally {
+          setLoading(prev => ({ ...prev, [key]: false }));
         }
-      } finally {
-        setLoading(prev => ({ ...prev, [key]: false }));
-      }
-    };
-
-    return (
-      <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
-        <InputLabel>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</InputLabel>
-        <Select
-          multiple
-          value={filters[key as keyof FilterState] || []}
-          onChange={handleChange}
-          renderValue={(selected) => (selected as string[]).join(', ')}
-          MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: 48 * 4.5,
-                width: 250,
+      };
+    
+      const departmentCounts = getDepartmentCounts();
+    
+      return (
+        <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+          <InputLabel>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</InputLabel>
+          <Select
+            multiple
+            value={filters[key as keyof FilterState] || []}
+            onChange={handleChange}
+            renderValue={(selected) => (selected as string[]).join(', ')}
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 4.5,
+                  width: 250,
+                },
               },
-            },
-          }}
-        >
-          <MenuItem value="All">
-            <Checkbox 
-              checked={filters[key as keyof FilterState]?.length === values.length}
-              indeterminate={
-                filters[key as keyof FilterState]?.length > 0 && 
-                filters[key as keyof FilterState]?.length < values.length
-              }
-            />
-            <ListItemText primary="Select All" />
-          </MenuItem>
-          {values.map((value, index) => (
-            <MenuItem key={`${value}-${index}`} value={value}>
+            }}
+          >
+            <MenuItem value="all">
               <Checkbox 
-                checked={filters[key as keyof FilterState]?.includes(value)}
-                disabled={loading[key]}
+                checked={filters[key as keyof FilterState]?.length === values.length}
+                indeterminate={
+                  filters[key as keyof FilterState]?.length > 0 && 
+                  filters[key as keyof FilterState]?.length < values.length
+                }
               />
-              <ListItemText
-                primary={`(${getFilteredCount(data, key, value, filters)}) ${value} `}
-              />
+              <ListItemText primary="Select All" />
             </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-    );
-  };
+            {values.map((value, index) => (
+              <MenuItem key={`${value}-${index}`} value={value}>
+                <Checkbox 
+                  checked={filters[key as keyof FilterState]?.includes(value)}
+                  disabled={loading[key]}
+                />
+                <ListItemText
+                  primary={`(${key === 'course_of_study' ? getFilteredCount(data, key, value, filters) : departmentCounts[value]}) ${value} `}
+                />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      );
+    };
 
   return (
     <div>
@@ -257,43 +304,46 @@ export const FilterPanel = ({ data, filters, onFilterChange, onYearChange }: Fil
         </Select>
       </FormControl>
 
-     {selectedUniversity && (
-        <>
-          <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
-            Departments
-          </Typography>
-          <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
-            <InputLabel>Department</InputLabel>
-            <Select
-              multiple
-              value={selectedDepartment}
-              onChange={handleDepartmentChange}
-              renderValue={(selected) => (selected as string[]).join(', ')}
-            >
-              <MenuItem value="all">
-                <Checkbox
-                  checked={selectedDepartment.length === Object.keys(departments).length}
-                  indeterminate={selectedDepartment.length > 0 && selectedDepartment.length < Object.keys(departments).length}
-                />
-                <ListItemText primary="Select All" />
-              </MenuItem>
-              {Object.keys(departments).map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  <Checkbox checked={selectedDepartment.includes(dept)} />
-                  <ListItemText primary={dept} />
+      {selectedUniversity && (
+          <>
+            <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
+              Departments
+            </Typography>
+            <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+              <InputLabel>Department</InputLabel>
+              <Select
+                multiple
+                value={selectedDepartment}
+                onChange={handleDepartmentChange}
+                renderValue={(selected) => (selected as string[]).join(', ')}
+              >
+                <MenuItem value="all">
+                  <Checkbox
+                    checked={selectedDepartment.length === Object.keys(departments[selectedUniversity] || {}).length}
+                    indeterminate={selectedDepartment.length > 0 && selectedDepartment.length < Object.keys(departments[selectedUniversity] || {}).length}
+                  />
+                  <ListItemText primary="Select All" />
                 </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </>
-      )}
+                {Object.keys(departments[selectedUniversity] || {}).map((dept) => {
+                  const counts = getDepartmentCounts();
+                  return (
+                    <MenuItem key={dept} value={dept}>
+                      <Checkbox checked={selectedDepartment.includes(dept)} />
+                      <ListItemText primary={`(${counts[dept] || 0}) ${dept}`} />
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+          </>
+        )}
 
       {selectedDepartment.length > 0 && (
         <>
           <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', borderRadius: '5px', backgroundColor: '#ffff' }}>
             Courses
           </Typography>
-          {renderSelect('course_of_study', selectedDepartment.flatMap(dept => departments[dept] || []))}
+          {renderSelect('course_of_study', selectedDepartment.flatMap(dept => departments[selectedUniversity]?.[dept] || []))}
         </>
       )}
 

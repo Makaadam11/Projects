@@ -44,8 +44,8 @@ export const CountryMap: React.FC<Props> = ({ data }) => {
       <Typography variant="h6" gutterBottom>
         Countries
       </Typography>
-      <Box sx={{ height: 350 }}>
-        <ComposableMap style={{ width: "100%", height: 350 ,  border: '2px solid #ddd', borderRadius: '8px', overflow: 'hidden'}}>
+      <Box sx={{ height: 383 }}>
+        <ComposableMap style={{ width: "100%", height: 380 ,  border: '2px solid #ddd', borderRadius: '8px', overflow: 'hidden'}}>
           <ZoomableGroup zoom = {1.3}>
             <Geographies geography="/topo.json">
               {({ geographies }) =>

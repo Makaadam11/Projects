@@ -31,7 +31,7 @@ export const TotalDeviceHoursChart = ({ data }: TotalDeviceHoursChartProps) => {
     <ResponsiveContainer width="100%" height={350}>
       <AreaChart data={groupedData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="total_device_hours" angle={75} dy={20} height={50} interval={1}/>
+        <XAxis dataKey="total_device_hours" dy={10} height={50} interval={1}/>
         <YAxis />
         <Tooltip />
         <Area type="monotone" dataKey="prediction_0" name="No MH Issues" stackId="1" stroke="#82ca9d" fill="#82ca9d" />

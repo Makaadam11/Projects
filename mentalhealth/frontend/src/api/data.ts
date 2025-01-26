@@ -33,7 +33,8 @@ export const loadDepartments = async (university: string): Promise<string[]> => 
         throw new Error(`Failed to fetch departments: ${response.statusText}`);
       }
       const data = await response.json();
-      return data.departments;
+      console.log(data.departments);
+      return data;
     }
     return [];
   } catch (error) {
@@ -42,14 +43,14 @@ export const loadDepartments = async (university: string): Promise<string[]> => 
   }
 };
 
-export async function getDashboardData(): Promise<DashboardData[]> {
-    const response = await fetch('http://localhost:8000/api/dashboard');
-    
-    if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data');
-    }
-    
-    return response.json();
+export async function getDashboardData(university: string = 'All'): Promise<DashboardData[]> {
+  const response = await fetch(`http://localhost:8000/api/dashboard?university=${university}`);
+  
+  if (!response.ok) {
+      throw new Error('Failed to fetch dashboard data');
+  }
+  
+  return response.json();
 }
 
 export const generateReport = async (filteredData: DashboardData[], chartImages: { [key: string]: string }) => {

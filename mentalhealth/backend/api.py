@@ -3,7 +3,7 @@ from io import BytesIO
 from PIL import Image
 from typing import Dict
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, validator
 from typing import List, Dict, Union
@@ -347,7 +347,7 @@ def process_excel_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 @app.get("/api/dashboard")
-async def get_dashboard_data():
+async def get_dashboard_data(university: str = Query(None)):
     try:
         file_path = "../data/merged/merged_data.xlsx"
         if not os.path.exists(file_path):
@@ -359,8 +359,13 @@ async def get_dashboard_data():
         column_ids = df.iloc[1].copy()     # Set IDs as column names
         df_cleaned = df.iloc[2:] 
         df_cleaned.columns = column_ids
+        
         # Process data
         df_processed = process_excel_data(df_cleaned)
+        
+        # Filter by university if specified
+        if university and university != 'All':
+            df_processed = df_processed[df_processed['source'] == university]
         
         # Convert to dictionary records
         data = df_processed.to_dict('records')

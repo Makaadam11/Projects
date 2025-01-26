@@ -28,7 +28,7 @@ export const TimetableReasonsChart = ({ data }: TimetableReasonsChartProps) => {
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
       <Typography variant="h6" align="center" gutterBottom>
-        Top 10 Timetable Reasons
+        Top 15 Timetable Reasons
       </Typography>
       <ResponsiveContainer width="100%" height={350}>
         <WordCloud
@@ -38,7 +38,7 @@ export const TimetableReasonsChart = ({ data }: TimetableReasonsChartProps) => {
           font="Arial"
           fontStyle="normal"
           fontWeight="bold"
-          fontSize={(word) => Math.max(12, Math.min(40, word.value * 5))}
+          fontSize={(word) => Math.max(15, Math.min(40, word.value * 5))}
           rotate={0}
           padding={2}
         />
