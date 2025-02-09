@@ -165,14 +165,6 @@ class DataProcessor:
             df_merged = df_merged.iloc[2:]            # Keep only data rows
 
             # Set column IDs for processing
-            df_merged = pd.read_excel(merged_excel_path, header=None)
-
-            # Store questions (first row) and set IDs as headers (second row)
-            questions_row = df_merged.iloc[0].copy()  # Store questions
-            column_ids = df_merged.iloc[1].copy()     # Set IDs as column names
-            df_merged = df_merged.iloc[2:]            # Keep only data rows
-
-            # Set column IDs for processing
             df_merged.columns = column_ids
 
             # Print predictions count before evaluation
@@ -195,10 +187,7 @@ class DataProcessor:
             df_merged_evaluated = evaluate_data(df_copy)
 
             # Update predictions keeping ID headers
-            # Ensure 'predictions' column exists in both DataFrames
-            # Update predictions keeping ID headers
             if 'predictions' in df_merged.columns and 'predictions' in df_merged_evaluated.columns:
-                
                 condition = df_merged['actual'] == "Prefer not to say / I don't know"
                 
                 # Ensure predictions column is numeric
@@ -276,6 +265,7 @@ class DataProcessor:
         except Exception as e:
             print(f"Error saving to Excel: {e}")
             return False
+        
 if __name__ == "__main__":
     processor = DataProcessor()
     processor.process_data()

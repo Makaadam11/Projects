@@ -17,6 +17,7 @@ export default function Questionaire({
   onSubmitSuccess 
 }: QuestionaireProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false); // New state for submission status
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,22 +41,25 @@ export default function Questionaire({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setIsSubmitted(true); // Set submitted state immediately
     setError(null);
-
+  
     const answers = questions.map(question => ({
       id: question.id,
       answer: formData[question.id]
     }));
-
+  
     submitQuestionaire({
       answers,
       source: university.toUpperCase()
     })
       .then(() => {
         onSubmitSuccess();
+        setFormData({}); // Clear formData after successful submission
       })
       .catch(() => {
         setError('Failed to submit survey');
+        setIsSubmitted(false); // Reset submitted state on error
       })
       .finally(() => {
         setIsSubmitting(false);
@@ -146,6 +150,11 @@ export default function Questionaire({
         {error && (
           <div className="p-4 bg-red-100 text-red-700 rounded mb-4">
             {error}
+          </div>
+        )}
+        {isSubmitted && !error && (
+          <div className="p-4 bg-green-100 text-green-700 rounded mb-4">
+            Submitted successfully!
           </div>
         )}
         {questions.map(renderQuestion)}
