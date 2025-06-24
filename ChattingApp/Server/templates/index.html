@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Cautious App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'>
+<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Montserrat'>
+<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha.6/css/bootstrap.min.css'>
+<link rel="stylesheet" href="./static/style.css">
+
+<style>
+  .chat{
+    width: 100%;
+  }
+  .footer-chat{
+    width: 100%;
+    margin-left:16px;
+  }
+  .chat .footer-chat .send{
+    right: 10px;
+  }
+  .write-message{
+    width:85%;
+  }
+  .menu{
+    margin-left: -54px
+  }
+  .messages-chat{
+    overflow-y: auto;
+    max-height: 520px;
+  }
+
+  /* **************typing animation*********************** */
+  .chat-bubble {
+  background-color:#E6F8F1;
+  padding:16px 28px;
+  -webkit-border-radius: 20px;
+  -webkit-border-bottom-left-radius: 2px;
+  -moz-border-radius: 20px;
+  -moz-border-radius-bottomleft: 2px;
+  border-radius: 20px;
+  border-bottom-left-radius: 2px;
+  display:inline-block;
+}
+.mychattyping .chat-bubble{
+  margin-right: 30px; 
+  background-color: #f6f6f6; 
+  border-bottom-left-radius: 20px; 
+  border-bottom-right-radius: 2px;
+}
+.userchattyping .chat-bubble{
+  margin-left:30px; 
+  background-color: #f6f6f6;
+}
+.typing {
+  align-items: center;
+  display: flex;
+  height: 17px;
+}
+.typing .dot {
+  animation: mercuryTypingAnimation 1.8s infinite ease-in-out;
+  /* rgba(20,105,69,.7); */
+  background-color: #6CAD96 ;
+  border-radius: 50%;
+  height: 7px;
+  margin-right: 4px;
+  vertical-align: middle;
+  width: 7px;
+  display: inline-block;
+}
+.typing .dot:nth-child(1) {
+  animation-delay: 200ms;
+}
+.typing .dot:nth-child(2) {
+  animation-delay: 300ms;
+}
+.typing .dot:nth-child(3) {
+  animation-delay: 400ms;
+}
+.typing .dot:last-child {
+  margin-right: 0;
+}
+
+@keyframes mercuryTypingAnimation {
+  0% {
+    transform: translateY(0px);
+    /* rgba(20,105,69,.7); */
+    background-color:#6CAD96; 
+  }
+  28% {
+    transform: translateY(-7px);
+    /* rgba(20,105,69,.4); */
+    background-color:#9ECAB9;
+  }
+  44% {
+    transform: translateY(0px);
+    /* rgba(20,105,69,.2); */
+    background-color: #B5D9CB;
+  }
+}
+  /* **************typing animation ends*********************** */
+
+
+  .msginput {
+      border-radius: 15px;
+      border-color: #fff !important;
+      outline: #fff !important;
+      background: #fff;
+  }
+  
+  .msginput.abusive {
+      border-color: #ff0606 !important;
+      outline: #f00 !important;
+      background: #ffe2e2;
+  }
+</style>
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<body>
+  <div class="container">
+    <div class="row" style="display:block">
+      <nav class="menu">
+        <ul class="items">
+          <li class="item">
+            <i class="fa fa-home" aria-hidden="true"></i>
+          </li>
+          <li class="item">
+            <i class="fa fa-user" aria-hidden="true"></i>
+          </li>
+          <li class="item">
+            <i class="fa fa-pencil" aria-hidden="true"></i>
+          </li>
+          <li class="item item-active">
+            <i class="fa fa-commenting" aria-hidden="true"></i>
+          </li>
+          <li class="item">
+            <i class="fa fa-file" aria-hidden="true"></i>
+          </li>
+          <li class="item">
+            <i class="fa fa-cog" aria-hidden="true"></i>
+          </li>
+          <li style="margin-top: 70px;padding: 5px;">
+            <canvas id="predicted_sentiment"></canvas>
+          </li>
+          <li class="item" id="predValues" style="font-size: 7px;color: #fff;padding: 2px;">
+            
+          </li>
+        </ul>
+      </nav>
+
+      
+      <section class="chat">
+        <div class="header-chat">
+          <i class="icon fa fa-user-o" aria-hidden="true"></i>
+          <p class="name" id="userSelectedName">---</p>
+          <i class="icon clickable fa fa-ellipsis-h right" aria-hidden="true"></i>
+        </div>
+        <div class="messages-chat">
+          <!-- messages go here -->
+        </div>
+        <div class="footer-chat">
+          <i class="icon fa fa-smile-o clickable" style="font-size:25pt;" aria-hidden="true"></i>
+          <input type="text" class="write-message msginput" placeholder="Type your message here" id="msg" oninput="handleTyping()"></input>
+          <i class="icon send fa fa-paper-plane-o clickable" aria-hidden="true" id="send_msg" onclick="sendMessage()"></i>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+<!-- partial -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <div class="footer-chat">
+    <button id="stop-recording-btn" style="margin-left:10px;">Stop Recording</button>
+  </div>
+
+  <script type="text/javascript">
+    
+    // initialize the user
+    Swal.fire({
+      title: 'Enter username for chat',
+      input: 'text',
+      inputAttributes: {
+        autocapitalize: 'off'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Enter chat',
+      showLoaderOnConfirm: true,
+      allowOutsideClick: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        $("#userSelectedName").html(result.value);
+        socket.emit('start_recording');
+        // console.log(result)
+
+      }
+    })
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+    var isTyping = false; // To track user typing status
+    var userID = generateUserID(1, 20)
+    var userTyping = `<div class="message userchattyping">
+            <div class="photo" style="background-image: url(./static/user.png);">
+              <div class="online"></div>
+            </div>
+              <div class="chat-bubble">
+                <div class="typing">
+                  <div class="dot"></div>
+                  <div class="dot"></div>
+                  <div class="dot"></div>
+                </div>
+              </div>
+          </div>`
+      var myTyping = `<div class="message text-only mychattyping">
+            <div class="response">
+              <div class="chat-bubble">
+                <div class="typing">
+                  <div class="dot"></div>
+                  <div class="dot"></div>
+                  <div class="dot"></div>
+                </div>
+              </div>
+            </div>
+          </div>`
+    
+
+    // ploting chart
+    var plotChart;
+    async function create_chart(values, user_id){
+      const ctx = document.getElementById('predicted_sentiment');
+      let input_config = {
+        type: 'doughnut',
+        data: {
+          labels: ['Neutral', 'Friendly', 'Aggression'],
+          datasets: [{
+            label: 'pct:',
+            data: [values.neu, values.pos, values.neg],
+            borderWidth: 1,
+            backgroundColor: [
+              'rgb(54, 162, 235)',
+              'rgb(84, 219, 52)',
+              'rgb(255, 99, 132)'
+            ],
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          plugins:{
+            legend: false
+          },
+          scales: {
+            y: {
+              display: false
+            }, 
+            x: {
+              display: false
+            }
+          }
+        }
+      }
+
+      if (user_id==userID){
+        if(typeof pnlChartJs == 'object'){
+          plotChart.destroy();
+        }
+
+        try {
+          plotChart = new Chart(ctx, input_config);
+        } catch(err){
+          plotChart.destroy();
+          plotChart = new Chart(ctx, input_config);
+        }
+      }
+
+      document.querySelector("#predValues").innerHTML = `
+          Aggression: ${(values.neg * 100).toFixed(2)}%
+          Friendly: ${(values.pos * 100).toFixed(2)}%
+          Neutral: ${(values.neu * 100).toFixed(2)}%`
+      
+    }
+
+    // socket start
+    socket.on('connect', function() {
+        console.log('Connected');
+    });
+
+    socket.on('message', function(message) {
+        var chatBox = $(".messages-chat")
+        let data_ = JSON.parse(message)
+        var msgChat;
+        // console.log(data_)
+        if(data_.userID==userID){
+          msgChat = `<div class="message text-only">
+            <div class="response">
+              <p class="text"> ${data_.msg}</p>
+            </div>
+          </div>
+          <p class="response-time time"> ${data_.msgTime}</p>`
+        } else {
+          msgChat = `<div class="message">
+            <div class="photo" style="background-image: url(./static/user.png);">
+              <div class="online"></div>
+            </div>
+            <p class="text"> ${data_.msg}</p>
+          </div>
+          <p class="time"> ${data_.msgTime}</p>`
+        }
+        if(data_.pred){
+            if(data_.values.predicted == "negative" && data_.userID==userID){
+              alertUser("You are typing negative words !")
+              $("input#msg").removeClass("abusive")
+            }
+            create_chart(data_.values, data_.userID)
+        }
+        
+        chatBox.append(msgChat)
+    });
+
+    // alert user function
+    function alertUser(text_){
+      // Swal.fire({
+      //   position: 'top-end',
+      //   icon: 'error',
+      //   text: text_,
+      //   showConfirmButton: true
+      // })
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer)
+          toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+      })
+      Toast.fire({
+        icon: 'error',
+        title: text_
+      })
+    }
+    // Function to handle user typing event
+    function handleTyping() {
+        let messageInput = document.getElementById('msg');
+        let message = messageInput.value;
+        if (!isTyping) {
+            isTyping = true;                
+            socket.emit('typing', JSON.stringify({msg:message, isTyping:isTyping, userID:userID}));
+        }
+        clearTimeout(timeout);
+        var timeout = setTimeout(function() {
+            isTyping = false;
+            socket.emit('typing', JSON.stringify({msg:message, isTyping:isTyping, userID:userID}));
+        }, 3000);
+    }
+
+    socket.on('user_typing', function(typing) {
+        var typingStatus = $(".messages-chat")
+        let data_ = JSON.parse(typing)
+        console.log(data_)
+        if(data_.pred){
+            if(data_.values.predicted == "negative" && data_.userID==userID){
+              // alertUser("You are typing negative words !")  // if you want to send alert
+              // create input border danger
+              $("input#msg").addClass("abusive")
+              create_chart(data_.values, data_.userID)  // if you want to plot chart
+            } else {
+              $("input#msg").removeClass("abusive")
+            }
+        } else {
+          $("input#msg").removeClass("abusive")
+        }
+        // if i am type
+        if(data_.isTyping && data_.userID==userID){
+          typingStatus.append(myTyping)
+        } else if(data_.isTyping==false && data_.userID==userID){
+          $(".mychattyping").remove()
+        } else {
+          
+        }
+        // if the other user is typing
+        if(data_.isTyping && data_.userID!=userID){
+          typingStatus.append(userTyping)
+        } else if(data_.isTyping==false && data_.userID!=userID){
+          $(".userchattyping").remove()
+        } else {
+          
+        }
+    });
+
+    function sendMessage() {
+        let messageInput = document.getElementById('msg');
+        let message = messageInput.value;
+        socket.emit('message', JSON.stringify({msg:message, userID:userID}));
+        messageInput.value = '';
+    }
+
+    // generate user ID
+    function generateUserID(min, max){
+        let usID = Math.floor(Math.random() * (max - min + 1)) + min;
+        console.log(usID)
+        // document.getElementById("#userID").value = usID
+        return usID
+    }
+
+    $(window).on('keydown', async function(event){
+      if(event.which == 13){
+        sendMessage()
+        return false;
+      }
+    })
+
+    document.getElementById('stop-recording-btn').onclick = function() {
+      socket.emit('stop_recording');
+    }
+  </script>
+
+
+
+</body>
+</html>
