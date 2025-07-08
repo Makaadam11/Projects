@@ -11,6 +11,7 @@ class RecordingService:
         self.chat_manager = ChatManager()
         self.recording = False
         self.current_messages = {}  # {user_id: current_message}
+        self.waiting_users = []
         self._init_deepface()
 
     def _init_deepface(self):
@@ -33,34 +34,25 @@ class RecordingService:
     def process_frame(self, frame, user_id, username, status="sender"):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         try:
-            with tf.compat.v1.Session() as sess:
-                emotion_predictions = DeepFace.analyze(
-                    frame, 
-                    actions=['emotion'], 
-                    enforce_detection=False,
-                    silent=True  # Wyłącz verbose output
-                )
+            emotion_predictions = DeepFace.analyze(
+                frame, 
+                actions=['emotion'], 
+                enforce_detection=False,
+                silent=True
+            )
                 
             if isinstance(emotion_predictions, list):
                 emotion = emotion_predictions[0]['emotion']
             else:
                 emotion = emotion_predictions['emotion']
                 
-        
             current_message = self.current_messages.get(user_id, "")
-            logger = self.logger_manager.get_logger(user_id, username)
-            logger.log_event(emotion_dict=emotion, status=status, message=current_message)
             
-        except Exception as e:
-            print(f"Error processing frame: {e}")
-            # Fallback - loguj bez emocji
-            current_message = self.current_messages.get(user_id, "")
-            logger = self.logger_manager.get_logger(user_id, username)
-            logger.log_event(emotion_dict={}, status=status, message=current_message)
+            # Sprawdź czy user ma partnera
             partner_id = self.chat_manager.get_partner_id(user_id)
             
             if partner_id:
-                # Loguj do obu użytkowników
+                # Użyj log_chat_event - automatycznie loguje do obu partnerów
                 self.logger_manager.log_chat_event(
                     user_id=user_id,
                     event_type="emotion_detected",
@@ -69,9 +61,16 @@ class RecordingService:
                     message=current_message
                 )
             else:
-                # Fallback - tylko ten użytkownik
+                # Fallback - tylko ten użytkownik (czeka na partnera)
                 logger = self.logger_manager.get_logger(user_id, username)
-                logger.log_event(emotion_dict=emotion, status=status, message=current_message)   
+                logger.log_event(emotion_dict=emotion, status=status, message=current_message)
+                
+        except Exception as e:
+            print(f"Error processing frame: {e}")
+            # Fallback bez emocji
+            current_message = self.current_messages.get(user_id, "")
+            logger = self.logger_manager.get_logger(user_id, username)
+            logger.log_event(emotion_dict={}, status=status, message=current_message)
 
     def record_screen(self, user_id, username, status="sender"):
         interval = 0.5  # Zwiększ interval żeby zmniejszyć obciążenie

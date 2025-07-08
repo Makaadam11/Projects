@@ -3,9 +3,10 @@ from flask_socketio import Namespace, emit
 import json
 
 class ChatNamespace(Namespace):
-    def __init__(self, namespace, sentiment_service):
+    def __init__(self, namespace, sentiment_service, recording_service):
         super().__init__(namespace)
         self.sentiment_service = sentiment_service
+        self.recording_service = recording_service
 
     def on_message(self, message):
         message = json.loads(message)

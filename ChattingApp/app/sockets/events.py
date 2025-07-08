@@ -1,11 +1,10 @@
 from flask_socketio import Namespace
 import json
-from app.services.recording import RecordingService
 
 class EventsNamespace(Namespace):
-    def __init__(self, namespace):
+    def __init__(self, namespace, recording_service):
         super().__init__(namespace)
-        self.recording_service = RecordingService()
+        self.recording_service = recording_service
 
     def on_start_viewing(self, data):
         data = json.loads(data) if isinstance(data, str) else data
