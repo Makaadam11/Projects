@@ -1,22 +1,12 @@
 import numpy as np
-
 import re
-from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer, PorterStemmer
-from nltk import pos_tag, ne_chunk, wsd
-from collections import Counter
-
-# Transformers
-from transformers import BertTokenizer, BertTokenizerFast
-from transformers import TFBertModel
-
-# tensorflow
+from nltk.stem import WordNetLemmatizer
+from transformers import BertTokenizerFast, TFBertModel
 import tensorflow as tf
-
-import spacy
 import emoji
 
+from app.models.base_model import BaseModel
 
 def model_builder(bert_model, max_):
     options_ = tf.keras.optimizers.legacy.Adam(learning_rate=1e-5, decay=1e-7)
@@ -34,20 +24,21 @@ def model_builder(bert_model, max_):
 
     return model
 
+class BertModel(BaseModel):
+    _instance = None
 
-class PredictorModel:
-    def __init__(self, max_: int = 50):
-        # initialize BERT
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def __init__(self, model_path, tokenizer_path, max_len=50):
         self.bert_model = TFBertModel.from_pretrained('bert-base-uncased')
-        # initialize lematizer
         self.lametizer = WordNetLemmatizer()
-        # initialize max length
-        self.MAX_LEN = max_
-        # Load the saved model weights for prediction
+        self.MAX_LEN = max_len
         self.loaded_model = model_builder(self.bert_model, self.MAX_LEN)
-        self.loaded_model.load_weights('saved_model_weights.h5')
-        # Load tokenizer
-        self.tokenizer = BertTokenizerFast.from_pretrained('tokenizer_1')
+        self.loaded_model.load_weights(model_path)
+        self.tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
 
     def convert_emoji(self, text_):
         try:
@@ -55,7 +46,7 @@ class PredictorModel:
             text_ = text_.replace(":", "")
             text_ = text_.replace("_", " ")
             return text_
-        except:
+        except Exception:
             return text_
 
     def clean_text(self, text_: str):
@@ -66,39 +57,29 @@ class PredictorModel:
             text_ = text_.replace("RT ", "").strip()
             text_ = self.convert_emoji(text_)
             return text_
-        except Exception as error:
+        except Exception:
             return text_
 
     def tokenize_2(self, data):
         input_id = []
         attention_mask = []
         for i in range(len(data)):
-            encode = self.tokenizer.encode_plus(data[i], max_length=self.MAX_LEN, add_special_tokens=True,
-                                           padding='max_length', return_attention_mask=True)
+            encode = self.tokenizer.encode_plus(
+                data[i], max_length=self.MAX_LEN, add_special_tokens=True,
+                padding='max_length', return_attention_mask=True
+            )
             input_id.append(encode["input_ids"])
             attention_mask.append(encode["attention_mask"])
         return np.array(input_id), np.array(attention_mask)
 
-    # create predictor function using model and tokenizer
-    def predict_chat_text_2(self, chat_text: str) -> list:
-        # clean the text
+    def predict(self, chat_text: str):
         chat_text = self.clean_text(chat_text)
-        # convert emoji
         chat_text = self.convert_emoji(chat_text)
-        # break sentence into tokens
         chat_text = word_tokenize(chat_text)
-        # lametize
         chat_text = [self.lametizer.lemmatize(token) for token in chat_text]
-        # join list into sentence
         chat_text = " ".join(chat_text)
-        # convert into number tokens
         txt_, txt_mask = self.tokenize_2([chat_text])
         text_clf = self.loaded_model.predict([txt_, txt_mask])
         y_pred_raveled = text_clf.ravel()[:3]
         predicted_class = np.argmax(y_pred_raveled)
         return list((y_pred_raveled, predicted_class))
-
-
-# pred_ = PredictorModel().predict_chat_text_2("You are not showing the right attitude 😠")
-#
-# print(pred_)

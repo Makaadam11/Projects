@@ -2,9 +2,10 @@
 /venv
 .vscode
 .idea
-/Server/__pycache__
-/Server/*.pyc
-/Server/*.pyo
-/Server/saved_model_weights.h5
+__pycache__
+*.pyc
+*.pyo
 # add all .xlsx files in sub directories
-/Server/**/*.xlsx
+*.xlsx
+
+app\assets\saved_model_weights.h5
