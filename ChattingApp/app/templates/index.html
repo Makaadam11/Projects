@@ -2,7 +2,6 @@
 {% block title %}Chat{% endblock %}
 {% block content %}
 <div class="container">
-  <div class="row" style="display:block">
     <nav class="menu">
       <ul class="items">
         <li class="item"><i class="fa fa-home" aria-hidden="true"></i></li>
@@ -14,7 +13,7 @@
         <li style="margin-top: 70px;padding: 5px;">
           <canvas id="predicted_sentiment"></canvas>
         </li>
-        <li class="item" id="predValues" style="font-size: 7px;color: #fff;padding: 2px;"></li>
+        <li class="item" id="predValues" style="font-size: 10px;color: #fff;padding: 2px;"></li>
       </ul>
     </nav>
     <section class="chat">
@@ -33,7 +32,6 @@
         <button id="stop-recording-btn">Stop Recording</button>
       </div>
     </section>
-  </div>
 </div>
 {% endblock %}
 {% block scripts %}

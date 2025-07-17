@@ -82,8 +82,8 @@ async function create_chart(values, user_id){
   }
 
   document.querySelector("#predValues").innerHTML = `
-      Aggression: ${(values.neg * 100).toFixed(2)}%
-      Friendly: ${(values.pos * 100).toFixed(2)}%
+      Aggression: ${(values.neg * 100).toFixed(2)}%<br>
+      Friendly: ${(values.pos * 100).toFixed(2)}%<br>
       Neutral: ${(values.neu * 100).toFixed(2)}%`
 }
 
