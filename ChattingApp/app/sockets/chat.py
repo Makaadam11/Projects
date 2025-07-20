@@ -27,13 +27,13 @@ class ChatNamespace(Namespace):
         }
         emit('message', json.dumps(data), broadcast=True)
 
-    def handle_typing(self, typing):
+    def on_typing(self, typing):
         typing = json.loads(typing)
         msg = str(typing["msg"])
         userID = int(typing["userID"])
-        wordcount = msg.split(" ")
+        # wordcount = msg.split(" ")
         data = {"pred": False, "values": {}, "isTyping": typing["isTyping"], "msg": msg, "userID": userID}
-        if len(wordcount) > 2:
+        if len(msg) > 1:
             pred_ = self.sentiment_service.analyze(msg)
             data = {
                 "pred": True,

@@ -20,7 +20,7 @@ def model_builder(bert_model, max_):
     output = tf.keras.layers.Dense(3, activation="softmax")(embeddings)
 
     model = tf.keras.models.Model(inputs=[input_ids, attention_masks], outputs=output)
-    model.compile(options_, loss=loss, metrics=accuracy)
+    model.compile(options_, loss=loss, metrics=accuracy, run_eagerly=True)
 
     return model
 

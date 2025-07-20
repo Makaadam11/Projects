@@ -13,29 +13,31 @@ let username = null;
 let userID = generateUserID(1, 20);
 
 let isTyping = false; // To track user typing status
-let userTyping = `<div class="message userchattyping">
-      <div class="photo" style="background-image: url(./static/user.png);">
-        <div class="online"></div>
-      </div>
-        <div class="chat-bubble">
-          <div class="typing">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-          </div>
-        </div>
-    </div>`;
-let myTyping = `<div class="message text-only mychattyping">
-      <div class="response">
-        <div class="chat-bubble">
-          <div class="typing">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-          </div>
+let userTyping = `
+  <div class="message userchattyping">
+    <div class="photo" style="background-image: url(./static/user.png);">
+      <div class="online"></div>
+    </div>
+      <div class="chat-bubble">
+        <div class="typing">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
         </div>
       </div>
-    </div>`;
+  </div>`;
+let myTyping = `
+  <div class="message text-only mychattyping">
+    <div class="response">
+      <div class="chat-bubble">
+        <div class="typing">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
 
 
 // ploting chart
@@ -115,14 +117,16 @@ chatSocket.on('message', function(message) {
     let data_ = JSON.parse(message)
     let msgChat;
     if(data_.userID==userID){
-      msgChat = `<div class="message text-only">
+      msgChat = `
+      <div class="message text-only">
         <div class="response">
           <p class="text"> ${data_.msg}</p>
         </div>
       </div>
       <p class="response-time time"> ${data_.msgTime}</p>`;
     } else {
-      msgChat = `<div class="message">
+      msgChat = `
+      <div class="message">
         <div class="photo" style="background-image: url(./static/user.png);">
           <div class="online"></div>
         </div>
@@ -181,22 +185,21 @@ function handleTyping() {
             endViewingTime = null;
             totalViewingTime = 0;
         }
-        chatSocket.emit('typing', JSON.stringify({msg:message, isTyping:isTyping, userID:userID}));
     }
-    clearTimeout(timeout);
-    let timeout = setTimeout(function() {
+    clearTimeout(window.typingTimeout);
+    window.typingTimeout = setTimeout(function() {
         isTyping = false;
-        chatSocket.emit('typing', JSON.stringify({msg:message, isTyping:isTyping, userID:userID}));
-    }, 3000);
+        chatSocket.emit('typing', JSON.stringify({msg:message, isTyping:false, userID:userID}));
+    }, 1000);
 }
 
 chatSocket.on('user_typing', function(typing) {
     let typingStatus = $(".messages-chat")
     let data_ = JSON.parse(typing)
     if(data_.pred){
+        create_chart(data_.values, data_.userID);
         if(data_.values.predicted == "negative" && data_.userID==userID){
           $("input#msg").addClass("abusive");
-          create_chart(data_.values, data_.userID);
         } else {
           $("input#msg").removeClass("abusive");
         }
