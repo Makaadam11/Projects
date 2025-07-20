@@ -235,38 +235,67 @@ body {
 }
 
 .chat .messages-chat .text {
-  margin: 0 35px;
   background-color: #f6f6f6;
   padding: 15px;
   border-radius: 12px;
 }
 
 .text-only {
-  margin-left: 45px;
+  margin-left: auto;
+  margin-right: 45px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 70%;
 }
 
 .time {
   font-size: 10px;
-  color:lightgrey;
-  margin-bottom:10px;
-  margin-left: 85px;
+  color: lightgrey;
+  margin-bottom: 10px;
+  margin-left: 0;
+  margin-top: 5px;
+  align-self: flex-end;
 }
 
 .response-time {
-  float: right;
-  margin-right: 40px !important;
+  float: none !important;
+  margin-right: 0 !important;
+  margin-top: 5px;
+  align-self: flex-end;
 }
 
 .response {
-  float: right;
-  margin-right: 0px !important;
-  margin-left:auto; /* flexbox alignment rule */
+  float: none !important;
+  margin-right: 0;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 70%;
 }
 
 .response .text {
   background-color: #e3effd !important;
+  margin: 0;
 }
 
+.chat .messages-chat .message {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.chat .messages-chat .message:not(.text-only) {
+  justify-content: flex-start;
+}
+
+.chat .messages-chat .message.text-only {
+  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
+}
 .chat .footer-chat {
   width: 100%;
   display: flex;
@@ -368,3 +397,33 @@ body {
 .clickable {
   cursor: pointer;
 }
+
+.chat .footer-chat .msginput {
+  border-radius: 25px;
+  border: 2px solid #ddd !important;
+  outline: none !important;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.chat .footer-chat .msginput.abusive {
+  border: 2px solid #ff0606 !important;
+  outline: none !important;
+  background: #ffe2e2;
+  box-shadow: 0 0 5px rgba(255, 6, 6, 0.3);
+}
+
+/* 
+.chat .footer-chat .msginput.positive {
+  border: 2px solid #28a745 !important;
+  outline: none !important;
+  background: #e8f5e8;
+  box-shadow: 0 0 5px rgba(40, 167, 69, 0.3);
+}
+
+.chat .footer-chat .msginput.neutral {
+  border: 2px solid #17a2b8 !important;
+  outline: none !important;
+  background: #e8f8fa;
+  box-shadow: 0 0 5px rgba(23, 162, 184, 0.3);
+} */

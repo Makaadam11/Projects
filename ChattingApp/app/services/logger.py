@@ -4,30 +4,29 @@ class Logger:
     def __init__(self):
         self.frames = []
         self.status = ""
-        self.username = ""  # DODAJ to pole
-        self.chat_partner = ""  # DODAJ to pole
+        self.username = ""
+        self.chat_partner = ""
         self.user_id = ""
     
-        # Kolumny - własne + partnera
         self.columns = [
-            # Własne dane
             'timestamp', 'user_id', 'username', 'status', 'message', 'complete_message',
             'start_sending_time', 'end_sending_time', 'sender_total_sending_time',
             'start_viewing_time', 'end_viewing_time', 'receiver_total_viewing_time',
             'event_type', 'action_by',
             
-            # Emocje własne
             'angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral',
             
-            # Dane partnera
+            'sentiment_neg', 'sentiment_pos', 'sentiment_neu',
+            
             'partner_name', 'partner_status', 'partner_message', 'partner_complete_message',
             'partner_start_sending_time', 'partner_end_sending_time', 'partner_sender_total_sending_time',
             'partner_start_viewing_time', 'partner_end_viewing_time', 'partner_receiver_total_viewing_time',
             'partner_event_type', 'partner_action_by',
             
-            # Emocje partnera
             'partner_angry', 'partner_disgust', 'partner_fear', 'partner_happy', 
-            'partner_sad', 'partner_surprise', 'partner_neutral'
+            'partner_sad', 'partner_surprise', 'partner_neutral',
+            
+            'partner_sentiment_neg', 'partner_sentiment_pos', 'partner_sentiment_neu'
         ]
 
     def log_event(self, emotion_dict=None, partner_data=None, **kwargs):
@@ -72,7 +71,7 @@ class Logger:
             print("No username set")
             return None
             
-        # ✅ POPRAW: Sprawdź self.frames (nie self.data)
+
         if not self.frames:
             print(f"No data to save for {self.username}")
             return None

@@ -7,10 +7,11 @@ from app.services.chat_manager import ChatManager
 
 class RecordingService:
     def __init__(self):
-        self.logger_manager = LoggerManager()
+        self.logger_manager = LoggerManager(self)
         self.chat_manager = ChatManager()
         self.recording = False
         self.current_messages = {}  # {user_id: current_message}
+        self.message_sentiment = {}  # {user_id: sentiment}
         self.waiting_users = []
         self._init_deepface()
 
@@ -48,11 +49,9 @@ class RecordingService:
                 
             current_message = self.current_messages.get(user_id, "")
             
-            # Sprawdź czy user ma partnera
             partner_id = self.chat_manager.get_partner_id(user_id)
             
             if partner_id:
-                # Użyj log_chat_event - automatycznie loguje do obu partnerów
                 self.logger_manager.log_chat_event(
                     user_id=user_id,
                     event_type="emotion_detected",
@@ -97,3 +96,10 @@ class RecordingService:
         self.recording = False
         saved_files = self.logger_manager.save_all_logs()
         print(f"Saved logs: {saved_files}")
+
+    def update_sentiment(self, user_id, sentiment_data):
+        self.message_sentiment[user_id] = sentiment_data
+        print(f"Sentiment updated for user {user_id}: {sentiment_data}")
+    
+    def get_sentiment(self, user_id):
+        return self.message_sentiment.get(user_id, None)

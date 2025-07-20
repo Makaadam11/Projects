@@ -31,9 +31,9 @@ class ChatNamespace(Namespace):
         typing = json.loads(typing)
         msg = str(typing["msg"])
         userID = int(typing["userID"])
-        # wordcount = msg.split(" ")
+        wordcount = msg.split(" ")
         data = {"pred": False, "values": {}, "isTyping": typing["isTyping"], "msg": msg, "userID": userID}
-        if len(msg) > 1:
+        if len(wordcount) > 1:
             pred_ = self.sentiment_service.analyze(msg)
             data = {
                 "pred": True,
@@ -47,9 +47,14 @@ class ChatNamespace(Namespace):
                 "msg": msg,
                 "userID": userID
             }
+            self.sentiment_update(userID, data["values"])
             if data["values"]["predicted"] == "negative":
                 emit('alert_user_typing', json.dumps({"msg": "You are typing negative words!"}), broadcast=True)
         emit('user_typing', json.dumps(data), broadcast=True)
 
     def alert_user_typing(self, alert):
         emit('alert_message', json.dumps(alert), broadcast=True)
+        
+    def sentiment_update(self, user_id, sentiment_data):
+        self.recording_service.update_sentiment(user_id, sentiment_data)
+        print(f"Updated sentiment for user {user_id}: {sentiment_data}")

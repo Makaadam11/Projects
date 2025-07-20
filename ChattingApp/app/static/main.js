@@ -116,26 +116,30 @@ chatSocket.on('message', function(message) {
     let chatBox = $(".messages-chat")
     let data_ = JSON.parse(message)
     let msgChat;
+    
     if(data_.userID==userID){
-      msgChat = `
-      <div class="message text-only">
-        <div class="response">
-          <p class="text"> ${data_.msg}</p>
-        </div>
-      </div>
-      <p class="response-time time"> ${data_.msgTime}</p>`;
+        msgChat = `
+        <div class="message text-only">
+            <div class="response">
+                <p class="text">${data_.msg}</p>
+                <p class="response-time time">${data_.msgTime}</p>
+            </div>
+        </div>`;
     } else {
-      msgChat = `
-      <div class="message">
-        <div class="photo" style="background-image: url(./static/user.png);">
-          <div class="online"></div>
-        </div>
-        <p class="text"> ${data_.msg}</p>
-      </div>
-      <p class="time"> ${data_.msgTime}</p>`;
+        msgChat = `
+        <div class="message">
+            <div class="photo" style="background-image: url(user.png);">
+                <div class="online"></div>
+            </div>
+            <div>
+                <p class="text">${data_.msg}</p>
+                <p class="time">${data_.msgTime}</p>
+            </div>
+        </div>`;
     }
-    if(data_.pred){
-        if(data_.values.predicted == "negative" && data_.userID==userID){
+    
+    if(data_.pred && data_.userID==userID){
+        if(data_.values.predicted == "negative"){
           alertUser("You are typing negative words !");
           $("input#msg").removeClass("abusive");
         }
@@ -196,15 +200,21 @@ function handleTyping() {
 chatSocket.on('user_typing', function(typing) {
     let typingStatus = $(".messages-chat")
     let data_ = JSON.parse(typing)
-    if(data_.pred){
-        create_chart(data_.values, data_.userID);
-        if(data_.values.predicted == "negative" && data_.userID==userID){
+    if(data_.pred && data_.userID == userID){
+      create_chart(data_.values, data_.userID);
+      $("input#msg").removeClass("abusive positive neutral");
+      if(data_.values.predicted == "negative") {
+          alertUser("You are typing negative words!")
           $("input#msg").addClass("abusive");
-        } else {
-          $("input#msg").removeClass("abusive");
-        }
+      } else if(data_.values.predicted == "positive") {
+          $("input#msg").addClass("positive");
+      } else if(data_.values.predicted == "neutral") {
+          $("input#msg").addClass("neutral");
+      }
     } else {
-      $("input#msg").removeClass("abusive");
+      if(data_.userID == userID) {
+          $("input#msg").removeClass("abusive positive neutral");
+      }
     }
     if(data_.isTyping && data_.userID==userID){
       typingStatus.append(myTyping);
