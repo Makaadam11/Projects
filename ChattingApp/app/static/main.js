@@ -8,6 +8,7 @@ let totalViewingTime = 0;
 let startSendingTime = null;
 let endSendingTime = null;
 let totalSendingTime = 0;
+let isRecording = true;
 
 let username = null;
 let userID = generateUserID(1, 20);
@@ -104,6 +105,9 @@ Swal.fire({
     username = result.value;
     $("#userSelectedName").html(username);
     recordingSocket.emit('start_recording', {username: username, userID: userID});
+    isRecording = true;
+      document.getElementById('start-recording-btn').style.display = 'none';
+    document.getElementById('stop-recording-btn').style.display = 'block';
   }
 });
 
@@ -112,9 +116,9 @@ chatSocket.on('connect', function() {
     console.log('Connected to chat');
 });
 
-chatSocket.on('message', function(message) {
+chatSocket.on('message', function(data) {
     let chatBox = $(".messages-chat")
-    let data_ = JSON.parse(message)
+    let data_ = JSON.parse(data)
     let msgChat;
     
     if(data_.userID==userID){
@@ -126,9 +130,11 @@ chatSocket.on('message', function(message) {
             </div>
         </div>`;
     } else {
+        const initials = data_.username ? data_.username.substring(0, 2).toUpperCase() : "??";
         msgChat = `
         <div class="message">
-            <div class="photo" style="background-image: url(user.png);">
+            <div class="photo">
+                <span class="initials">${initials}</span>
                 <div class="online"></div>
             </div>
             <div>
@@ -174,10 +180,10 @@ function handleTyping() {
     recordingSocket.emit('current_message', { userID: userID, message: message });
     if (!isTyping) {
         isTyping = true;
-        startSendingTime = Date.now();
+        startSendingTime = Date.now().toLocaleTimeString();
         eventSocket.emit("start_sending", JSON.stringify({ status: 'sender', startSendingTime: startSendingTime, userID: userID, message: message }));
         if (startViewingTime && !endViewingTime) {
-            endViewingTime = Date.now();
+            endViewingTime = Date.now().toLocaleTimeString();
             eventSocket.emit('end_viewing', JSON.stringify({
                 userID: userID,
                 status: 'receiver',
@@ -231,9 +237,9 @@ chatSocket.on('user_typing', function(typing) {
 function sendMessage() {
     let messageInput = document.getElementById('msg');
     let message = messageInput.value;
-    chatSocket.emit('message', JSON.stringify({msg:message, userID:userID}));
-    endSendingTime = Date.now();
-    startViewingTime = Date.now();
+    chatSocket.emit('message', JSON.stringify({msg:message, userID:userID, username: username, msgTime: new Date().toLocaleTimeString()}));
+    endSendingTime = Date.now().toLocaleTimeString();
+    startViewingTime = Date.now().toLocaleTimeString();
     eventSocket.emit("start_viewing", JSON.stringify({ status: 'receiver', startViewingTime: startViewingTime, userID: userID, completeMessage: message }));
     eventSocket.emit('end_sending', JSON.stringify({
         userID: userID,
@@ -263,4 +269,44 @@ $(window).on('keydown', async function(event){
 
 document.getElementById('stop-recording-btn').onclick = function() {
     recordingSocket.emit('stop_recording', {userID: userID});
+    isRecording = false;
+    
+    // ✅ DODAJ - aktualizuj widoczność przycisków
+    document.getElementById('stop-recording-btn').style.display = 'none';
+    document.getElementById('start-recording-btn').style.display = 'block';
 };
+
+document.getElementById('start-recording-btn').onclick = function() {
+    recordingSocket.emit('start_recording', {username: username, userID: userID});
+    isRecording = true;
+    
+    // ✅ DODAJ - aktualizuj widoczność przycisków
+    document.getElementById('start-recording-btn').style.display = 'none';
+    document.getElementById('stop-recording-btn').style.display = 'block';
+};
+
+recordingSocket.on('recording_started', function(data) {
+    console.log('Recording started:', data);
+    isRecording = true;
+    document.getElementById('start-recording-btn').style.display = 'none';
+    document.getElementById('stop-recording-btn').style.display = 'block';
+});
+
+recordingSocket.on('recording_stopped', function(data) {
+    console.log('Recording stopped:', data);
+    isRecording = false;
+    document.getElementById('stop-recording-btn').style.display = 'none';
+    document.getElementById('start-recording-btn').style.display = 'block';
+});
+
+recordingSocket.on('waiting_for_partner', function(data) {
+    console.log('Waiting for partner:', data);
+    // Pokaż komunikat oczekiwania
+    Swal.fire({
+        title: 'Waiting for partner...',
+        text: data.message,
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false
+    });
+});

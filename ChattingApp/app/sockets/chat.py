@@ -12,6 +12,8 @@ class ChatNamespace(Namespace):
         message = json.loads(message)
         msg = str(message["msg"])
         userID = int(message["userID"])
+        username = str(message["username"])
+        msgTime = str(message["msgTime"])
         pred_ = self.sentiment_service.analyze(msg)
         data = {
             "pred": True,
@@ -23,7 +25,9 @@ class ChatNamespace(Namespace):
             },
             "isTyping": False,
             "msg": msg,
-            "userID": userID
+            "userID": userID,
+            "username": username,
+            "msgTime": msgTime
         }
         emit('message', json.dumps(data), broadcast=True)
 

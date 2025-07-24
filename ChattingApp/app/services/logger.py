@@ -12,7 +12,6 @@ class Logger:
             'timestamp', 'user_id', 'username', 'status', 'message', 'complete_message',
             'start_sending_time', 'end_sending_time', 'sender_total_sending_time',
             'start_viewing_time', 'end_viewing_time', 'receiver_total_viewing_time',
-            'event_type', 'action_by',
             
             'angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral',
             

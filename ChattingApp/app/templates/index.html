@@ -29,7 +29,8 @@
         <i class="icon fa fa-smile-o clickable" style="font-size:25pt;" aria-hidden="true"></i>
         <input type="text" class="write-message msginput" placeholder="Type your message here" id="msg" oninput="handleTyping()" onkeyup="handleTyping()">
         <i class="icon send fa fa-paper-plane-o clickable" aria-hidden="true" id="send_msg" onclick="sendMessage()"></i>
-        <button id="stop-recording-btn">Stop Recording</button>
+        <button {% if is_recording %} style="display: block;" {% else %} style="display: none;" {% endif %} id="stop-recording-btn">Stop Recording</button>
+        <button {% if not is_recording %} style="display: block;" {% else %} style="display: none;" {% endif %} id="start-recording-btn">Start Recording</button>
       </div>
     </section>
 </div>

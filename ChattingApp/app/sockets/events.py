@@ -66,7 +66,7 @@ class EventsNamespace(Namespace):
             event_type="end_sending",
             individual_emotions=emotions,
             status="sender",  # Zawsze sender - wysyłasz wiadomość
-            end_sending=data.get('endSendingTime', ''),
+            end_sending_time=data.get('endSendingTime', ''),
             sender_total_sending_time=data.get('totalSendingTime', ''),
             complete_message=data.get('completeMessage', ''),
             message=data.get('completeMessage', ''),
