@@ -1,4 +1,4 @@
-from app.services.message_strategy import BertSentimentStrategy
+from chat.services.message_strategy import BertSentimentStrategy
 
 class SentimentStrategyFactory:
     @staticmethod

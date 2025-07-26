@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_socketio import SocketIO
-from app.config.config import Config
+from chat.config.config import Config
 
 socketio = SocketIO()
 

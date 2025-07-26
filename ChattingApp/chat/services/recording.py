@@ -2,8 +2,8 @@ import time
 import cv2
 import tensorflow as tf
 from deepface import DeepFace
-from app.services.logger_manager import LoggerManager
-from app.services.chat_manager import ChatManager
+from chat.services.logger_manager import LoggerManager
+from chat.services.chat_manager import ChatManager
 
 class RecordingService:
     def __init__(self):

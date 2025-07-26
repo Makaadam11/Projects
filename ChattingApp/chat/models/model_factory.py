@@ -1,6 +1,6 @@
-from app.models.bert_model import BertModel
-from app.models.deepface_model import DeepFaceModel
-from app.config.config import Config
+from chat.models.bert_model import BertModel
+from chat.models.deepface_model import DeepFaceModel
+from chat.config.config import Config
 
 class ModelFactory:
     @staticmethod

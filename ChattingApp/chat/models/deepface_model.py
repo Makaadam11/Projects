@@ -1,4 +1,4 @@
-from app.models.base_model import BaseModel
+from chat.models.base_model import BaseModel
 from deepface import DeepFace
 
 class DeepFaceModel(BaseModel):

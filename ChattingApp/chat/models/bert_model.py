@@ -6,7 +6,7 @@ from transformers import BertTokenizerFast, TFBertModel
 import tensorflow as tf
 import emoji
 
-from app.models.base_model import BaseModel
+from chat.models.base_model import BaseModel
 
 def model_builder(bert_model, max_):
     options_ = tf.keras.optimizers.legacy.Adam(learning_rate=1e-5, decay=1e-7)
