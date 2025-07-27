@@ -67,14 +67,3 @@ export function EmotionChart({ userName, data }: EmotionChartProps) {
     </div>
   );
 }
-
-export function WordCloud({ userName, data }: { userName: string; data: SessionData[] }) {
-  return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-semibold mb-4">Word Cloud ({userName})</h3>
-      <div className="h-64 bg-gray-50 rounded flex items-center justify-center">
-        <span className="text-gray-500">Word cloud will be here</span>
-      </div>
-    </div>
-  );
-}

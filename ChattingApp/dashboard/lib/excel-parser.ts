@@ -103,7 +103,9 @@ export class ExcelParser {
     return splitRecords;
   }
 
-  // ✅ POPRAWIONA METODA - użyj podzielonych danych
+// ...existing code...
+
+  // ✅ POPRAWIONA METODA - użyj podzielonych danych + konwersja na minuty/sekundy
   private static extractUsersFromSplitData(data: UserRecord[], userNames: string[]): User[] {
     const userMap = new Map<number, User>();
     
@@ -125,14 +127,25 @@ export class ExcelParser {
       
       if (record.status === 'sender' && record.complete_message !== '') {
         user.totalMessages++;
-        user.totalSending += record.total_sending_time || 0;
+        // ✅ Konwertuj milisekundy na sekundy
+        user.totalSending += (record.total_sending_time || 0) / 1000;
       } else if (record.status === 'receiver') {
-        user.totalViewing += record.total_viewing_time || 0;
+        // ✅ Konwertuj milisekundy na sekundy
+        user.totalViewing += (record.total_viewing_time || 0) / 1000;
       }
     });
     
     return Array.from(userMap.values());
   }
+
+  // ✅ NOWA METODA - formatuj czas na minuty:sekundy
+  static formatTimeToMinutesSeconds(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+// ...existing code...
 
   // ✅ POPRAWIONA METODA - emocje z podzielonych danych
   private static extractEmotionsFromSplitData(data: UserRecord[]): Record<string, EmotionData> {

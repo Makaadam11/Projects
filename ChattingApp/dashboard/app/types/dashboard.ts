@@ -1,10 +1,13 @@
 export interface User {
   id: string;
   name: string;
-  totalSending: number;
-  totalViewing: number;
+  totalSending: number; // w sekundach
+  totalViewing: number; // w sekundach
   totalMessages: number;
   corrections: number;
+  // ✅ Dodaj formatowane czasy
+  formattedTotalSending?: string; // MM:SS
+  formattedTotalViewing?: string;  // MM:SS
 }
 
 export interface EmotionData {
@@ -100,6 +103,9 @@ export interface ExcelRow {
 }
 
 // Pojedynczy rekord użytkownika
+
+
+// ✅ Dodaj interface dla messages
 export interface UserRecord {
   timestamp: string;
   user_id: number;
@@ -125,4 +131,3 @@ export interface UserRecord {
   sentiment_neu: number;
 }
 
-// ... reszta interfejsów

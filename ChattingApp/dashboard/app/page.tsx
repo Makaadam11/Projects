@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { DateFilter, SessionFilter, MinuteFilter, SentimentFilter } from './components/filters';
-import { UserCard, EmotionChart, WordCloud } from './components/dashboard';
+import { UserCard, EmotionChart } from './components/dashboard';
+import WordCloud from './components/wordcloud';
 import { SessionData, SessionInfo } from './types/dashboard';
 import { DataProcessor } from '@/lib/data-processor';
 
@@ -95,14 +96,37 @@ export default function Dashboard() {
       {/* Results */}
       {filteredSessionData ? (
         <>
+          {/* ✅ User Cards z formatowanymi czasami */}
           <div className="grid grid-cols-2 gap-6 mb-6">
-            <UserCard name={filteredSessionData.users[0]?.name || "User 1"} data={[filteredSessionData]} />
-            <UserCard name={filteredSessionData.users[1]?.name || "User 2"} data={[filteredSessionData]} />
+            <UserCard 
+              name={filteredSessionData.users[0]?.name || "User 1"} 
+              data={[filteredSessionData]} 
+            />
+            <UserCard 
+              name={filteredSessionData.users[1]?.name || "User 2"} 
+              data={[filteredSessionData]} 
+            />
           </div>
           
-          <div className="grid grid-cols-2 gap-6">
-            <EmotionChart userName={filteredSessionData.users[0]?.name || "User 1"} data={[filteredSessionData]} />
-            <EmotionChart userName={filteredSessionData.users[1]?.name || "User 2"} data={[filteredSessionData]} />
+          {/* ✅ Emotion Charts */}
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <EmotionChart 
+              userName={filteredSessionData.users[0]?.name || "User 1"} 
+              data={[filteredSessionData]} 
+            />
+            <EmotionChart 
+              userName={filteredSessionData.users[1]?.name || "User 2"} 
+              data={[filteredSessionData]} 
+            />
+          </div>
+
+          {/* ✅ NOWY - Word Cloud */}
+          <div className="mb-6">
+            <WordCloud 
+              messages={filteredSessionData.messages || []}
+              topCount={filters.topSentimentCount}
+              className="w-full"
+            />
           </div>
         </>
       ) : (
