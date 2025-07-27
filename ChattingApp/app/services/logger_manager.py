@@ -1,4 +1,4 @@
-from chat.services.logger import Logger
+from app.services.logger import Logger
 
 class LoggerManager:
     def __init__(self, recording_service):

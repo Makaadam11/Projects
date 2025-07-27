@@ -10,17 +10,16 @@ class Logger:
     
         self.columns = [
             'timestamp', 'user_id', 'username', 'status', 'message', 'complete_message',
-            'start_sending_time', 'end_sending_time', 'sender_total_sending_time',
-            'start_viewing_time', 'end_viewing_time', 'receiver_total_viewing_time',
+            'start_sending_time', 'end_sending_time', 'total_sending_time',
+            'start_viewing_time', 'end_viewing_time', 'total_viewing_time',
             
             'angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral',
             
             'sentiment_neg', 'sentiment_pos', 'sentiment_neu',
             
             'partner_name', 'partner_status', 'partner_message', 'partner_complete_message',
-            'partner_start_sending_time', 'partner_end_sending_time', 'partner_sender_total_sending_time',
-            'partner_start_viewing_time', 'partner_end_viewing_time', 'partner_receiver_total_viewing_time',
-            'partner_event_type', 'partner_action_by',
+            'partner_start_sending_time', 'partner_end_sending_time', 'partner_total_sending_time',
+            'partner_start_viewing_time', 'partner_end_viewing_time', 'partner_total_viewing_time',
             
             'partner_angry', 'partner_disgust', 'partner_fear', 'partner_happy', 
             'partner_sad', 'partner_surprise', 'partner_neutral',

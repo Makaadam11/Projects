@@ -1,40 +1,43 @@
- 
-import { SessionData, DashboardFilters } from '@/app/types/dashboard';
+// lib/data-processor.ts
+import { SessionData, SessionInfo } from '@/app/types/dashboard';
 
 export class DataProcessor {
-  static applyFilters(filters: any): SessionData[] {
-    // Placeholder implementation
-    return [];
+  // Pobierz dostępne daty z sesji
+  static getAvailableDates(sessions: SessionInfo[]): string[] {
+    if (!sessions || !Array.isArray(sessions) || sessions.length === 0) {
+      return [];
+    }
+    
+    try {
+      const dates = sessions
+        .map(session => session.date)
+        .filter(date => date && typeof date === 'string')
+        .filter((date, index, array) => array.indexOf(date) === index)
+        .sort();
+      
+      return dates;
+    } catch (error) {
+      console.error('Error getting available dates:', error);
+      return [];
+    }
   }
   
-  static filterByDateRange(sessions: SessionData[], dateRange: [Date, Date]): SessionData[] {
-    const [startDate, endDate] = dateRange;
-    return sessions.filter(session => {
-      const sessionDate = new Date(session.date);
-      return sessionDate >= startDate && sessionDate <= endDate;
-    });
+  // Filtruj sesje po dacie
+  static filterSessionsByDate(sessions: SessionInfo[], targetDate: string): SessionInfo[] {
+    if (!targetDate) return sessions;
+    return sessions.filter(session => session.date === targetDate);
   }
   
-  static filterByMinutes(sessions: SessionData[], minutes: number | 'all'): SessionData[] {
-    if (minutes === 'all') return sessions;
+  // Zastosuj filtry na danych sesji (nie na liście sesji)
+  static applyDataFilters(sessionData: SessionData, filters: any): SessionData {
+    let filteredData = { ...sessionData };
     
-    return sessions.map(session => ({
-      ...session,
-      messages: session.messages.slice(0, minutes)
-    }));
-  }
-  
-  static getTopNegativeWords(sessions: SessionData[], count: number): string[] {
-    const words: string[] = [];
+    // Filtruj wiadomości po minutach
+    if (filters.minuteFilter && filters.minuteFilter !== 'all') {
+      const minutes = parseInt(filters.minuteFilter);
+      filteredData.messages = sessionData.messages.slice(0, minutes);
+    }
     
-    sessions.forEach(session => {
-      session.messages.forEach((message: any) => {
-        if (message.sentiment_neg > 0.5) {
-          words.push(...(message.message?.split(' ') || []));
-        }
-      });
-    });
-    
-    return words.slice(0, count);
+    return filteredData;
   }
 }

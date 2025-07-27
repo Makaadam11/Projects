@@ -1,13 +1,13 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO
-from chat.services.recording import RecordingService
-from chat.services.sentiment import SentimentService
-from chat.services.sentiment_factory import SentimentStrategyFactory
-from chat.models import bert_model
-from chat.config.config import Config
-from chat.sockets.chat import ChatNamespace
-from chat.sockets.recording import RecordingNamespace
-from chat.sockets.events import EventsNamespace
+from app.services.recording import RecordingService
+from app.services.sentiment import SentimentService
+from app.services.sentiment_factory import SentimentStrategyFactory
+from app.models import bert_model
+from app.config.config import Config
+from app.sockets.chat import ChatNamespace
+from app.sockets.recording import RecordingNamespace
+from app.sockets.events import EventsNamespace
 
 def create_app():
     app = Flask(__name__)

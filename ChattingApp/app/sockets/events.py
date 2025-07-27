@@ -34,7 +34,7 @@ class EventsNamespace(Namespace):
             individual_emotions=emotions,
             status="receiver",  # Zawsze receiver - skończyłeś oglądać wiadomość partnera
             end_viewing_time=data.get('endViewingTime', ''),
-            receiver_total_viewing_time=data.get('totalViewingTime', ''),
+            total_viewing_time=data.get('totalViewingTime', 0),
             message=data.get('message', ''),  # Aktualnie pisana wiadomość
             action_by=user_id
         )
@@ -67,7 +67,7 @@ class EventsNamespace(Namespace):
             individual_emotions=emotions,
             status="sender",  # Zawsze sender - wysyłasz wiadomość
             end_sending_time=data.get('endSendingTime', ''),
-            sender_total_sending_time=data.get('totalSendingTime', ''),
+            total_sending_time=data.get('totalSendingTime', 0),
             complete_message=data.get('completeMessage', ''),
             message=data.get('completeMessage', ''),
             action_by=user_id

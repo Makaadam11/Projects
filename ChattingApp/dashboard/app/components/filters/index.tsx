@@ -1,46 +1,65 @@
 'use client';
 
 import { useState } from 'react';
+import { SessionData, SessionInfo } from '@/app/types/dashboard';
 
 interface DateFilterProps {
-  onChange: (date: [Date, Date]) => void;
+  onChange: (date: string) => void;
+  availableDates?: string[];
 }
 
-export function DateFilter({ onChange }: DateFilterProps) {
+export function DateFilter({ onChange, availableDates = [] }: DateFilterProps) {
   const [selectedDate, setSelectedDate] = useState<string>('');
   
   return (
     <div className="bg-white p-4 rounded-lg shadow">
       <label className="block text-sm font-medium mb-2">Date (Calendar)</label>
-      <input 
-        placeholder="Select date"
-        type="date" 
+      <select 
+        title='Select Date'
         className="w-full border rounded p-2"
         value={selectedDate}
         onChange={(e) => {
           setSelectedDate(e.target.value);
-          const date = new Date(e.target.value);
-          onChange([date, date]);
+          onChange(e.target.value);
         }}
-      />
+      >
+        <option value="">All Dates</option>
+        {availableDates.length === 0 ? (
+          <option disabled>No dates available</option>
+        ) : (
+          availableDates.map(date => (
+            <option key={date} value={date}>{date}</option>
+          ))
+        )}
+      </select>
     </div>
   );
 }
 
 interface SessionFilterProps {
-  onChange: (sessions: string[]) => void;
+  onChange: (fileName: string) => void;  // ✅ Zmieniono na fileName
+  sessions?: SessionInfo[];
 }
 
-export function SessionFilter({ onChange }: SessionFilterProps) {
+export function SessionFilter({ onChange, sessions = [] }: SessionFilterProps) {
   return (
     <div className="bg-white p-4 rounded-lg shadow">
       <label className="block text-sm font-medium mb-2">List of Sessions</label>
       <select
-      title='Select Session' 
-      className="w-full border rounded p-2" onChange={(e) => onChange([e.target.value])}>
-        <option value="">All Sessions</option>
-        <option value="session1">Session 1</option>
-        <option value="session2">Session 2</option>
+        title='Select Session' 
+        className="w-full border rounded p-2" 
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">Select Session</option>
+        {sessions.length === 0 ? (
+          <option disabled>No sessions available</option>
+        ) : (
+          sessions.map(session => (
+            <option key={session.fileName} value={session.file}>
+              {session.names.join(' & ')} - {session.date} {(session.time)}
+            </option>
+          ))
+        )}
       </select>
     </div>
   );
@@ -55,14 +74,16 @@ export function MinuteFilter({ onChange }: MinuteFilterProps) {
     <div className="bg-white p-4 rounded-lg shadow">
       <label className="block text-sm font-medium mb-2">Minute Filter</label>
       <select 
-      title='Select Minute Filter'
-      className="w-full border rounded p-2" onChange={(e) => onChange(e.target.value as any)}>
+        title='Select Minute Filter'
+        className="w-full border rounded p-2" 
+        onChange={(e) => onChange(e.target.value as any)}
+      >
+        <option value="all">All</option>
         <option value="1">1 min</option>
         <option value="5">5 min</option>
         <option value="10">10 min</option>
         <option value="30">30 min</option>
         <option value="60">60 min</option>
-        <option value="all">All</option>
       </select>
     </div>
   );
@@ -77,12 +98,12 @@ export function SentimentFilter({ onChange }: SentimentFilterProps) {
     <div className="bg-white p-4 rounded-lg shadow">
       <label className="block text-sm font-medium mb-2">Top Word Sentiment No</label>
       <input 
-      title='Select Top Sentiment Count'
-      placeholder="Enter count"
+        title='Select Top Sentiment Count'
+        placeholder="Enter count"
         type="number" 
         defaultValue="50" 
         className="w-full border rounded p-2"
-        onChange={(e) => onChange(parseInt(e.target.value))}
+        onChange={(e) => onChange(parseInt(e.target.value) || 50)}
       />
     </div>
   );

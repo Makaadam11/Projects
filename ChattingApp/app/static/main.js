@@ -173,29 +173,39 @@ function alertUser(text_){
   });
 }
 
-// Function to handle user typing event
 function handleTyping() {
     let messageInput = document.getElementById('msg');
     let message = messageInput.value;
     recordingSocket.emit('current_message', { userID: userID, message: message });
+    
     if (!isTyping) {
         isTyping = true;
-        startSendingTime = Date.now().toLocaleTimeString();
-        eventSocket.emit("start_sending", JSON.stringify({ status: 'sender', startSendingTime: startSendingTime, userID: userID, message: message }));
+        startSendingTime = new Date().toISOString(); // ✅ ISO format
+        
+        eventSocket.emit("start_sending", JSON.stringify({ 
+            status: 'sender', 
+            startSendingTime: startSendingTime, 
+            userID: userID, 
+            message: message 
+        }));
+        
         if (startViewingTime && !endViewingTime) {
-            endViewingTime = Date.now().toLocaleTimeString();
+            endViewingTime = new Date().toISOString(); // ✅ ISO format
+            const totalViewing = new Date(endViewingTime) - new Date(startViewingTime);
+            
             eventSocket.emit('end_viewing', JSON.stringify({
                 userID: userID,
                 status: 'receiver',
                 message: message,
                 endViewingTime: endViewingTime,
-                totalViewingTime: endViewingTime - startViewingTime
+                totalViewingTime: totalViewing
             }));
             startViewingTime = null;
             endViewingTime = null;
             totalViewingTime = 0;
         }
     }
+    
     clearTimeout(window.typingTimeout);
     window.typingTimeout = setTimeout(function() {
         isTyping = false;
@@ -237,17 +247,34 @@ chatSocket.on('user_typing', function(typing) {
 function sendMessage() {
     let messageInput = document.getElementById('msg');
     let message = messageInput.value;
-    chatSocket.emit('message', JSON.stringify({msg:message, userID:userID, username: username, msgTime: new Date().toLocaleTimeString()}));
-    endSendingTime = Date.now().toLocaleTimeString();
-    startViewingTime = Date.now().toLocaleTimeString();
-    eventSocket.emit("start_viewing", JSON.stringify({ status: 'receiver', startViewingTime: startViewingTime, userID: userID, completeMessage: message }));
+    
+    chatSocket.emit('message', JSON.stringify({
+        msg: message, 
+        userID: userID, 
+        username: username, 
+        msgTime: new Date().toLocaleTimeString()
+    }));
+    
+    endSendingTime = new Date().toISOString();
+    const totalSending = startSendingTime ? new Date(endSendingTime) - new Date(startSendingTime) : 0;
+    
+    startViewingTime = new Date().toISOString();
+    
+    eventSocket.emit("start_viewing", JSON.stringify({ 
+        status: 'receiver', 
+        startViewingTime: startViewingTime, 
+        userID: userID, 
+        completeMessage: message 
+    }));
+    
     eventSocket.emit('end_sending', JSON.stringify({
         userID: userID,
         status: 'sender',
         completeMessage: message,
         endSendingTime: endSendingTime,
-        totalSendingTime: endSendingTime - startSendingTime
+        totalSendingTime: totalSending
     }));
+    
     messageInput.value = '';
     isTyping = false;
     startSendingTime = null;
@@ -271,7 +298,6 @@ document.getElementById('stop-recording-btn').onclick = function() {
     recordingSocket.emit('stop_recording', {userID: userID});
     isRecording = false;
     
-    // ✅ DODAJ - aktualizuj widoczność przycisków
     document.getElementById('stop-recording-btn').style.display = 'none';
     document.getElementById('start-recording-btn').style.display = 'block';
 };
@@ -280,7 +306,6 @@ document.getElementById('start-recording-btn').onclick = function() {
     recordingSocket.emit('start_recording', {username: username, userID: userID});
     isRecording = true;
     
-    // ✅ DODAJ - aktualizuj widoczność przycisków
     document.getElementById('start-recording-btn').style.display = 'none';
     document.getElementById('stop-recording-btn').style.display = 'block';
 };
