@@ -1,4 +1,3 @@
-// lib/excel-parser.ts
 import * as XLSX from 'xlsx';
 import { SessionData, ExcelRow, User, EmotionData, SentimentData, UserRecord } from '@/app/types/dashboard';
 
@@ -21,7 +20,6 @@ export class ExcelParser {
   private static processSheetData(data: ExcelRow[], sheetName: string, fileName?: string): SessionData {
     const fileInfo = this.parseFileName(fileName || sheetName);
     
-    // ✅ NOWA LOGIKA - podziel dane na użytkowników
     const splitData = this.splitDataByUsers(data, fileInfo.names);
     
     const users = this.extractUsersFromSplitData(splitData, fileInfo.names);
@@ -38,74 +36,117 @@ export class ExcelParser {
     };
   }
 
-  // ✅ NOWA METODA - podziel dane na użytkowników
-  private static splitDataByUsers(data: ExcelRow[], userNames: string[]): UserRecord[] {
-    const splitRecords: UserRecord[] = [];
-    
-    data.forEach(row => {
-      // User 1 - główne kolumny
-      if (row.username) {
-        splitRecords.push({
-          timestamp: row.timestamp,
-          user_id: 1,
-          username: userNames[0] || row.username,
-          status: row.status,
-          message: row.message,
-          complete_message: row.complete_message,
-          start_sending_time: row.start_sending_time,
-          end_sending_time: row.end_sending_time,
-          total_sending_time: row.total_sending_time || 0,
-          start_viewing_time: row.start_viewing_time,
-          end_viewing_time: row.end_viewing_time,
-          total_viewing_time: row.total_viewing_time || 0,
-          angry: row.angry || 0,
-          disgust: row.disgust || 0,
-          fear: row.fear || 0,
-          happy: row.happy || 0,
-          sad: row.sad || 0,
-          surprise: row.surprise || 0,
-          neutral: row.neutral || 0,
-          sentiment_neg: row.sentiment_neg || 0,
-          sentiment_pos: row.sentiment_pos || 0,
-          sentiment_neu: row.sentiment_neu || 0
+  private static parseEuropeanNumber(value: any): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const cleanValue = value.replace(',', '.').replace(/\s/g, '');
+      const parsed = parseFloat(cleanValue);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  }
+
+  private static convertPercentToDecimal(value: number): number {
+    return value > 1 ? value / 100 : value;
+  }
+
+  
+    private static splitDataByUsers(data: ExcelRow[], userNames: string[]): UserRecord[] {
+      const splitRecords: UserRecord[] = [];
+      
+      // ✅ DODAJ - test parsowania na pierwszym wierszu
+      if (data.length > 0) {
+        const testRow = data[0];
+        console.log('Excel parser - test first row emotions:', {
+          raw_angry: testRow.angry,
+          raw_happy: testRow.happy,
+          raw_neutral: testRow.neutral,
+          parsed_angry: this.convertPercentToDecimal(this.parseEuropeanNumber(testRow.angry)),
+          parsed_happy: this.convertPercentToDecimal(this.parseEuropeanNumber(testRow.happy)),
+          parsed_neutral: this.convertPercentToDecimal(this.parseEuropeanNumber(testRow.neutral)),
         });
       }
       
-      // User 2 - kolumny z prefiksem partner_
-      if (row.partner_name) {
-        splitRecords.push({
-          timestamp: row.timestamp,
-          user_id: 2,
-          username: userNames[1] || row.partner_name,
-          status: row.partner_status,
-          message: row.partner_message,
-          complete_message: row.partner_complete_message,
-          start_sending_time: row.partner_start_sending_time,
-          end_sending_time: row.partner_end_sending_time,
-          total_sending_time: row.partner_total_sending_time || 0,
-          start_viewing_time: row.partner_start_viewing_time,
-          end_viewing_time: row.partner_end_viewing_time,
-          total_viewing_time: row.partner_total_viewing_time || 0,
-          angry: row.partner_angry || 0,
-          disgust: row.partner_disgust || 0,
-          fear: row.partner_fear || 0,
-          happy: row.partner_happy || 0,
-          sad: row.partner_sad || 0,
-          surprise: row.partner_surprise || 0,
-          neutral: row.partner_neutral || 0,
-          sentiment_neg: row.partner_sentiment_neg || 0,
-          sentiment_pos: row.partner_sentiment_pos || 0,
-          sentiment_neu: row.partner_sentiment_neu || 0
-        });
-      }
-    });
-    
-    return splitRecords;
-  }
+      data.forEach(row => {
+        // User 1 - główne kolumny
+        if (row.username) {
+          const user1Record = {
+            timestamp: row.timestamp,
+            user_id: 1,
+            username: userNames[0] || row.username,
+            status: row.status,
+            message: row.message,
+            complete_message: row.complete_message,
+            start_sending_time: row.start_sending_time,
+            end_sending_time: row.end_sending_time,
+            total_sending_time: this.parseEuropeanNumber(row.total_sending_time),
+            start_viewing_time: row.start_viewing_time,
+            end_viewing_time: row.end_viewing_time,
+            total_viewing_time: this.parseEuropeanNumber(row.total_viewing_time),
+            
+            // ✅ POPRAW - parsuj emocje z debuggiem
+            angry: this.convertPercentToDecimal(this.parseEuropeanNumber(row.angry)),
+            disgust: this.convertPercentToDecimal(this.parseEuropeanNumber(row.disgust)),
+            fear: this.convertPercentToDecimal(this.parseEuropeanNumber(row.fear)),
+            happy: this.convertPercentToDecimal(this.parseEuropeanNumber(row.happy)),
+            sad: this.convertPercentToDecimal(this.parseEuropeanNumber(row.sad)),
+            surprise: this.convertPercentToDecimal(this.parseEuropeanNumber(row.surprise)),
+            neutral: this.convertPercentToDecimal(this.parseEuropeanNumber(row.neutral)),
+            
+            sentiment_neg: this.convertPercentToDecimal(this.parseEuropeanNumber(row.sentiment_neg)),
+            sentiment_pos: this.convertPercentToDecimal(this.parseEuropeanNumber(row.sentiment_pos)),
+            sentiment_neu: this.convertPercentToDecimal(this.parseEuropeanNumber(row.sentiment_neu))
+          };
+  
+          // ✅ DEBUG pierwszego rekordu
+          if (splitRecords.length === 0) {
+            console.log('First user record emotions:', {
+              angry: user1Record.angry,
+              happy: user1Record.happy,
+              neutral: user1Record.neutral,
+              message: user1Record.complete_message?.substring(0, 30)
+            });
+          }
+  
+          splitRecords.push(user1Record);
+        }
+        
+        // User 2 - analogicznie...
+        if (row.partner_name) {
+          splitRecords.push({
+            timestamp: row.timestamp,
+            user_id: 2,
+            username: userNames[1] || row.partner_name,
+            status: row.partner_status,
+            message: row.partner_message,
+            complete_message: row.partner_complete_message,
+            start_sending_time: row.partner_start_sending_time,
+            end_sending_time: row.partner_end_sending_time,
+            total_sending_time: this.parseEuropeanNumber(row.partner_total_sending_time),
+            start_viewing_time: row.partner_start_viewing_time,
+            end_viewing_time: row.partner_end_viewing_time,
+            total_viewing_time: this.parseEuropeanNumber(row.partner_total_viewing_time),
+            
+            angry: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_angry)),
+            disgust: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_disgust)),
+            fear: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_fear)),
+            happy: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_happy)),
+            sad: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_sad)),
+            surprise: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_surprise)),
+            neutral: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_neutral)),
+            
+            sentiment_neg: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_sentiment_neg)),
+            sentiment_pos: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_sentiment_pos)),
+            sentiment_neu: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_sentiment_neu))
+          });
+        }
+      });
+      
+      return splitRecords;
+    }
+  
+  // ...existing code...
 
-// ...existing code...
-
-  // ✅ POPRAWIONA METODA - użyj podzielonych danych + konwersja na minuty/sekundy
   private static extractUsersFromSplitData(data: UserRecord[], userNames: string[]): User[] {
     const userMap = new Map<number, User>();
     
@@ -127,10 +168,8 @@ export class ExcelParser {
       
       if (record.status === 'sender' && record.complete_message !== '') {
         user.totalMessages++;
-        // ✅ Konwertuj milisekundy na sekundy
         user.totalSending += (record.total_sending_time || 0) / 1000;
       } else if (record.status === 'receiver') {
-        // ✅ Konwertuj milisekundy na sekundy
         user.totalViewing += (record.total_viewing_time || 0) / 1000;
       }
     });
@@ -138,16 +177,12 @@ export class ExcelParser {
     return Array.from(userMap.values());
   }
 
-  // ✅ NOWA METODA - formatuj czas na minuty:sekundy
   static formatTimeToMinutesSeconds(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
-// ...existing code...
-
-  // ✅ POPRAWIONA METODA - emocje z podzielonych danych
   private static extractEmotionsFromSplitData(data: UserRecord[]): Record<string, EmotionData> {
     const emotionMap: Record<string, EmotionData> = {};
     
@@ -178,7 +213,6 @@ export class ExcelParser {
     return emotionMap;
   }
 
-  // ✅ POPRAWIONA METODA - sentymenty z podzielonych danych
   private static extractSentimentsFromSplitData(data: UserRecord[]): Record<string, SentimentData> {
     const sentimentMap: Record<string, SentimentData> = {};
     
@@ -202,7 +236,6 @@ export class ExcelParser {
     return sentimentMap;
   }
 
-  // ✅ Pozostałe metody bez zmian
   private static parseFileName(fileName: string): { names: string[], date: string } {
     const parts = fileName.split('_');
     

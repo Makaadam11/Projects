@@ -201,24 +201,6 @@ export default function WordCloud({ messages, topCount = 50, className = '' }: W
         />
       </div>
 
-      {/* Debug info */}
-      {process.env.NODE_ENV === 'development' && (
-        <details className="mt-4 text-xs text-gray-500">
-          <summary>Debug Info</summary>
-          <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto">
-            {JSON.stringify({
-              messagesCount: messages.length,
-              sampleMessages: messages.slice(0, 3).map(m => ({
-                message: m.complete_message?.substring(0, 50),
-                sentiment_neg: m.sentiment_neg,
-                sentiment_pos: m.sentiment_pos,
-                sentiment_neu: m.sentiment_neu
-              })),
-              wordStats
-            }, null, 2)}
-          </pre>
-        </details>
-      )}
     </div>
   );
 }

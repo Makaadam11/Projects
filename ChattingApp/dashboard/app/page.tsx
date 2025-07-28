@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import { DateFilter, SessionFilter, MinuteFilter, SentimentFilter } from './components/filters';
 import { UserCard, EmotionChart } from './components/dashboard';
 import WordCloud from './components/wordcloud';
+import EmotionTimeline from './components/emotiongraph'
 import { SessionData, SessionInfo } from './types/dashboard';
 import { DataProcessor } from '@/lib/data-processor';
+import EmotionTimelineSegments from './components/emotiongraph';
+
 
 export default function Dashboard() {
   const [availableSessions, setAvailableSessions] = useState<SessionInfo[]>([]);
@@ -108,19 +111,17 @@ export default function Dashboard() {
             />
           </div>
           
-          {/* ✅ Emotion Charts */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <EmotionChart 
-              userName={filteredSessionData.users[0]?.name || "User 1"} 
-              data={[filteredSessionData]} 
+          <div className="space-y-6 mb-6">
+            <EmotionTimelineSegments
+              messages={filteredSessionData.messages.filter(msg => msg.user_id === 1)}  
+              userName={filteredSessionData.users[0]?.name || "User 1"}
             />
-            <EmotionChart 
-              userName={filteredSessionData.users[1]?.name || "User 2"} 
-              data={[filteredSessionData]} 
+            <EmotionTimelineSegments
+              messages={filteredSessionData.messages.filter(msg => msg.user_id === 2)}
+              userName={filteredSessionData.users[1]?.name || "User 2"}  
             />
           </div>
-
-          {/* ✅ NOWY - Word Cloud */}
+          
           <div className="mb-6">
             <WordCloud 
               messages={filteredSessionData.messages || []}
