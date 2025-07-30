@@ -111,18 +111,25 @@ export default function Dashboard() {
             />
           </div>
           
-          <div className="space-y-6 mb-6">
+          <div className="grid grid-cols-2 gap-6 mb-6">
             <EmotionTimelineSegments
               messages={filteredSessionData.messages.filter(msg => msg.user_id === 1)}  
               userName={filteredSessionData.users[0]?.name || "User 1"}
+              minuteFilter={filters.minuteFilter} // ✅ Przekaż filter
             />
             <EmotionTimelineSegments
               messages={filteredSessionData.messages.filter(msg => msg.user_id === 2)}
-              userName={filteredSessionData.users[1]?.name || "User 2"}  
+              userName={filteredSessionData.users[1]?.name || "User 2"}
+              minuteFilter={filters.minuteFilter} // ✅ Przekaż filter
             />
           </div>
           
-          <div className="mb-6">
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <WordCloud 
+              messages={filteredSessionData.messages || []}
+              topCount={filters.topSentimentCount}
+              className="w-full"
+            />
             <WordCloud 
               messages={filteredSessionData.messages || []}
               topCount={filters.topSentimentCount}
