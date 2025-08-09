@@ -26,7 +26,6 @@ class LoggerManager:
                     **{k: v for k, v in shared_data.items() if 'time' in k.lower()}
                 }
                 
-                # Dodaj sentiment partnera do partner_data
                 if partner_sentiment:
                     partner_data.update({
                         'sentiment_neg': partner_sentiment.get('neg', 0),
@@ -38,7 +37,6 @@ class LoggerManager:
                 **shared_data
             }
             
-            # Dodaj sentiment użytkownika do jego własnych danych
             if user_sentiment:
                 log_data.update({
                     'sentiment_neg': user_sentiment.get('neg', 0),
@@ -51,7 +49,6 @@ class LoggerManager:
                 partner_data=partner_data,
                 **log_data
             )
-            print(f"Logged event '{event_type}' for user {user_id}")
         
         if partner_id:
             partner_logger = self.loggers.get(partner_id)
@@ -62,12 +59,9 @@ class LoggerManager:
                 elif shared_data.get("status") == "receiver":
                     partner_shared_data["status"] = "sender"
                 
-                # Pobierz sentiment partnera dla jego własnych danych
                 partner_sentiment = self.recording_service.get_sentiment(partner_id)
-                # Pobierz sentiment użytkownika dla danych partnera
                 user_sentiment = self.recording_service.get_sentiment(user_id)
                 
-                # Dodaj sentiment partnera do jego własnych danych
                 if partner_sentiment:
                     partner_shared_data.update({
                         'sentiment_neg': partner_sentiment.get('neg', 0),
@@ -91,7 +85,6 @@ class LoggerManager:
                     **{k: v for k, v in shared_data.items() if 'time' in k.lower()}
                 }
                 
-                # Dodaj sentiment użytkownika jako partner sentiment
                 if user_sentiment:
                     user_data.update({
                         'sentiment_neg': user_sentiment.get('neg', 0),
@@ -104,7 +97,6 @@ class LoggerManager:
                     partner_data=user_data,
                     **partner_shared_data
                 )
-                print(f"Logged event '{event_type}' for partner {partner_id}")
     
     def set_partner(self, user_id, partner_id, user_name=None, partner_name=None):
         self.partners[user_id] = partner_id

@@ -62,7 +62,6 @@ class Logger:
         }
     
         self.frames.append(row_data)
-        print(f"Logged: {kwargs.get('event_type', 'event')} for {self.username}. Total entries: {len(self.frames)}")
     
     def save_to_excel(self):
         if not self.username:

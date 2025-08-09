@@ -90,6 +90,16 @@ async function create_chart(values, user_id){
       Neutral: ${(values.neu * 100).toFixed(2)}%`
 }
 
+let langSelect = document.getElementById('translation-lang');
+if (langSelect) {
+  langSelect.addEventListener('change', () => {
+    chatSocket.emit('set_language', JSON.stringify({
+      userID: userID,
+      language: langSelect.value || ""
+    }));
+  });
+}
+
 Swal.fire({
   title: 'Enter username for chat',
   input: 'text',
@@ -111,50 +121,57 @@ Swal.fire({
   }
 });
 
-// socket start
 chatSocket.on('connect', function() {
     console.log('Connected to chat');
 });
 
 chatSocket.on('message', function(data) {
-    let chatBox = $(".messages-chat")
-    let data_ = JSON.parse(data)
-    let msgChat;
-    
-    if(data_.userID==userID){
-        msgChat = `
-        <div class="message text-only">
-            <div class="response">
-                <p class="text">${data_.msg}</p>
-                <p class="response-time time">${data_.msgTime}</p>
-            </div>
-        </div>`;
-    } else {
-        const initials = data_.username ? data_.username.substring(0, 2).toUpperCase() : "??";
-        msgChat = `
-        <div class="message">
-            <div class="photo">
-                <span class="initials">${initials}</span>
-                <div class="online"></div>
-            </div>
-            <div>
-                <p class="text">${data_.msg}</p>
-                <p class="time">${data_.msgTime}</p>
-            </div>
-        </div>`;
+  const chatBox = $(".messages-chat");
+  const data_ = JSON.parse(data);
+  const currentLang = langSelect ? langSelect.value : "";
+  const msgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let translatedLine;
+  if (currentLang && data_.translations && data_.translations[currentLang]) {
+    translatedLine = `<p class="translation" style="margin:4px 0 0 0;font-size:10px;color:#666;">${esc(data_.translations[currentLang])}</p>`;
+  } else {
+    translatedLine = `<p class="translation" style="margin:4px 0 0 0;font-size:10px;color:#666;"></p>`;
+  }
+  let msgChat;
+  if (data_.userID == userID) {
+    msgChat = `
+      <div class="message text-only" id="${msgId}">
+        <div class="response">
+          <p class="text">${esc(data_.msg)}</p>
+          ${translatedLine}
+          <p class="response-time time">${esc(data_.msgTime)}</p>
+        </div>
+      </div>`;
+  } else {
+    const initials = data_.username ? esc(data_.username.substring(0,2).toUpperCase()) : "??";
+    msgChat = `
+      <div class="message" id="${msgId}">
+        <div class="photo">
+          <span class="initials">${initials}</span>
+          <div class="online"></div>
+        </div>
+        <div>
+          <p class="text">${esc(data_.msg)}</p>
+          ${translatedLine}
+          <p class="time">${esc(data_.msgTime)}</p>
+        </div>
+      </div>`;
+  }
+  if (data_.pred && data_.userID == userID) {
+    if (data_.values.predicted == "negative") {
+      alertUser("You are typing negative words !");
+      $("input#msg").removeClass("abusive");
     }
-    
-    if(data_.pred && data_.userID==userID){
-        if(data_.values.predicted == "negative"){
-          alertUser("You are typing negative words !");
-          $("input#msg").removeClass("abusive");
-        }
-        create_chart(data_.values, data_.userID);
-    }
-    chatBox.append(msgChat);
+    create_chart(data_.values, data_.userID);
+  }
+  chatBox.append(msgChat);
 });
 
-// alert user function
 function alertUser(text_){
   const Toast = Swal.mixin({
     toast: true,
