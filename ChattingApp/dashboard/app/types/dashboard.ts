@@ -129,5 +129,29 @@ export interface UserRecord {
   sentiment_neg: number;
   sentiment_pos: number;
   sentiment_neu: number;
+  partner_name?: string; // Opcjonalne, jeśli wiadomość dotyczy partnera
+  partner_status?: string;
+  partner_message?: string;
+  partner_complete_message?: string;
+  partner_start_sending_time?: string;
+  partner_end_sending_time?: string;
+  partner_total_sending_time?: number;
+  partner_start_viewing_time?: string;
+  partner_end_viewing_time?: string;
+  partner_total_viewing_time?: number;
+  partner_event_type?: string;
+  partner_action_by?: string;
+  partner_angry?: number;
+  partner_disgust?: number;
+  partner_fear?: number;
+  partner_happy?: number;
+  partner_sad?: number;
+  partner_surprise?: number;
+  partner_neutral?: number;
+  partner_sentiment_neg?: number;
+  partner_sentiment_pos?: number;
+  partner_sentiment_neu?: number;
+  formattedTotalSending?: string; // MM:SS
+  formattedTotalViewing?: string;  // MM:SS
 }
 

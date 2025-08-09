@@ -35,7 +35,8 @@ export class DataProcessor {
     // Filtruj wiadomości po minutach
     if (filters.minuteFilter && filters.minuteFilter !== 'all') {
       const minutes = parseInt(filters.minuteFilter);
-      filteredData.messages = sessionData.messages.slice(0, minutes);
+      
+      filteredData.messages = sessionData.messages.slice(0, minutes * 60);
     }
     
     return filteredData;

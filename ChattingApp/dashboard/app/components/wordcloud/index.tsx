@@ -32,15 +32,6 @@ export default function WordCloud({ messages, topCount = 50, className = '' }: W
       const hasMessage = msg.complete_message && msg.complete_message.trim().length > 0;
       const hasNegativeSentiment = msg.sentiment_neg && msg.sentiment_neg > 0;
       
-      console.log('Message check:', {
-        message: msg.complete_message?.substring(0, 50),
-        sentiment_neg: msg.sentiment_neg,
-        sentiment_pos: msg.sentiment_pos,
-        sentiment_neu: msg.sentiment_neu,
-        hasMessage,
-        hasNegativeSentiment
-      });
-      
       return hasMessage && hasNegativeSentiment;
     });
 

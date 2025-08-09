@@ -14,10 +14,15 @@ export default function Dashboard() {
   const [availableSessions, setAvailableSessions] = useState<SessionInfo[]>([]);
   const [selectedSessionData, setSelectedSessionData] = useState<SessionData | null>(null);
   const [filteredSessionData, setFilteredSessionData] = useState<SessionData | null>(null);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    date: string;
+    selectedFile: string;
+    minuteFilter: 1 | 5 | 10 | 30 | 60 | "all";
+    topSentimentCount: number;
+  }>({
     date: '',
     selectedFile: '',
-    minuteFilter: 'all' as const,
+    minuteFilter: 'all',
     topSentimentCount: 50
   });
 
@@ -27,8 +32,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (selectedSessionData) {
-      const filtered = DataProcessor.applyDataFilters(selectedSessionData, filters);
-      setFilteredSessionData(filtered);
+      // const filtered = DataProcessor.applyDataFilters(selectedSessionData, filters);
+      setFilteredSessionData(selectedSessionData);
     }
   }, [filters, selectedSessionData]);
 
@@ -72,7 +77,6 @@ export default function Dashboard() {
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6">Chat Analytics Dashboard</h1>
       
-      {/* Session Info */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold mb-2">Available Sessions: {availableSessions.length}</h2>
         {selectedSessionData && (
@@ -82,7 +86,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Filters */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <DateFilter 
           availableDates={availableDates}
@@ -96,31 +99,32 @@ export default function Dashboard() {
         <SentimentFilter onChange={(count) => setFilters({...filters, topSentimentCount: count})} />
       </div>
       
-      {/* Results */}
       {filteredSessionData ? (
         <>
-          {/* ✅ User Cards z formatowanymi czasami */}
           <div className="grid grid-cols-2 gap-6 mb-6">
-            <UserCard 
-              name={filteredSessionData.users[0]?.name || "User 1"} 
-              data={[filteredSessionData]} 
+            <UserCard
+              name={filteredSessionData.users[0]?.name || "User 1"}
+              data={[filteredSessionData]}
             />
-            <UserCard 
-              name={filteredSessionData.users[1]?.name || "User 2"} 
-              data={[filteredSessionData]} 
+            <UserCard
+              name={filteredSessionData.users[1]?.name || "User 2"}
+              data={[filteredSessionData]}
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-6 mb-6">
             <EmotionTimelineSegments
-              messages={filteredSessionData.messages.filter(msg => msg.user_id === 1)}  
-              userName={filteredSessionData.users[0]?.name || "User 1"}
-              minuteFilter={filters.minuteFilter} // ✅ Przekaż filter
+              key={`timeline-${filteredSessionData.users[0]?.name || 'user1'}`}
+              name={filteredSessionData.users[0]?.name || "User 1"}
+              data={[filteredSessionData]}
+              minuteFilter={filters.minuteFilter}
+
             />
             <EmotionTimelineSegments
-              messages={filteredSessionData.messages.filter(msg => msg.user_id === 2)}
-              userName={filteredSessionData.users[1]?.name || "User 2"}
-              minuteFilter={filters.minuteFilter} // ✅ Przekaż filter
+              key={`timeline-${filteredSessionData.users[1]?.name || 'user2'}`}
+              name={filteredSessionData.users[1]?.name || "User 2"}
+              data={[filteredSessionData]}
+              minuteFilter={filters.minuteFilter}
             />
           </div>
           
