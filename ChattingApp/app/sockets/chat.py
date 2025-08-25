@@ -1,3 +1,4 @@
+from itertools import count
 from flask_socketio import Namespace, emit
 from flask import request
 from app.utils.translator_service import TranslatorService
@@ -52,22 +53,23 @@ class ChatNamespace(Namespace):
     def on_typing(self, raw):
         obj = json.loads(raw) if isinstance(raw, str) else raw
         msg = str(obj.get("msg", ""))
+        if (msg is None) or (msg.strip() == ""):
+            return
         user_id = int(obj.get("userID"))
         is_typing = bool(obj.get("isTyping"))
         data = {"pred": False, "values": {}, "isTyping": is_typing, "msg": msg, "userID": user_id}
 
-        if len(msg.split()) > 1:
-            pred = self.sentiment_service.analyze(msg)
-            values = {
-                "neg": float(pred[0][0]),
-                "neu": float(pred[0][1]),
-                "pos": float(pred[0][2]),
-                "predicted": ["negative", "neutral", "positive"][int(pred[1])]
-            }
-            data.update({"pred": True, "values": values})
-            self.recording_service.update_sentiment(user_id, values)
-            if values["predicted"] == "negative":
-                emit("alert_user_typing", json.dumps({"msg": "You are typing negative words!"}), broadcast=True)
+        pred = self.sentiment_service.analyze(msg)
+        values = {
+            "neg": float(pred[0][0]),
+            "neu": float(pred[0][1]),
+            "pos": float(pred[0][2]),
+            "predicted": ["negative", "neutral", "positive"][int(pred[1])]
+        }
+        data.update({"pred": True, "values": values})
+        self.recording_service.update_sentiment(user_id, values)
+        if values["predicted"] == "negative":
+            emit("alert_user_typing", json.dumps({"msg": "You are typing negative words!"}), broadcast=True)
 
         emit("user_typing", json.dumps(data), broadcast=True)
 

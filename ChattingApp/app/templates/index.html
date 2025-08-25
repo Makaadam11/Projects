@@ -20,12 +20,24 @@
       <div class="header-chat">
         <i class="icon fa fa-user-o" aria-hidden="true"></i>
         <p class="name" id="userSelectedName">---</p>
-        <i class="icon clickable fa fa-ellipsis-h right" aria-hidden="true"></i>
+        <div style="position:relative;margin-left:auto;">
+          <i class="icon clickable fa fa-ellipsis-h right" aria-hidden="true" id="menu-toggle"></i>
+          <div id="options-menu" style="display:none;position:absolute;right:0;top:28px;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);min-width:220px;z-index:1000;padding:8px;">
+            <label style="display:flex;align-items:center;gap:8px;padding:8px 6px;cursor:pointer;">
+              <input type="checkbox" id="toggle-bert" />
+              <span>Enable Analysis</span>
+            </label>
+            <hr style="margin:6px 0;">
+            <button id="start-recording-menu" style="width:100%;padding:8px;border:0;background:#2d7ef7;color:#fff;border-radius:4px;cursor:pointer;">Start Recording</button>
+            <button id="stop-recording-menu" style="display:none;width:100%;margin-top:6px;padding:8px;border:0;background:#f73b3b;color:#fff;border-radius:4px;cursor:pointer;">Stop Recording</button>
+          </div>
+        </div>
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:6px;padding-right:10px;">
         <label style="font-size:11px;color:#555;">Translate</label>
         <select id="translation-lang" style="font-size:11px;padding:2px 4px;">
           <option value="">Off</option>
+          <option value="en">English</option>
           <option value="ar">Arabic</option>
           <option value="es">Spanish</option>
           <option value="fr">French</option>
@@ -38,8 +50,6 @@
         <i class="icon fa fa-smile-o clickable" style="font-size:25pt;" aria-hidden="true"></i>
         <input type="text" class="write-message msginput" placeholder="Type your message here" id="msg" oninput="handleTyping()" onkeyup="handleTyping()">
         <i class="icon send fa fa-paper-plane-o clickable" aria-hidden="true" id="send_msg" onclick="sendMessage()"></i>
-        <button {% if is_recording %} style="display: block;" {% else %} style="display: none;" {% endif %} id="stop-recording-btn">Stop Recording</button>
-        <button {% if not is_recording %} style="display: block;" {% else %} style="display: none;" {% endif %} id="start-recording-btn">Start Recording</button>
       </div>
     </section>
 </div>

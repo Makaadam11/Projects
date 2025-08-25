@@ -1,0 +1,34 @@
+# UPROSZCZONY plik TOP-LEVEL (użyj jako requirements2.in dla wszystkich platform)
+# Zostaw tylko bezpośrednie zależności. Resztę (transitive) dobierze pip-compile.
+
+Flask
+flask-cors
+Flask-SocketIO
+gevent
+gunicorn           ; sys_platform != "win32"   # opcjonalne na prod Linux/mac
+deepface==0.0.93
+spacy==3.6.0
+transformers==4.28.1
+translate
+pandas==2.3.0
+openpyxl
+numpy==1.23.5
+scipy              # pozwól pip dobrać kompatybilną
+opencv-python
+gdown
+mtcnn
+retina-face
+nltk
+tqdm
+requests
+python-socketio
+eventlet           ; sys_platform != "win32"   # alternatywa dla gevent
+# TensorFlow warianty (NIE instaluj wszystkich naraz)
+tensorflow-intel==2.12.0     ; sys_platform == "win32"
+tensorflow-macos==2.12.0     ; sys_platform == "darwin"
+tensorflow-metal==1.1.0      ; sys_platform == "darwin"
+tensorflow==2.12.0           ; sys_platform != "win32" and sys_platform != "darwin"
+
+# (opcjonalnie) JAX jeśli naprawdę potrzebny – może kolidować z TF na Mac
+jax==0.4.30        ; sys_platform != "darwin"
+jaxlib==0.4.30     ; sys_platform != "darwin"

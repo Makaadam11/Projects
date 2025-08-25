@@ -5,7 +5,7 @@ from typing import Dict, Set
 
 class TranslatorService:
     def __init__(self, supported: Set[str] | None = None):
-        self.supported = supported or {"ar", "es", "fr"}
+        self.supported = supported or {"en","ar", "es", "fr"}
         self._user_lang: Dict[int, str] = {}
         self._lang_translators: Dict[str, Translator] = {}
         self._lock = threading.Lock()
@@ -17,7 +17,7 @@ class TranslatorService:
             if lang in self.supported:
                 self._user_lang[user_id] = lang
                 if lang not in self._lang_translators:
-                    self._lang_translators[lang] = Translator(to_lang=lang)
+                    self._lang_translators[lang] = Translator(to_lang=lang, from_lang="autodetect")
             else:
                 self._user_lang[user_id] = ""
             if prev != self._user_lang[user_id]:

@@ -9,11 +9,12 @@ let startSendingTime = null;
 let endSendingTime = null;
 let totalSendingTime = 0;
 let isRecording = true;
+let bertEnabled = false;
 
 let username = null;
 let userID = generateUserID(1, 20);
 
-let isTyping = false; // To track user typing status
+let isTyping = false;
 let userTyping = `
   <div class="message userchattyping">
     <div class="photo" style="background-image: url(./static/user.png);">
@@ -116,7 +117,7 @@ Swal.fire({
     $("#userSelectedName").html(username);
     recordingSocket.emit('start_recording', {username: username, userID: userID});
     isRecording = true;
-      document.getElementById('start-recording-btn').style.display = 'none';
+    document.getElementById('start-recording-btn').style.display = 'none';
     document.getElementById('stop-recording-btn').style.display = 'block';
   }
 });
@@ -126,6 +127,7 @@ chatSocket.on('connect', function() {
 });
 
 chatSocket.on('message', function(data) {
+  if (data._msg == null) return;
   const chatBox = $(".messages-chat");
   const data_ = JSON.parse(data);
   const currentLang = langSelect ? langSelect.value : "";
@@ -162,7 +164,7 @@ chatSocket.on('message', function(data) {
         </div>
       </div>`;
   }
-  if (data_.pred && data_.userID == userID) {
+  if (bertEnabled && data_.pred && data_.userID == userID) {
     if (data_.values.predicted == "negative") {
       alertUser("You are typing negative words !");
       $("input#msg").removeClass("abusive");
@@ -170,6 +172,7 @@ chatSocket.on('message', function(data) {
     create_chart(data_.values, data_.userID);
   }
   chatBox.append(msgChat);
+  scrollToBottom();
 });
 
 function alertUser(text_){
@@ -193,6 +196,7 @@ function alertUser(text_){
 function handleTyping() {
     let messageInput = document.getElementById('msg');
     let message = messageInput.value;
+    if (message == null) return;
     recordingSocket.emit('current_message', { userID: userID, message: message });
     
     if (!isTyping) {
@@ -231,6 +235,7 @@ function handleTyping() {
 }
 
 chatSocket.on('user_typing', function(typing) {
+    if (!bertEnabled) return;
     let typingStatus = $(".messages-chat")
     let data_ = JSON.parse(typing)
     if(data_.pred && data_.userID == userID){
@@ -251,11 +256,13 @@ chatSocket.on('user_typing', function(typing) {
     }
     if(data_.isTyping && data_.userID==userID){
       typingStatus.append(myTyping);
+      scrollToBottom();
     } else if(data_.isTyping==false && data_.userID==userID){
       $(".mychattyping").remove();
     }
     if(data_.isTyping && data_.userID!=userID){
       typingStatus.append(userTyping);
+      scrollToBottom();
     } else if(data_.isTyping==false && data_.userID!=userID){
       $(".userchattyping").remove();
     }
@@ -304,6 +311,37 @@ function generateUserID(min, max){
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function scrollToBottom() {
+  const box = $(".messages-chat");
+  if (!box.length) return;
+  requestAnimationFrame(() => {
+    box.stop(true);
+    box.animate({ scrollTop: box[0].scrollHeight }, 250);
+  });
+}
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('options-menu');
+  const btn = document.getElementById('menu-toggle');
+  if (!menu || !btn) return;
+  if (btn.contains(e.target)) {
+    menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+  } else if (!menu.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
+const bertToggle = document.getElementById('toggle-bert');
+if (bertToggle) {
+  bertToggle.checked = false;
+  bertToggle.addEventListener('change', () => {
+    bertEnabled = bertToggle.checked;
+    document.getElementById('predicted_sentiment').style.display = bertEnabled ? 'block' : 'none';
+    document.getElementById('predValues').style.display = bertEnabled ? 'block' : 'none';
+    $("input#msg").removeClass("abusive positive neutral");
+  });
+}
+
 $(window).on('keydown', async function(event){
   if(event.which == 13){
     sendMessage();
@@ -311,39 +349,34 @@ $(window).on('keydown', async function(event){
   }
 });
 
-document.getElementById('stop-recording-btn').onclick = function() {
-    recordingSocket.emit('stop_recording', {userID: userID});
-    isRecording = false;
-    
-    document.getElementById('stop-recording-btn').style.display = 'none';
-    document.getElementById('start-recording-btn').style.display = 'block';
-};
-
-document.getElementById('start-recording-btn').onclick = function() {
-    recordingSocket.emit('start_recording', {username: username, userID: userID});
+const startRecBtn = document.getElementById('start-recording-menu');
+const stopRecBtn  = document.getElementById('stop-recording-menu');
+if (startRecBtn && stopRecBtn) {
+  startRecBtn.addEventListener('click', () => {
+    recordingSocket.emit('start_recording', { username: username, userID: userID });
     isRecording = true;
-    
-    document.getElementById('start-recording-btn').style.display = 'none';
-    document.getElementById('stop-recording-btn').style.display = 'block';
-};
+    startRecBtn.style.display = 'none';
+    stopRecBtn.style.display = 'block';
+  });
+  stopRecBtn.addEventListener('click', () => {
+    recordingSocket.emit('stop_recording', { userID: userID });
+    isRecording = false;
+    stopRecBtn.style.display = 'none';
+    startRecBtn.style.display = 'block';
+  });
+}
 
 recordingSocket.on('recording_started', function(data) {
-    console.log('Recording started:', data);
-    isRecording = true;
-    document.getElementById('start-recording-btn').style.display = 'none';
-    document.getElementById('stop-recording-btn').style.display = 'block';
+  isRecording = true;
+  if (startRecBtn && stopRecBtn) { startRecBtn.style.display = 'none'; stopRecBtn.style.display = 'block'; }
 });
-
 recordingSocket.on('recording_stopped', function(data) {
-    console.log('Recording stopped:', data);
-    isRecording = false;
-    document.getElementById('stop-recording-btn').style.display = 'none';
-    document.getElementById('start-recording-btn').style.display = 'block';
+  isRecording = false;
+  if (startRecBtn && stopRecBtn) { stopRecBtn.style.display = 'none'; startRecBtn.style.display = 'block'; }
 });
 
 recordingSocket.on('waiting_for_partner', function(data) {
     console.log('Waiting for partner:', data);
-    // Pokaż komunikat oczekiwania
     Swal.fire({
         title: 'Waiting for partner...',
         text: data.message,
