@@ -37,7 +37,7 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
     const negativeMessages = messages.filter(msg =>
       msg.complete_message &&
       msg.complete_message.trim().length > 0 &&
-      (msg.sentiment_neg || 0) > 0
+      (msg.sentiment_neg || 0) > 20
     );
     const messagesToProcess = negativeMessages.length ? negativeMessages : messages.filter(msg =>
       msg.complete_message &&
@@ -54,8 +54,7 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
           word.length > 2 &&
           ![
             'the','and','that','this','with','have','will','they','from','been','were','said','each','which','their',
-            'time','would','there','could','other','jest','nie','czy','ale','jak','też','już','tak','może','było',
-            'będzie','lub','oraz','dla','jego','jej','tym','tej','ten','mnie','tego','która','które'
+            'time','would','there','could','other'
           ].includes(word)
         );
       words.forEach(word => {
@@ -71,7 +70,7 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
         frequency: data.count,
         sentiment: data.totalSentiment / data.count
       }))
-      .sort((a, b) => b.frequency - a.frequency || b.sentiment - a.sentiment)
+      .sort((a, b) => b.sentiment - a.sentiment || b.frequency - a.frequency)
       .slice(0, topCount);
     setWordStats({
       totalWords: wordFrequencies.length,

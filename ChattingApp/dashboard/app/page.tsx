@@ -8,6 +8,7 @@ import EmotionTimeline from './components/emotiongraph'
 import { SessionData, SessionInfo } from './types/dashboard';
 import { DataProcessor } from '@/lib/data-processor';
 import EmotionTimelineSegments from './components/emotiongraph';
+import SentimentTimelineSegments from './components/sentimentgraph';
 
 
 export default function Dashboard() {
@@ -109,6 +110,22 @@ export default function Dashboard() {
             <UserCard
               name={filteredSessionData.users[1]?.name || "User 2"}
               data={[filteredSessionData]}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <SentimentTimelineSegments
+              key={`timeline-${filteredSessionData.users[0]?.name || 'user1'}`}
+              name={filteredSessionData.users[0]?.name || "User 1"}
+              data={[filteredSessionData]}
+              minuteFilter={filters.minuteFilter}
+
+            />
+            <SentimentTimelineSegments
+              key={`timeline-${filteredSessionData.users[1]?.name || 'user2'}`}
+              name={filteredSessionData.users[1]?.name || "User 2"}
+              data={[filteredSessionData]}
+              minuteFilter={filters.minuteFilter}
             />
           </div>
 

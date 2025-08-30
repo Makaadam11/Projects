@@ -1,11 +1,10 @@
 export interface User {
   id: string;
   name: string;
-  totalSending: number; // w sekundach
-  totalViewing: number; // w sekundach
+  totalSending: number;
+  totalViewing: number;
   totalMessages: number;
   corrections: number;
-  // ✅ Dodaj formatowane czasy
   formattedTotalSending?: string; // MM:SS
   formattedTotalViewing?: string;  // MM:SS
 }
@@ -28,21 +27,20 @@ export interface SentimentData {
 }
 
 export interface SessionInfo {
-  fileName: string;  // Adam_Femi_2025-07-22_21-05-26
-  file: string;      // Adam_Femi_2025-07-22_21-05-26.xlsx
-  names: string[];   // ["Adam", "Femi"]
-  date: string;      // 2025-07-22
-  time?: string;     // 21-05-26
+  fileName: string;
+  file: string;
+  names: string[];
+  date: string;
+  time?: string;
 }
 
-// app/types/dashboard.ts
 export interface SessionData {
   id: string;
   date: string;
   users: User[];
   emotions: Record<string, EmotionData>;
   sentiments: Record<string, SentimentData>;
-  messages: UserRecord[]; // ✅ Zmieniono na UserRecord[]
+  messages: UserRecord[];
   sessionInfo?: SessionInfo;
 }
     
@@ -77,7 +75,6 @@ export interface ExcelRow {
   sentiment_pos: number;
   sentiment_neu: number;
   
-  // Partner data
   partner_name: string;
   partner_status: string;
   partner_message: string;
@@ -89,7 +86,6 @@ export interface ExcelRow {
   partner_end_viewing_time: string;
   partner_total_viewing_time: number;
   partner_event_type: string;
-  partner_action_by: string;
   partner_angry: any;
   partner_disgust: any;
   partner_fear: any;
@@ -102,10 +98,8 @@ export interface ExcelRow {
   partner_sentiment_neu: number;
 }
 
-// Pojedynczy rekord użytkownika
 
 
-// ✅ Dodaj interface dla messages
 export interface UserRecord {
   timestamp: string;
   user_id: number;
@@ -129,7 +123,8 @@ export interface UserRecord {
   sentiment_neg: number;
   sentiment_pos: number;
   sentiment_neu: number;
-  partner_name?: string; // Opcjonalne, jeśli wiadomość dotyczy partnera
+
+  partner_name?: string;
   partner_status?: string;
   partner_message?: string;
   partner_complete_message?: string;
@@ -140,7 +135,6 @@ export interface UserRecord {
   partner_end_viewing_time?: string;
   partner_total_viewing_time?: number;
   partner_event_type?: string;
-  partner_action_by?: string;
   partner_angry?: number;
   partner_disgust?: number;
   partner_fear?: number;
