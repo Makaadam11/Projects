@@ -73,12 +73,9 @@ class ChatNamespace(Namespace):
         self.recording_service.update_sentiment(user_id, values)
         if values["predicted"] == "negative":
             self._warn_counts[user_id] = self._warn_counts.get(user_id, 0) + 1
-            partner_id = self.recording_service.logger_manager.partners.get(user_id)
             self.recording_service.logger_manager.log_chat_event(
                 user_id=user_id,
                 warnings_count=self._warn_counts[user_id],
-                partner_warnings_count=self._warn_counts.get(partner_id, ""),
-                status=obj.get("status", "")
             )
             emit("alert_user_typing", json.dumps({"msg": "You are typing negative words!"}), broadcast=True)
 
@@ -88,11 +85,9 @@ class ChatNamespace(Namespace):
         obj = json.loads(raw) if isinstance(raw, str) else raw
         user_id = int(obj.get("userID"))
         self._corr_counts[user_id] = int(obj.get("correctionsCount"))
-        partner_id = self.recording_service.logger_manager.partners.get(user_id)
         self.recording_service.logger_manager.log_chat_event(
             user_id=user_id,
             corrections_count=self._corr_counts[user_id],
-            partner_corrections_count=self._corr_counts.get(partner_id, ""),
         )
         emit("correction_acknowledged", json.dumps({"msg": "Correction noted. Warning count reset."}), room=request.sid)
     

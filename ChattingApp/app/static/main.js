@@ -5,11 +5,13 @@ let eventSocket = io.connect('/events');
 let startViewingTime = null;
 let endViewingTime = null;
 let totalViewingTime = 0;
+let lastViewedMessage = "";
 let startSendingTime = null;
 let endSendingTime = null;
 let totalSendingTime = 0;
 let isRecording = false;
 let bertEnabled = false;
+let isSending = false;
 
 let username = null;
 const userID = (typeof crypto !== 'undefined' && crypto.getRandomValues)
@@ -149,6 +151,19 @@ chatSocket.on('message', function(payload) {
         </div>
       </div>`;
   } else {
+    if (!startViewingTime) {
+      startViewingTime = new Date().toISOString();
+      endViewingTime = null;
+      totalViewingTime = 0;
+      lastViewedMessage = data_.msg || "";
+      eventSocket.emit("start_viewing", JSON.stringify({
+        status: 'receiver',
+        startViewingTime: startViewingTime,
+        userID: userID,
+        completeMessage: lastViewedMessage
+      }));
+    }
+
     const initials = data_.username ? esc(data_.username.substring(0,2).toUpperCase()) : "??";
     msgChat = `
       <div class="message" id="${msgId}">
@@ -218,49 +233,69 @@ function trackWordDeletions(message) {
   }
   prevWordTokens = curr;
 }
+const isEmptyMsg = (s) => !s || !s.trim();
 
 function handleTyping() {
-    let messageInput = document.getElementById('msg');
-    if (!messageInput) return;
-    let message = messageInput.value ?? "";
-    
-    trackWordDeletions(message);
-    
-    recordingSocket.emit('current_message', { userID: userID, message: message });
+  let messageInput = document.getElementById('msg');
+  if (!messageInput) return;
+  let message = messageInput.value ?? "";
 
-    if (!isTyping) {
-        isTyping = true;
-        startSendingTime = new Date().toISOString(); // ✅ ISO format
-        
-        eventSocket.emit("start_sending", JSON.stringify({ 
-            status: 'sender', 
-            startSendingTime: startSendingTime, 
-            userID: userID, 
-            message: message 
-        }));
-        
-        if (startViewingTime && !endViewingTime) {
-            endViewingTime = new Date().toISOString(); // ✅ ISO format
-            const totalViewing = new Date(endViewingTime) - new Date(startViewingTime);
-            
-            eventSocket.emit('end_viewing', JSON.stringify({
-                userID: userID,
-                status: 'receiver',
-                message: message,
-                endViewingTime: endViewingTime,
-                totalViewingTime: totalViewing
-            }));
-            startViewingTime = null;
-            endViewingTime = null;
-            totalViewingTime = 0;
-        }
-    }
-    
+  trackWordDeletions(message);
+
+  recordingSocket.emit('current_message', { userID: userID, message: message });
+
+  if (startSendingTime && isEmptyMsg(message)) {
+    const cancelTs = new Date().toISOString();
+    const totalSending = new Date(cancelTs) - new Date(startSendingTime);
+
+    eventSocket.emit('cancel_sending', JSON.stringify({
+      userID,
+      status: 'sender',
+      endSendingTime: cancelTs,
+      totalSendingTime: totalSending,
+      cancelled: true
+    }));
+
+    startSendingTime = null;
+    endSendingTime = null;
+    totalSendingTime = 0;
+    isTyping = false;
     clearTimeout(window.typingTimeout);
-    window.typingTimeout = setTimeout(function() {
-        isTyping = false;
-        chatSocket.emit('typing', JSON.stringify({msg:message, isTyping:false, userID:userID}));
-    }, 1000);
+    return;
+  }
+
+  if (!isTyping && !isEmptyMsg(message)) {
+    isTyping = true;
+    startSendingTime = new Date().toISOString();
+    eventSocket.emit("start_sending", JSON.stringify({
+      status: 'sender',
+      startSendingTime,
+      userID,
+      message
+    }));
+
+    if (startViewingTime && !endViewingTime) {
+      endViewingTime = new Date().toISOString();
+      const totalViewing = new Date(endViewingTime) - new Date(startViewingTime);
+      eventSocket.emit('end_viewing', JSON.stringify({
+        userID: userID,
+        status: 'receiver',
+        message: lastViewedMessage,
+        endViewingTime: endViewingTime,
+        totalViewingTime: totalViewing
+      }));
+      startViewingTime = null;
+      endViewingTime = null;
+      totalViewingTime = 0;
+      lastViewedMessage = "";
+    }
+  }
+
+  clearTimeout(window.typingTimeout);
+  window.typingTimeout = setTimeout(function() {
+    isTyping = false;
+    chatSocket.emit('typing', JSON.stringify({msg:message, isTyping:false, userID:userID}));
+  }, 500);
 }
 
 chatSocket.on('user_typing', function(payload) {
@@ -300,6 +335,8 @@ chatSocket.on('user_typing', function(payload) {
 function sendMessage() {
     let messageInput = document.getElementById('msg');
     let message = messageInput.value;
+
+    if (isEmptyMsg(message)) return;
     
     chatSocket.emit('message', JSON.stringify({
         msg: message, 
@@ -310,16 +347,6 @@ function sendMessage() {
     
     endSendingTime = new Date().toISOString();
     const totalSending = startSendingTime ? new Date(endSendingTime) - new Date(startSendingTime) : 0;
-    
-    startViewingTime = new Date().toISOString();
-    
-    eventSocket.emit("start_viewing", JSON.stringify({ 
-        status: 'receiver', 
-        startViewingTime: startViewingTime, 
-        userID: userID, 
-        completeMessage: message 
-    }));
-    
     eventSocket.emit('end_sending', JSON.stringify({
         userID: userID,
         status: 'sender',
@@ -327,8 +354,8 @@ function sendMessage() {
         endSendingTime: endSendingTime,
         totalSendingTime: totalSending
     }));
-    
-    messageInput.value = '';
+
+    document.getElementById('msg').value = '';
     isTyping = false;
     startSendingTime = null;
     endSendingTime = null;
@@ -374,6 +401,8 @@ if (bertToggle) {
 
 $(window).on('keydown', async function(event){
   if(event.which == 13){
+    const v = document.getElementById('msg')?.value || '';
+    if (isEmptyMsg(v)) return false;
     sendMessage();
     return false;
   }

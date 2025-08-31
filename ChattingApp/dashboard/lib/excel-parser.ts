@@ -95,7 +95,10 @@ export class ExcelParser {
             
             sentiment_neg: this.convertPercentToDecimal(this.parseEuropeanNumber(row.sentiment_neg)),
             sentiment_pos: this.convertPercentToDecimal(this.parseEuropeanNumber(row.sentiment_pos)),
-            sentiment_neu: this.convertPercentToDecimal(this.parseEuropeanNumber(row.sentiment_neu))
+            sentiment_neu: this.convertPercentToDecimal(this.parseEuropeanNumber(row.sentiment_neu)),
+
+            warnings_count: row.warnings_count,
+            corrections_count: row.corrections_count
           };
   
           // ✅ DEBUG pierwszego rekordu
@@ -113,7 +116,7 @@ export class ExcelParser {
         
         // User 2 - analogicznie...
         if (row.partner_name) {
-          splitRecords.push({
+          const user2Record ={
             timestamp: row.timestamp,
             user_id: 2,
             username: userNames[1] || row.partner_name,
@@ -137,15 +140,17 @@ export class ExcelParser {
             
             sentiment_neg: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_sentiment_neg)),
             sentiment_pos: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_sentiment_pos)),
-            sentiment_neu: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_sentiment_neu))
-          });
+            sentiment_neu: this.convertPercentToDecimal(this.parseEuropeanNumber(row.partner_sentiment_neu)),
+            warnings_count: row.partner_warnings_count,
+            corrections_count: row.partner_corrections_count
+          };
+          splitRecords.push(user2Record);
         }
       });
       
       return splitRecords;
     }
   
-  // ...existing code...
 
   private static extractUsersFromSplitData(data: UserRecord[], userNames: string[]): User[] {
     const userMap = new Map<number, User>();
@@ -160,7 +165,8 @@ export class ExcelParser {
           totalSending: 0,
           totalViewing: 0,
           totalMessages: 0,
-          corrections: 0
+          warnings_count: 0,
+          corrections_count: 0
         });
       }
       
@@ -172,6 +178,9 @@ export class ExcelParser {
       } else if (record.status === 'receiver') {
         user.totalViewing += (record.total_viewing_time || 0) / 1000;
       }
+
+      user.warnings_count += record.warnings_count || 0;
+      user.corrections_count += record.corrections_count || 0;
     });
     
     return Array.from(userMap.values());

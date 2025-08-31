@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const filters = Object.fromEntries(searchParams);
-  
-  const filteredData = DataProcessor.applyFilters(filters);
-  
+
+  const filteredData = DataProcessor.applyDataFilters(filters);
+
   return Response.json(filteredData);
 }

@@ -40,8 +40,22 @@ class RecordingNamespace(Namespace):
         data = json.loads(data) if isinstance(data, str) else data
         user_id = int(data.get('userID'))
         print(f'[recording] stop_recording user={user_id} sid={request.sid}')
+
         saved = self.recording_service.stop_session(user_id)
+
+        partner_id = self.recording_service.logger_manager.partners.get(user_id)
+        partner_sid = None
+        if partner_id:
+            sess = self.recording_service.sessions.get(partner_id)
+            partner_sid = (sess or {}).get('sid')
+            try:
+                self.recording_service.stop_session(partner_id)
+            except Exception:
+                pass
+
         emit('recording_stopped', {'userID': user_id, 'saved_files': saved}, room=request.sid)
+        if partner_sid:
+            emit('recording_stopped', {'userID': partner_id, 'saved_files': []}, room=partner_sid)
 
     def on_current_message(self, data):
         user_id = data.get('userID')

@@ -292,9 +292,7 @@ export default function SentimentTimelineSegments({
               >
                 {s.dominantEmotion !== 'none' && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[10px] text-white font-semibold select-none">
-                      {SENTIMENT_LABELS[s.dominantEmotion].slice(0, 3)}
-                    </span>
+           
                   </div>
                 )}
                 {s.dominantEmotion === 'none' && (
