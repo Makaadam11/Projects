@@ -1,6 +1,6 @@
-let chatSocket = io.connect('http://' + document.domain + ':' + location.port + '/chat');
-let recordingSocket = io.connect('http://' + document.domain + ':' + location.port + '/recording');
-let eventSocket = io.connect('http://' + document.domain + ':' + location.port + '/events');
+let chatSocket = io.connect('/chat');
+let recordingSocket = io.connect('/recording');
+let eventSocket = io.connect('/events');
 
 let startViewingTime = null;
 let endViewingTime = null;
@@ -8,11 +8,13 @@ let totalViewingTime = 0;
 let startSendingTime = null;
 let endSendingTime = null;
 let totalSendingTime = 0;
-let isRecording = true;
+let isRecording = false;
 let bertEnabled = false;
 
 let username = null;
-let userID = generateUserID(1, 20);
+const userID = (typeof crypto !== 'undefined' && crypto.getRandomValues)
+  ? crypto.getRandomValues(new Uint32Array(1))[0]
+  : Math.floor(1e9 + Math.random() * 9e9);
 
 let isTyping = false;
 let userTyping = `
@@ -116,9 +118,6 @@ Swal.fire({
     username = result.value;
     $("#userSelectedName").html(username);
     recordingSocket.emit('start_recording', {username: username, userID: userID});
-    isRecording = true;
-    document.getElementById('start-recording-btn').style.display = 'none';
-    document.getElementById('stop-recording-btn').style.display = 'block';
   }
 });
 
@@ -126,19 +125,19 @@ chatSocket.on('connect', function() {
     console.log('Connected to chat');
 });
 
-chatSocket.on('message', function(data) {
-  if (data._msg == null) return;
+chatSocket.on('message', function(payload) {
+  const data_ = typeof payload === 'string' ? JSON.parse(payload) : payload;
+
   const chatBox = $(".messages-chat");
-  const data_ = JSON.parse(data);
   const currentLang = langSelect ? langSelect.value : "";
   const msgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let translatedLine;
-  if (currentLang && data_.translations && data_.translations[currentLang]) {
-    translatedLine = `<p class="translation" style="margin:4px 0 0 0;font-size:10px;color:#666;">${esc(data_.translations[currentLang])}</p>`;
-  } else {
-    translatedLine = `<p class="translation" style="margin:4px 0 0 0;font-size:10px;color:#666;"></p>`;
-  }
+
+  const translatedLine =
+    (currentLang && data_.translations && data_.translations[currentLang])
+      ? `<p class="translation" style="margin:4px 0 0 0;font-size:10px;color:#666;">${esc(data_.translations[currentLang])}</p>`
+      : `<p class="translation" style="margin:4px 0 0 0;font-size:10px;color:#666;"></p>`;
+
   let msgChat;
   if (data_.userID == userID) {
     msgChat = `
@@ -165,10 +164,10 @@ chatSocket.on('message', function(data) {
       </div>`;
   }
   if (bertEnabled && data_.pred && data_.userID == userID) {
-    if (data_.values.predicted == "negative") {
-      alertUser("You are typing negative words !");
-      $("input#msg").removeClass("abusive");
-    }
+    // if (data_.values.predicted == "negative") {
+    //   alertUser("You are typing negative words !");
+    //   $("input#msg").removeClass("abusive");
+    // }
     create_chart(data_.values, data_.userID);
   }
   chatBox.append(msgChat);
@@ -193,12 +192,42 @@ function alertUser(text_){
   });
 }
 
+let correctionsCount = 0;
+let prevWordTokens = [];
+let lastEditEmitTs = 0;
+const EDIT_COOLDOWN_MS = 700;
+
+function tokenizeWords(text) {
+  if (!text) return [];
+  return text.trim().length ? text.trim().split(/\s+/) : [];
+}
+
+function trackWordDeletions(message) {
+  const curr = tokenizeWords(message || "");
+  const diff = Math.max(0, prevWordTokens.length - curr.length);
+  if (diff > 0) {
+    correctionsCount += diff;
+    const now = Date.now();
+    if (now - lastEditEmitTs > EDIT_COOLDOWN_MS) {
+      chatSocket.emit('correction', JSON.stringify({
+        userID: userID,
+        correctionsCount: correctionsCount
+      }));
+      lastEditEmitTs = now;
+    }
+  }
+  prevWordTokens = curr;
+}
+
 function handleTyping() {
     let messageInput = document.getElementById('msg');
-    let message = messageInput.value;
-    if (message == null) return;
-    recordingSocket.emit('current_message', { userID: userID, message: message });
+    if (!messageInput) return;
+    let message = messageInput.value ?? "";
     
+    trackWordDeletions(message);
+    
+    recordingSocket.emit('current_message', { userID: userID, message: message });
+
     if (!isTyping) {
         isTyping = true;
         startSendingTime = new Date().toISOString(); // ✅ ISO format
@@ -234,38 +263,38 @@ function handleTyping() {
     }, 1000);
 }
 
-chatSocket.on('user_typing', function(typing) {
-    if (!bertEnabled) return;
-    let typingStatus = $(".messages-chat")
-    let data_ = JSON.parse(typing)
-    if(data_.pred && data_.userID == userID){
-      create_chart(data_.values, data_.userID);
-      $("input#msg").removeClass("abusive positive neutral");
-      if(data_.values.predicted == "negative") {
-          alertUser("You are typing negative words!")
-          $("input#msg").addClass("abusive");
-      } else if(data_.values.predicted == "positive") {
-          $("input#msg").addClass("positive");
-      } else if(data_.values.predicted == "neutral") {
-          $("input#msg").addClass("neutral");
-      }
-    } else {
-      if(data_.userID == userID) {
-          $("input#msg").removeClass("abusive positive neutral");
-      }
+chatSocket.on('user_typing', function(payload) {
+  if (!bertEnabled) return;
+  const typingStatus = $(".messages-chat");
+  const data_ = typeof payload === 'string' ? JSON.parse(payload) : payload;
+
+  if (data_.pred && data_.userID == userID) {
+    create_chart(data_.values, data_.userID);
+    $("input#msg").removeClass("abusive positive neutral");
+    if (data_.values.predicted == "negative") {
+      alertUser("You are typing negative words!");
+      $("input#msg").addClass("abusive");
+    } else if (data_.values.predicted == "positive") {
+      $("input#msg").addClass("positive");
+    } else if (data_.values.predicted == "neutral") {
+      $("input#msg").addClass("neutral");
     }
-    if(data_.isTyping && data_.userID==userID){
-      typingStatus.append(myTyping);
-      scrollToBottom();
-    } else if(data_.isTyping==false && data_.userID==userID){
-      $(".mychattyping").remove();
-    }
-    if(data_.isTyping && data_.userID!=userID){
-      typingStatus.append(userTyping);
-      scrollToBottom();
-    } else if(data_.isTyping==false && data_.userID!=userID){
-      $(".userchattyping").remove();
-    }
+  } else {
+    if (data_.userID == userID) $("input#msg").removeClass("abusive positive neutral");
+  }
+
+  if (data_.isTyping && data_.userID==userID){
+    typingStatus.append(myTyping);
+    scrollToBottom();
+  } else if (data_.isTyping==false && data_.userID==userID){
+    $(".mychattyping").remove();
+  }
+  if (data_.isTyping && data_.userID!=userID){
+    typingStatus.append(userTyping);
+    scrollToBottom();
+  } else if (data_.isTyping==false && data_.userID!=userID){
+    $(".userchattyping").remove();
+  }
 });
 
 function sendMessage() {
@@ -304,6 +333,7 @@ function sendMessage() {
     startSendingTime = null;
     endSendingTime = null;
     totalSendingTime = 0;
+    prevWordTokens = [];
 }
 
 // generate user ID
@@ -349,39 +379,113 @@ $(window).on('keydown', async function(event){
   }
 });
 
+function ensureVideoEl() {
+  let v = document.querySelector('#cam');
+  if (!v) {
+    v = document.createElement('video');
+    v.id = 'cam';
+    v.autoplay = true;
+    v.playsInline = true;
+    v.muted = true;
+    v.style.display = 'none'; // ukryty element
+    document.body.appendChild(v);
+  }
+  return v;
+}
+
+let mediaStream, frameTimer;
+function ensureMediaDevices() {
+  if (!navigator.mediaDevices) navigator.mediaDevices = {};
+  if (!navigator.mediaDevices.getUserMedia) {
+    const legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    if (legacy) {
+      navigator.mediaDevices.getUserMedia = (c) => new Promise((res, rej) => legacy.call(navigator, c, res, rej));
+    }
+  }
+}
+async function startCameraAndStreaming() {
+  ensureMediaDevices();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    Swal.fire({ icon:'error', title:'Camera error', text:'Secure context (HTTPS or flagged HTTP) required.' });
+    return;
+  }
+  try {
+    const v = ensureVideoEl();
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    v.srcObject = mediaStream;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (frameTimer) clearInterval(frameTimer);
+    frameTimer = setInterval(() => {
+      if (!v || v.readyState < 2) return;
+      canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+      const frame = canvas.toDataURL('image/jpeg', 0.6);
+      recordingSocket.emit('frame', JSON.stringify({ userID, frame }));
+    }, 500);
+  } catch (err) {
+    console.error('getUserMedia failed:', err);
+    Swal.fire({ icon: 'error', title: 'Camera error', text: String(err) });
+  }
+}
+function stopCameraAndStreaming() {
+  if (frameTimer) clearInterval(frameTimer);
+  frameTimer = null;
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+}
+
+let waitingOpen = false;
+recordingSocket.on('waiting_for_partner', function(data) {
+  if (waitingOpen) return;
+  waitingOpen = true;
+  Swal.fire({
+    title: 'Waiting for partner...',
+    text: (data && data.message) || 'Please keep this tab open.',
+    icon: 'info',
+    allowOutsideClick: false,
+    showConfirmButton: false
+  });
+});
+
+recordingSocket.on('paired', function(data) {
+  console.log('Paired with:', data.partnerName || data.partnerID);
+});
+
+recordingSocket.on('recording_started', function(data) {
+  if (waitingOpen) { Swal.close(); waitingOpen = false; }
+  isRecording = true;
+  if (startRecBtn && stopRecBtn) { startRecBtn.style.display = 'none'; stopRecBtn.style.display = 'block'; }
+  startCameraAndStreaming();
+});
+
+recordingSocket.on('recording_stopped', function(data) {
+  isRecording = false;
+  if (startRecBtn && stopRecBtn) { stopRecBtn.style.display = 'none'; startRecBtn.style.display = 'block'; }
+  stopCameraAndStreaming();
+});
+
+recordingSocket.on('connect', () => console.log('[recording] connected'));
+recordingSocket.on('disconnect', () => console.log('[recording] disconnected'));
+
 const startRecBtn = document.getElementById('start-recording-menu');
 const stopRecBtn  = document.getElementById('stop-recording-menu');
 if (startRecBtn && stopRecBtn) {
   startRecBtn.addEventListener('click', () => {
     recordingSocket.emit('start_recording', { username: username, userID: userID });
-    isRecording = true;
-    startRecBtn.style.display = 'none';
-    stopRecBtn.style.display = 'block';
   });
   stopRecBtn.addEventListener('click', () => {
     recordingSocket.emit('stop_recording', { userID: userID });
-    isRecording = false;
-    stopRecBtn.style.display = 'none';
-    startRecBtn.style.display = 'block';
   });
 }
 
-recordingSocket.on('recording_started', function(data) {
-  isRecording = true;
-  if (startRecBtn && stopRecBtn) { startRecBtn.style.display = 'none'; stopRecBtn.style.display = 'block'; }
-});
-recordingSocket.on('recording_stopped', function(data) {
-  isRecording = false;
-  if (startRecBtn && stopRecBtn) { stopRecBtn.style.display = 'none'; startRecBtn.style.display = 'block'; }
-});
-
-recordingSocket.on('waiting_for_partner', function(data) {
-    console.log('Waiting for partner:', data);
-    Swal.fire({
-        title: 'Waiting for partner...',
-        text: data.message,
-        icon: 'info',
-        timer: 2000,
-        showConfirmButton: false
-    });
+document.addEventListener('DOMContentLoaded', () => {
+  const messageInput = document.getElementById('msg');
+  if (messageInput) {
+    messageInput.addEventListener('input', handleTyping);
+  }
 });

@@ -1,61 +1,53 @@
 from flask_socketio import Namespace, emit
-import threading
+from flask import request
+import json
+from app.services.recording import RecordingService
 
 class RecordingNamespace(Namespace):
-    def __init__(self, namespace, recording_service):
+    def __init__(self, namespace, recording_service: RecordingService):
         super().__init__(namespace)
         self.recording_service = recording_service
+        self.waiting = []
 
     def on_start_recording(self, data):
-        username = data.get('username')
-        user_id = data.get('userID')
-        
-        # Dodaj użytkownika do listy oczekujących
-        user_info = {'user_id': user_id, 'username': username}
-        self.recording_service.waiting_users.append(user_info)
-        
-        print(f"User {username} ({user_id}) added to waiting list. Total waiting: {len(self.recording_service.waiting_users)}")
-        
-        # Sprawdź czy można sparować (2 użytkowników)
-        if len(self.recording_service.waiting_users) >= 2:
-            user1 = self.recording_service.waiting_users.pop(0)
-            user2 = self.recording_service.waiting_users.pop(0)
-            
-            # Sparuj użytkowników
-            self.recording_service.register_user_session(
-                user1['user_id'], user1['username'],
-                user2['user_id'], user2['username']
-            )
-            
-            # Uruchom nagrywanie dla obu
-            thread1 = threading.Thread(
-                target=self.recording_service.record_screen,
-                args=(user1['user_id'], user1['username'], "sender")
-            )
-            thread2 = threading.Thread(
-                target=self.recording_service.record_screen,
-                args=(user2['user_id'], user2['username'], "sender")
-            )
-            
-            thread1.daemon = True
-            thread2.daemon = True
-            thread1.start()
-            thread2.start()
-            
-            # Powiadom obu o sparowaniu
-            emit('recording_started', {'partnered_with': user2['username']}, room=user1['user_id'])
-            emit('recording_started', {'partnered_with': user1['username']}, room=user2['user_id'])
-            
-            print(f"Paired: {user1['username']} ↔ {user2['username']}")
+        data = json.loads(data) if isinstance(data, str) else data
+        user_id = int(data.get('userID'))
+        username = data.get('username') or f'User-{user_id}'
+        print(f'[recording] start_recording user={user_id} sid={request.sid}')
+        self.recording_service.start_session(user_id, request.sid)
+
+        self.waiting = [w for w in self.waiting if w.get('sid') != request.sid]
+        if self.waiting:
+            partner = self.waiting.pop(0)
+            print(f'[recording] pairing {user_id} <-> {partner["user_id"]}')
+            self.recording_service.pair_users(user_id, username, partner['user_id'], partner['username'])
+            emit('paired', {'partnerID': partner['user_id'], 'partnerName': partner['username']}, room=request.sid)
+            emit('paired', {'partnerID': user_id, 'partnerName': username}, room=partner['sid'])
+            emit('recording_started', {'userID': user_id}, room=request.sid)
+            emit('recording_started', {'userID': partner['user_id']}, room=partner['sid'])
         else:
-            emit('waiting_for_partner', {'message': 'Waiting for another user...'})
+            self.waiting.append({'sid': request.sid, 'user_id': user_id, 'username': username})
+            print(f'[recording] queued user={user_id}; waiting size={len(self.waiting)}')
+            emit('waiting_for_partner', {'message': 'Waiting for another user to join...'}, room=request.sid)
+
+    def on_frame(self, data):
+        obj = json.loads(data) if isinstance(data, str) else data
+        user_id = int(obj.get('userID'))
+        frame_b64 = obj.get('frame', '')
+        self.recording_service.ingest_frame_b64(user_id, request.sid, frame_b64)
+
+    def on_stop_recording(self, data):
+        data = json.loads(data) if isinstance(data, str) else data
+        user_id = int(data.get('userID'))
+        print(f'[recording] stop_recording user={user_id} sid={request.sid}')
+        saved = self.recording_service.stop_session(user_id)
+        emit('recording_stopped', {'userID': user_id, 'saved_files': saved}, room=request.sid)
 
     def on_current_message(self, data):
         user_id = data.get('userID')
         message = data.get('message', '')
         self.recording_service.update_current_message(user_id, message)
 
-    def on_stop_recording(self, data):
-        user_id = data.get('userID')
-        self.recording_service.stop_screen_recording(user_id)
-        emit('recording_stopped', {'message': 'Recording stopped and logs saved'})
+    def on_disconnect(self):
+        self.waiting = [w for w in self.waiting if w.get('sid') != request.sid]
+        print(f'[recording] disconnect sid={request.sid}, waiting size={len(self.waiting)}')

@@ -1,69 +1,115 @@
+import base64
+import secrets
 import time
 import cv2
-import tensorflow as tf
+import numpy as np
 from deepface import DeepFace
 from app.services.logger_manager import LoggerManager
 from app.services.chat_manager import ChatManager
+import threading
 
 class RecordingService:
     def __init__(self):
         self.logger_manager = LoggerManager(self)
         self.chat_manager = ChatManager()
-        self.recording = False
-        self.current_messages = {}  # {user_id: current_message}
-        self.message_sentiment = {}  # {user_id: sentiment}
-        self.waiting_users = []
+
+        self.sessions = {}
+
+        self._deepface_lock = threading.Lock()
+
+        # Dane bieżącej wiadomości oraz sentyment tekstu
+        self.current_messages = {}   # user_id -> str
+        self.message_sentiment = {}  # user_id -> dict
+
         self._init_deepface()
 
     def _init_deepface(self):
         try:
-            import numpy as np
-            dummy_img = np.zeros((48, 48, 3), dtype=np.uint8)
-            DeepFace.analyze(dummy_img, actions=['emotion'], enforce_detection=False)
+            dummy = np.zeros((48, 48, 3), dtype=np.uint8)
+            DeepFace.analyze(dummy, actions=['emotion'], enforce_detection=False, silent=True)
             print("DeepFace model initialized successfully")
         except Exception as e:
             print(f"Warning: Could not initialize DeepFace: {e}")
 
+    def pair_users(self, user1_id: int, user1_name: str, user2_id: int, user2_name: str):
+        if hasattr(self.chat_manager, "create_session"):
+            self.chat_manager.create_session(user1_id, user1_name, user2_id, user2_name)
+        self.logger_manager.set_partner(user1_id, user2_id, user1_name, user2_name)
+        # nadaj nowy session token tej parze (ważne dla kolejnych rund)
+        self.logger_manager.begin_pair_session(user1_id, user2_id, secrets.token_hex(8))
+        # keep names for logs
+        if not hasattr(self.logger_manager, "user_names"):
+            self.logger_manager.user_names = {}
+        self.logger_manager.user_names[user1_id] = user1_name
+        self.logger_manager.user_names[user2_id] = user2_name
+        # set partner mapping
+        if not hasattr(self.logger_manager, "partners"):
+            self.logger_manager.partners = {}
+        self.logger_manager.partners[user1_id] = user2_id
+        self.logger_manager.partners[user2_id] = user1_id
+
+    # Sesja żyje, gdy klient wysyła klatki. Używamy SID, aby nie mieszać źródeł.
+    def start_session(self, user_id: int, sid: str):
+        self.sessions[user_id] = {"sid": sid, "last_frame_ts": 0.0}
+
+    def stop_session(self, user_id: int):
+        # zapis tylko raz na parę – LoggerManager ma latch
+        saved_files = []
+        print(f"Stopping session for user {user_id}")
+        saved_files = self.logger_manager.save_session_first_stop(user_id)
+        self.sessions.pop(user_id, None)
+        return saved_files
+
     def update_current_message(self, user_id, message):
         self.current_messages[user_id] = message
 
-    def register_user_session(self, user1_id, user1_name, user2_id, user2_name):
-        session = self.chat_manager.create_session(user1_id, user1_name, user2_id, user2_name)
-        self.logger_manager.set_partner(user1_id, user2_id, user1_name, user2_name)
-        return session
-    
-    def process_frame(self, frame, user_id, username, status="sender"):
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    def ingest_frame_b64(self, user_id: int, sid: str, frame_b64: str, min_interval_s: float = 0.4):
+        # Walidacja sesji i throttling (~2.5 FPS)
+        sess = self.sessions.get(user_id)
+        if not sess or sess.get("sid") != sid:
+            return
+        now = time.time()
+        if now - sess.get("last_frame_ts", 0.0) < min_interval_s:
+            return
+        sess["last_frame_ts"] = now
+
+        # Dekodowanie dataURL/base64 -> np.ndarray (BGR)
+        if "," in frame_b64:
+            frame_b64 = frame_b64.split(",", 1)[1]
         try:
-            emotion_predictions = DeepFace.analyze(
-                frame, 
-                actions=['emotion'], 
-                enforce_detection=False,
-                silent=True
-            )
-                
-            if isinstance(emotion_predictions, list):
-                emotion = emotion_predictions[0]['emotion']
-            else:
-                emotion = emotion_predictions['emotion']
-                
+            img_bytes = base64.b64decode(frame_b64)
+            arr = np.frombuffer(img_bytes, dtype=np.uint8)
+            frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+            if frame is None:
+                return
+            # Przetwarzanie
+            self.process_frame(frame, user_id=user_id, username=self.logger_manager.user_names.get(user_id, ""), status="sender")
+        except Exception as e:
+            print(f"ingest_frame_b64 error: {e}")
+
+    def process_frame(self, frame, user_id, username, status="sender"):
+        # DeepFace oczekuje RGB
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        try:
+            with self._deepface_lock:
+                res = DeepFace.analyze(frame_rgb, actions=['emotion'], enforce_detection=False, silent=True)
+            emo = res[0]['emotion'] if isinstance(res, list) else res['emotion']
+
             current_message = self.current_messages.get(user_id, "")
-            
             partner_id = self.chat_manager.get_partner_id(user_id)
-            
+
             if partner_id:
                 self.logger_manager.log_chat_event(
                     user_id=user_id,
-                    event_type="emotion_detected",
-                    individual_emotions=emotion,
+                    individual_emotions=emo,
                     status=status,
                     message=current_message
                 )
             else:
-                # Fallback - tylko ten użytkownik (czeka na partnera)
+                # Gdy brak partnera – zapis tylko po stronie usera
                 logger = self.logger_manager.get_logger(user_id, username)
-                logger.log_event(emotion_dict=emotion, status=status, message=current_message)
-                
+                logger.log_event(emotion_dict=emo, status=status, message=current_message)
+
         except Exception as e:
             print(f"Error processing frame: {e}")
             # Fallback bez emocji
@@ -71,35 +117,10 @@ class RecordingService:
             logger = self.logger_manager.get_logger(user_id, username)
             logger.log_event(emotion_dict={}, status=status, message=current_message)
 
-    def record_screen(self, user_id, username, status="sender"):
-        interval = 0.5  # Zwiększ interval żeby zmniejszyć obciążenie
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            print("Camera could not be opened.")
-            return
-
-        self.recording = True
-        print("Recording started...")
-
-        while self.recording:
-            ret, frame = cap.read()
-            if not ret:
-                print("Failed to grab frame.")
-                break
-            self.process_frame(frame, user_id=user_id, username=username, status=status)
-            time.sleep(interval)
-
-        cap.release()
-        print("Recording stopped.")
-
-    def stop_screen_recording(self, user_id):
-        self.recording = False
-        saved_files = self.logger_manager.save_all_logs()
-        print(f"Saved logs: {saved_files}")
-
+    # Tekstowy sentyment (z czatu)
     def update_sentiment(self, user_id, sentiment_data):
         self.message_sentiment[user_id] = sentiment_data
         print(f"Sentiment updated for user {user_id}: {sentiment_data}")
-    
+
     def get_sentiment(self, user_id):
         return self.message_sentiment.get(user_id, None)

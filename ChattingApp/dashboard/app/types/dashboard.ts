@@ -4,7 +4,8 @@ export interface User {
   totalSending: number;
   totalViewing: number;
   totalMessages: number;
-  corrections: number;
+  warnings_count: number;
+  corrections_count: number;
   formattedTotalSending?: string; // MM:SS
   formattedTotalViewing?: string;  // MM:SS
 }
@@ -74,7 +75,9 @@ export interface ExcelRow {
   sentiment_neg: number;
   sentiment_pos: number;
   sentiment_neu: number;
-  
+  warnings_count: number;
+  corrections_count: number;
+
   partner_name: string;
   partner_status: string;
   partner_message: string;
@@ -85,7 +88,6 @@ export interface ExcelRow {
   partner_start_viewing_time: string;
   partner_end_viewing_time: string;
   partner_total_viewing_time: number;
-  partner_event_type: string;
   partner_angry: any;
   partner_disgust: any;
   partner_fear: any;
@@ -96,6 +98,8 @@ export interface ExcelRow {
   partner_sentiment_neg: number;
   partner_sentiment_pos: number;
   partner_sentiment_neu: number;
+  partner_warnings_count: number;
+  partner_corrections_count: number;
 }
 
 
@@ -123,6 +127,8 @@ export interface UserRecord {
   sentiment_neg: number;
   sentiment_pos: number;
   sentiment_neu: number;
+  warnings_count: number;
+  corrections_count: number;
 
   partner_name?: string;
   partner_status?: string;
@@ -134,7 +140,6 @@ export interface UserRecord {
   partner_start_viewing_time?: string;
   partner_end_viewing_time?: string;
   partner_total_viewing_time?: number;
-  partner_event_type?: string;
   partner_angry?: number;
   partner_disgust?: number;
   partner_fear?: number;
@@ -145,6 +150,8 @@ export interface UserRecord {
   partner_sentiment_neg?: number;
   partner_sentiment_pos?: number;
   partner_sentiment_neu?: number;
+  partner_warnings_count?: number;
+  partner_corrections_count?: number;
   formattedTotalSending?: string; // MM:SS
   formattedTotalViewing?: string;  // MM:SS
 }

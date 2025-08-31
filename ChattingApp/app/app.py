@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, app, render_template, request, jsonify
 from flask_socketio import SocketIO
 from app.services.recording import RecordingService
 from app.services.sentiment import SentimentService
@@ -9,7 +9,7 @@ from app.config.config import Config
 from app.sockets.chat import ChatNamespace
 from app.sockets.recording import RecordingNamespace
 from app.sockets.events import EventsNamespace
-    
+
 def create_app():
     app = Flask(__name__)
     

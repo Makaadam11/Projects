@@ -14,12 +14,10 @@ class EventsNamespace(Namespace):
         
         self.recording_service.logger_manager.log_chat_event(
             user_id=user_id,
-            event_type="start_viewing",
             individual_emotions=emotions,
             status="receiver",  # Zawsze receiver - oglądasz wiadomość partnera
             start_viewing_time=data.get('startViewingTime', ''),
             message=data.get('completeMessage', ''),  # Wiadomość partnera którą oglądasz
-            action_by=user_id  # Kto wykonuje akcję
         )
 
     def on_end_viewing(self, data):
@@ -30,13 +28,11 @@ class EventsNamespace(Namespace):
         
         self.recording_service.logger_manager.log_chat_event(
             user_id=user_id,
-            event_type="end_viewing",
             individual_emotions=emotions,
             status="receiver",  # Zawsze receiver - skończyłeś oglądać wiadomość partnera
             end_viewing_time=data.get('endViewingTime', ''),
             total_viewing_time=data.get('totalViewingTime', 0),
             message=data.get('message', ''),  # Aktualnie pisana wiadomość
-            action_by=user_id
         )
 
     def on_start_sending(self, data):
@@ -47,12 +43,10 @@ class EventsNamespace(Namespace):
         
         self.recording_service.logger_manager.log_chat_event(
             user_id=user_id,
-            event_type="start_sending",
             individual_emotions=emotions,
             status="sender",  # Zawsze sender - zaczynasz pisać wiadomość
             start_sending_time=data.get('startSendingTime', ''),
             message=data.get('message', ''),  # Aktualnie pisana wiadomość
-            action_by=user_id
         )
 
     def on_end_sending(self, data):
@@ -63,12 +57,10 @@ class EventsNamespace(Namespace):
         
         self.recording_service.logger_manager.log_chat_event(
             user_id=user_id,
-            event_type="end_sending",
             individual_emotions=emotions,
             status="sender",  # Zawsze sender - wysyłasz wiadomość
             end_sending_time=data.get('endSendingTime', ''),
             total_sending_time=data.get('totalSendingTime', 0),
             complete_message=data.get('completeMessage', ''),
             message=data.get('completeMessage', ''),
-            action_by=user_id
         )

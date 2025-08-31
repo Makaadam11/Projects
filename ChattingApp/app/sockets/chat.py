@@ -1,15 +1,18 @@
 from itertools import count
 from flask_socketio import Namespace, emit
 from flask import request
+from app.services.recording import RecordingService
 from app.utils.translator_service import TranslatorService
 import json
 
 class ChatNamespace(Namespace):
-    def __init__(self, namespace, sentiment_service, recording_service, translator_service: TranslatorService):
+    def __init__(self, namespace, sentiment_service, recording_service: RecordingService, translator_service: TranslatorService):
         super().__init__(namespace)
         self.sentiment_service = sentiment_service
         self.recording_service = recording_service
         self.translator_service = translator_service
+        self._warn_counts = {}
+        self._corr_counts = {}
 
     def on_set_language(self, payload):
         try:
@@ -69,10 +72,30 @@ class ChatNamespace(Namespace):
         data.update({"pred": True, "values": values})
         self.recording_service.update_sentiment(user_id, values)
         if values["predicted"] == "negative":
+            self._warn_counts[user_id] = self._warn_counts.get(user_id, 0) + 1
+            partner_id = self.recording_service.logger_manager.partners.get(user_id)
+            self.recording_service.logger_manager.log_chat_event(
+                user_id=user_id,
+                warnings_count=self._warn_counts[user_id],
+                partner_warnings_count=self._warn_counts.get(partner_id, ""),
+                status=obj.get("status", "")
+            )
             emit("alert_user_typing", json.dumps({"msg": "You are typing negative words!"}), broadcast=True)
 
         emit("user_typing", json.dumps(data), broadcast=True)
 
+    def on_correction(self, raw):
+        obj = json.loads(raw) if isinstance(raw, str) else raw
+        user_id = int(obj.get("userID"))
+        self._corr_counts[user_id] = int(obj.get("correctionsCount"))
+        partner_id = self.recording_service.logger_manager.partners.get(user_id)
+        self.recording_service.logger_manager.log_chat_event(
+            user_id=user_id,
+            corrections_count=self._corr_counts[user_id],
+            partner_corrections_count=self._corr_counts.get(partner_id, ""),
+        )
+        emit("correction_acknowledged", json.dumps({"msg": "Correction noted. Warning count reset."}), room=request.sid)
+    
     def alert_user_typing(self, alert):
         emit('alert_message', json.dumps(alert), broadcast=True)
         
