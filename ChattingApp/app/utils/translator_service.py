@@ -25,6 +25,30 @@ class TranslatorService:
 
     def get_language(self, user_id: int) -> str:
         return self._user_lang.get(user_id, "")
+    
+    def _ensure_translator(self, lang: str):
+      with self._lock:
+        if lang in self.supported and lang not in self._lang_translators:
+          self._lang_translators[lang] = Translator(to_lang=lang, from_lang="autodetect")
+
+    def translate_to(self, lang: str, text: str) -> str:
+      if not text:
+          return text
+      lang = (lang or "").lower()
+      # en traktuj jako zawsze dostępny dla BERT
+      if lang == "en":
+          self.supported.add("en")
+          self._ensure_translator("en")
+      return self._translate_cached(lang, text)
+
+    def text_for_bert(self, text: str) -> str:
+      # zawsze spróbuj angielskiego, fallback na oryginał
+      t = self.translate_to("en", text or "")
+      return t or (text or "")
+
+    def build_translations_map(self, text: str) -> Dict[str, str]:
+      langs = self._active_languages_snapshot() | {"en"}  # dodaj en zawsze
+      return {lang: self._translate_cached(lang, text) for lang in langs}
 
     def _active_languages_snapshot(self) -> Set[str]:
         with self._lock:

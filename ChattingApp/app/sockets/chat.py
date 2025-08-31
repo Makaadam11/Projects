@@ -56,13 +56,15 @@ class ChatNamespace(Namespace):
     def on_typing(self, raw):
         obj = json.loads(raw) if isinstance(raw, str) else raw
         msg = str(obj.get("msg", ""))
-        if (msg is None) or (msg.strip() == ""):
+        if not msg.strip():
             return
+        text_en = self.translator_service.text_for_bert(msg)
+        final_msg = text_en if text_en else msg
         user_id = int(obj.get("userID"))
         is_typing = bool(obj.get("isTyping"))
-        data = {"pred": False, "values": {}, "isTyping": is_typing, "msg": msg, "userID": user_id}
+        data = {"pred": False, "values": {}, "isTyping": is_typing, "msg": final_msg, "userID": user_id}
 
-        pred = self.sentiment_service.analyze(msg)
+        pred = self.sentiment_service.analyze(final_msg)
         values = {
             "neg": float(pred[0][0]),
             "neu": float(pred[0][1]),
@@ -77,7 +79,7 @@ class ChatNamespace(Namespace):
                 user_id=user_id,
                 warnings_count=self._warn_counts[user_id],
             )
-            emit("alert_user_typing", json.dumps({"msg": "You are typing negative words!"}), broadcast=True)
+            emit("alert_user_typing", json.dumps({"msg": "You are typing negative words!"}), room=request.sid)
 
         emit("user_typing", json.dumps(data), broadcast=True)
 

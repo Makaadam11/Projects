@@ -38,7 +38,7 @@ events_namespace = EventsNamespace('/events', recording_service)
 socketio.on_namespace(chat_namespace)
 socketio.on_namespace(recording_namespace)
 socketio.on_namespace(events_namespace)
-translate_client = None
+# translate_client = None
 
 
     
