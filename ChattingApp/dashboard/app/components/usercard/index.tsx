@@ -8,10 +8,9 @@ import SentimentTimelineSegments from '../sentimentgraph';
 interface UserCardProps {
   name: string;
   data: SessionData[];
-  minuteFilter: 1 | 5 | 10 | 30 | 60 | "all";
 }
 
-export function UserCard({ name, data, minuteFilter }: UserCardProps) {
+export function UserCard({ name, data}: UserCardProps) {
   const [timeUnit, setTimeUnit] = useState<TimeUnit>('auto');
   
   const userData = data.find(session => 
@@ -57,15 +56,6 @@ export function UserCard({ name, data, minuteFilter }: UserCardProps) {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-2 mb-2">
-        <SentimentTimelineSegments
-          key={`timeline-${name || 'user1'}`}
-          name={name || "User 1"}
-          data={data}
-          minuteFilter={minuteFilter}
-
-        />
-      </div>
       <div className="grid grid-cols-3 gap-4 mt-4">
         <div className="bg-blue-50 p-3 rounded text-center">
           <div className="text-xs text-gray-600">Total Time Sending</div>
