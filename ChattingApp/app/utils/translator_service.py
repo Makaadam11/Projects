@@ -35,19 +35,17 @@ class TranslatorService:
       if not text:
           return text
       lang = (lang or "").lower()
-      # en traktuj jako zawsze dostępny dla BERT
       if lang == "en":
           self.supported.add("en")
           self._ensure_translator("en")
       return self._translate_cached(lang, text)
 
     def text_for_bert(self, text: str) -> str:
-      # zawsze spróbuj angielskiego, fallback na oryginał
       t = self.translate_to("en", text or "")
       return t or (text or "")
 
     def build_translations_map(self, text: str) -> Dict[str, str]:
-      langs = self._active_languages_snapshot() | {"en"}  # dodaj en zawsze
+      langs = self._active_languages_snapshot() | {"en"}
       return {lang: self._translate_cached(lang, text) for lang in langs}
 
     def _active_languages_snapshot(self) -> Set[str]:
@@ -64,7 +62,3 @@ class TranslatorService:
             return tr.translate(text) or text
         except Exception:
             return text
-
-    def build_translations_map(self, text: str) -> Dict[str, str]:
-        langs = self._active_languages_snapshot()
-        return {lang: self._translate_cached(lang, text) for lang in langs}
