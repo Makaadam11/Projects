@@ -7,6 +7,7 @@ from deepface import DeepFace
 from app.services.logger_manager import LoggerManager
 from app.services.chat_manager import ChatManager
 import threading
+import hashlib
 
 class RecordingService:
     def __init__(self):
@@ -70,10 +71,13 @@ class RecordingService:
             frame_b64 = frame_b64.split(",", 1)[1]
         try:
             img_bytes = base64.b64decode(frame_b64)
+            h = hashlib.md5(img_bytes[:4096]).hexdigest()
             arr = np.frombuffer(img_bytes, dtype=np.uint8)
             frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
             if frame is None:
+                # print(f"[frame] user={user_id} decode failed (hash={h})")
                 return
+            # print(f"[frame] user={user_id} size={frame.shape[:2]} hash={h}")
             self.process_frame(frame, user_id=user_id, username=self.logger_manager.user_names.get(user_id, ""), status="sender")
         except Exception as e:
             print(f"ingest_frame_b64 error: {e}")
@@ -81,8 +85,23 @@ class RecordingService:
     def process_frame(self, frame, user_id, username, status="sender"):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         try:
-            with self._deepface_lock:
-                res = DeepFace.analyze(frame_rgb, actions=['emotion'], enforce_detection=False, silent=True)
+            # 1) spróbuj dokładniej (mediapipe + enforce)
+            try:
+                with self._deepface_lock:
+                    res = DeepFace.analyze(
+                        frame_rgb, actions=['emotion'],
+                        detector_backend='mediapipe',
+                        enforce_detection=True, silent=True
+                    )
+            except Exception:
+                # 2) fallback (opencv + bez enforce) – zapobiegnie wyjątkom, ale może dać bazowy rozkład
+                with self._deepface_lock:
+                    res = DeepFace.analyze(
+                        frame_rgb, actions=['emotion'],
+                        detector_backend='opencv',
+                        enforce_detection=False, silent=True
+                    )
+
             emo = res[0]['emotion'] if isinstance(res, list) else res['emotion']
 
             current_message = self.current_messages.get(user_id, "")

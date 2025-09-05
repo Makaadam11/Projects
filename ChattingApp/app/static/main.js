@@ -119,7 +119,7 @@ Swal.fire({
   if (result.isConfirmed) {
     username = result.value;
     $("#userSelectedName").html(username);
-    recordingSocket.emit('start_recording', {username: username, userID: userID});
+    recordingSocket.emit('start_recording', { userID, username });
   }
 });
 
@@ -306,7 +306,7 @@ chatSocket.on('user_typing', function(payload) {
   if (data_.pred && data_.userID == userID) {
     create_chart(data_.values, data_.userID);
     $("input#msg").removeClass("abusive positive neutral");
-    if (data_.values.predicted == "negative") {
+    if (data_.values.neg > 0.31) {
       alertUser("You are typing negative words!");
       $("input#msg").addClass("abusive");
     } else if (data_.values.predicted == "positive") {
@@ -432,33 +432,50 @@ function ensureMediaDevices() {
     }
   }
 }
+
 async function startCameraAndStreaming() {
+  console.log('Starting camera and streaming...');
   ensureMediaDevices();
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    Swal.fire({ icon:'error', title:'Camera error', text:'Secure context (HTTPS or flagged HTTP) required.' });
+  if (!navigator.mediaDevices?.getUserMedia) {
+    Swal.fire({ icon:'error', title:'Camera error', text:'Secure context (HTTPS/localhost) required.' });
     return;
   }
   try {
     const v = ensureVideoEl();
-    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const constraints = { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false };
+    mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
     v.srcObject = mediaStream;
+    v.muted = true; v.playsInline = true; v.setAttribute('playsinline',''); v.setAttribute('muted','');
+    try { await v.play(); } catch (e) { console.warn('v.play() rejected', e); }
+
+    // poczekaj aż pojawi się rozmiar wideo
+    await new Promise((res) => {
+      if (v.videoWidth > 0 && v.videoHeight > 0) return res();
+      const to = setTimeout(res, 1500);
+      v.onloadedmetadata = () => { clearTimeout(to); res(); };
+    });
+    if (v.videoWidth === 0 || v.videoHeight === 0) {
+      console.warn('[camera] video size is 0x0 – skip frames until ready');
+    }
 
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
     if (frameTimer) clearInterval(frameTimer);
     frameTimer = setInterval(() => {
-      if (!v || v.readyState < 2) return;
+      if (!v || v.readyState < 2 || !v.videoWidth || !v.videoHeight) return;
       canvas.width = v.videoWidth; canvas.height = v.videoHeight;
       ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
       const frame = canvas.toDataURL('image/jpeg', 0.6);
       recordingSocket.emit('frame', JSON.stringify({ userID, frame }));
-    }, 500);
+    }, 400);
+    console.log('[camera] streaming started', v.videoWidth, 'x', v.videoHeight);
   } catch (err) {
     console.error('getUserMedia failed:', err);
     Swal.fire({ icon: 'error', title: 'Camera error', text: String(err) });
   }
 }
+
 function stopCameraAndStreaming() {
   if (frameTimer) clearInterval(frameTimer);
   frameTimer = null;

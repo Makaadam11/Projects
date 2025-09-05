@@ -59,9 +59,10 @@ class ChatNamespace(Namespace):
         if not msg.strip():
             return
         text_en = self.translator_service.text_for_bert(msg)
-        final_msg = text_en if text_en else msg
+        final_msg = text_en if text_en and text_en != "PLEASE SELECT TWO DISTINCT LANGUAGES" else msg
         user_id = int(obj.get("userID"))
         is_typing = bool(obj.get("isTyping"))
+        print(f"[typing] user={user_id} isTyping={is_typing} msg='{final_msg}'")
         data = {"pred": False, "values": {}, "isTyping": is_typing, "msg": final_msg, "userID": user_id}
 
         pred = self.sentiment_service.analyze(final_msg)
@@ -73,14 +74,14 @@ class ChatNamespace(Namespace):
         }
         data.update({"pred": True, "values": values})
         self.recording_service.update_sentiment(user_id, values)
-        if values["predicted"] == "negative":
+        if float(values["neg"]) >= 0.31:
+            print(f"[typing] user={user_id} sentiment={values}")
             self._warn_counts[user_id] = self._warn_counts.get(user_id, 0) + 1
             self.recording_service.logger_manager.log_chat_event(
                 user_id=user_id,
                 warnings_count=self._warn_counts[user_id],
             )
             emit("alert_user_typing", json.dumps({"msg": "You are typing negative words!"}), room=request.sid)
-
         emit("user_typing", json.dumps(data), broadcast=True)
 
     def on_correction(self, raw):

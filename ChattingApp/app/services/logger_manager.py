@@ -4,15 +4,13 @@ import secrets
 class LoggerManager:
     def __init__(self, recording_service):
         self.recording_service = recording_service
-        self.loggers = {}        # {user_id: Logger}
-        self.user_names = {}     # {user_id: username}
-        self.partners = {}       # {user_id: partner_id}
-        self.saved_pairs = set() # latch zapisu
+        self.loggers = {}
+        self.user_names = {}
+        self.partners = {}
+        self.saved_pairs = set()
         self.pair_session_id = {}
-
-        # Locki anty-duplikaty startów
-        self._sending_active = set()  # user_id z otwartym wysyłaniem
-        self._viewing_active = set()  # user_id z otwartym oglądaniem
+        self._sending_active = set()
+        self._viewing_active = set()
 
     def get_logger(self, user_id, username=None):
         lg = self.loggers.get(user_id)
@@ -27,12 +25,10 @@ class LoggerManager:
     def set_partner(self, user_id, partner_id, user_name=None, partner_name=None):
         self.partners[user_id] = partner_id
         self.partners[partner_id] = user_id
-
         if user_name:
             self.get_logger(user_id, user_name)
         if partner_name:
             self.get_logger(partner_id, partner_name)
-
         if user_name and partner_name:
             self.loggers[user_id].set_chat_partner(partner_name)
             self.loggers[partner_id].set_chat_partner(user_name)
@@ -63,24 +59,18 @@ class LoggerManager:
         return status or ""
 
     def _apply_start_end_locks(self, user_id: int, user_row: dict):
-        # Dedup start_sending
         if "start_sending_time" in user_row and user_row.get("start_sending_time"):
             if user_id in self._sending_active:
-                # zignoruj duplikat startu
                 user_row.pop("start_sending_time", None)
             else:
                 self._sending_active.add(user_id)
-        # End sending odblokowuje
         if "end_sending_time" in user_row and user_row.get("end_sending_time"):
             self._sending_active.discard(user_id)
-
-        # Dedup start_viewing
         if "start_viewing_time" in user_row and user_row.get("start_viewing_time"):
             if user_id in self._viewing_active:
                 user_row.pop("start_viewing_time", None)
             else:
                 self._viewing_active.add(user_id)
-        # End viewing odblokowuje
         if "end_viewing_time" in user_row and user_row.get("end_viewing_time"):
             self._viewing_active.discard(user_id)
 
@@ -91,94 +81,64 @@ class LoggerManager:
             return
         partner_id = self.partners.get(user_id)
         status = shared_data.get("status", "")
-
-        # Upewnij się, że logger istnieje
         user_logger = self.get_logger(user_id, self.user_names.get(user_id))
-
-        # Sentymenty tekstowe
         get_sent = getattr(self.recording_service, "get_sentiment", None)
         user_sent = get_sent(user_id) if get_sent else None
         partner_sent = get_sent(partner_id) if (get_sent and partner_id) else None
-
-        # 1) Wiersz użytkownika (baza)
-        # Kopiujemy tylko pola bazowe (bez partner_*)
         user_row = {k: v for k, v in shared_data.items() if not k.startswith("partner_")}
         user_row.setdefault("user_id", user_id)
         user_row.setdefault("status", status)
-
-        # Przy status=receiver, przekazane 'message' / 'complete_message' to treść partnera,
-        # więc NIE zapisujemy ich w bazie usera – trafią do partner_* niżej.
         if status == "receiver":
             user_row.pop("message", None)
             user_row.pop("complete_message", None)
-
-        # Locki: usuwamy duplikaty start_* bez end_*
         self._apply_start_end_locks(user_id, user_row)
-
         if user_sent:
             user_row.update({
                 "sentiment_neg": user_sent.get("neg", 0),
                 "sentiment_pos": user_sent.get("pos", 0),
                 "sentiment_neu": user_sent.get("neu", 0),
             })
-
-        # 2) partner_* do pliku użytkownika
         partner_data_for_user = {}
         if partner_id:
             partner_data_for_user = {
                 "name": self.user_names.get(partner_id, ""),
                 "status": self._invert_status(status),
-                # Jeżeli user jest viewerem, to 'message' odnosi się do partnera (nadawcy)
                 "message": shared_data.get("partner_message", shared_data.get("message", "") if status == "receiver" else ""),
                 "complete_message": shared_data.get("partner_complete_message", shared_data.get("complete_message", "") if status == "receiver" else ""),
-                # Liczniki partnera (jeśli są przekazane)
                 "warnings_count": shared_data.get("partner_warnings_count", None),
                 "corrections_count": shared_data.get("partner_corrections_count", None),
             }
-            # Wyrzuć None, zostaw tylko realne wartości
             partner_data_for_user = {k: v for k, v in partner_data_for_user.items() if v not in (None, "")}
-
             if partner_sent:
                 partner_data_for_user.update({
                     "sentiment_neg": partner_sent.get("neg", 0),
                     "sentiment_pos": partner_sent.get("pos", 0),
                     "sentiment_neu": partner_sent.get("neu", 0),
                 })
-
-        # Zapisz wiersz użytkownika
         user_logger.log_event(
             emotion_dict=individual_emotions or {},
             partner_data=partner_data_for_user,
             **user_row
         )
-
-        # 3) Lustrzany wpis do pliku partnera
         if partner_id:
             partner_logger = self.get_logger(partner_id, self.user_names.get(partner_id))
             partner_row = {
                 "user_id": partner_id,
                 "status": self._invert_status(status),
             }
-            # Tu NIE wstawiamy message/complete_message bazowych (to dane drugiej strony)
-
-            # partner_* (tj. user jako partner w pliku partnera) – zawiera także czasy usera
             user_data_for_partner = {
                 "name": self.user_names.get(user_id, ""),
                 "status": status,
-                # Przy status=sender: to wiadomość usera
-                # Przy status=receiver: to również partnerowa wiadomość, którą user ogląda
                 "message": shared_data.get("message", ""),
                 "complete_message": shared_data.get("complete_message", ""),
                 "warnings_count": shared_data.get("warnings_count", None),
                 "corrections_count": shared_data.get("corrections_count", None),
-                # czasy usera (Logger doda prefix partner_)
                 "start_sending_time": shared_data.get("start_sending_time", None),
                 "end_sending_time": shared_data.get("end_sending_time", None),
                 "total_sending_time": shared_data.get("total_sending_time", None),
                 "start_viewing_time": shared_data.get("start_viewing_time", None),
                 "end_viewing_time": shared_data.get("end_viewing_time", None),
                 "total_viewing_time": shared_data.get("total_viewing_time", None),
-                # emocje usera jako partner_*
                 "angry": (individual_emotions or {}).get("angry", 0),
                 "disgust": (individual_emotions or {}).get("disgust", 0),
                 "fear": (individual_emotions or {}).get("fear", 0),
@@ -187,19 +147,15 @@ class LoggerManager:
                 "surprise": (individual_emotions or {}).get("surprise", 0),
                 "neutral": (individual_emotions or {}).get("neutral", 0),
             }
-            # Usuń puste None, żeby nie zaśmiecać pliku
             user_data_for_partner = {k: v for k, v in user_data_for_partner.items() if v not in (None, "")}
-
-            # Sentyment usera w partner_*
             if user_sent:
                 user_data_for_partner.update({
                     "sentiment_neg": user_sent.get("neg", 0),
                     "sentiment_pos": user_sent.get("pos", 0),
                     "sentiment_neu": user_sent.get("neu", 0),
                 })
-
             partner_logger.log_event(
-                emotion_dict={},  # emocje usera już w partner_*
+                emotion_dict={},
                 partner_data=user_data_for_partner,
                 **partner_row
             )
