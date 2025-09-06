@@ -234,11 +234,23 @@ function trackWordDeletions(message) {
   prevWordTokens = curr;
 }
 const isEmptyMsg = (s) => !s || !s.trim();
+function clearMsgClasses() {
+  $("input#msg").removeClass("abusive positive neutral");
+}
+function getCurrentInput() {
+  return document.getElementById('msg')?.value || '';
+}
 
 function handleTyping() {
   let messageInput = document.getElementById('msg');
   if (!messageInput) return;
   let message = messageInput.value ?? "";
+
+  if (isEmptyMsg(message)) {
+    clearMsgClasses();
+  }
+
+  trackWordDeletions(message);
 
   trackWordDeletions(message);
 
@@ -255,6 +267,8 @@ function handleTyping() {
       totalSendingTime: totalSending,
       cancelled: true
     }));
+
+    clearMsgClasses();
 
     startSendingTime = null;
     endSendingTime = null;
@@ -303,9 +317,20 @@ chatSocket.on('user_typing', function(payload) {
   const typingStatus = $(".messages-chat");
   const data_ = typeof payload === 'string' ? JSON.parse(payload) : payload;
 
+  const currentText = getCurrentInput();
+  if (data_.userID == userID) {
+    if (isEmptyMsg(currentText)) {
+      clearMsgClasses();
+      return;
+    }
+    if ((data_.msg || '') !== currentText) {
+      return;
+    }
+  }
+
   if (data_.pred && data_.userID == userID) {
     create_chart(data_.values, data_.userID);
-    $("input#msg").removeClass("abusive positive neutral");
+    clearMsgClasses();
     if (data_.values.neg > 0.31) {
       alertUser("You are typing negative words!");
       $("input#msg").addClass("abusive");
@@ -315,7 +340,7 @@ chatSocket.on('user_typing', function(payload) {
       $("input#msg").addClass("neutral");
     }
   } else {
-    if (data_.userID == userID) $("input#msg").removeClass("abusive positive neutral");
+    if (data_.userID == userID) clearMsgClasses();
   }
 
   if (data_.isTyping && data_.userID==userID){
@@ -336,7 +361,10 @@ function sendMessage() {
     let messageInput = document.getElementById('msg');
     let message = messageInput.value;
 
-    if (isEmptyMsg(message)) return;
+    if (isEmptyMsg(message)) {
+      clearMsgClasses();
+      return;
+    }
     
     chatSocket.emit('message', JSON.stringify({
         msg: message, 
@@ -356,6 +384,7 @@ function sendMessage() {
     }));
 
     document.getElementById('msg').value = '';
+    clearMsgClasses();
     isTyping = false;
     startSendingTime = null;
     endSendingTime = null;
