@@ -17,32 +17,19 @@ function findPythonCmd(projectRoot: string): { cmd: string; args: string[] } {
   if (envPy && fs.existsSync(envPy)) return { cmd: envPy, args: [] };
 
   const candidates = [
-    // Windows venv
-    path.join(projectRoot, 'venv2', 'Scripts', 'pythonw.exe'),
-    path.join(projectRoot, '.venv', 'Scripts', 'pythonw.exe'),
-    path.join(projectRoot, 'venv', 'Scripts', 'pythonw.exe'),
-    path.join(projectRoot, 'env', 'Scripts', 'pythonw.exe'),
-    path.join(projectRoot, 'venv2', 'Scripts', 'python.exe'),
-    path.join(projectRoot, '.venv', 'Scripts', 'python.exe'),
-    path.join(projectRoot, 'venv', 'Scripts', 'python.exe'),
-    path.join(projectRoot, 'env', 'Scripts', 'python.exe'),
     // mac/Linux venvs
     path.join(projectRoot, 'venv_mac', 'bin', 'python'),
-    path.join(projectRoot, 'mac_venv', 'bin', 'python'),
-    path.join(projectRoot, '.venv', 'bin', 'python'),
-    path.join(projectRoot, 'venv2', 'bin', 'python'),
-    path.join(projectRoot, 'venv', 'bin', 'python'),
-    path.join(projectRoot, 'env', 'bin', 'python'),
-    // system python3 (mac)
-    '/opt/homebrew/bin/python3',
-    '/usr/local/bin/python3',
-    '/usr/bin/python3',
+    
+    // Windows venv
+    path.join(projectRoot, 'venv2', 'Scripts', 'pythonw.exe'),
+    path.join(projectRoot, 'venv2', 'Scripts', 'python.exe'),
+
   ];
   for (const p of candidates) {
     try { if (fs.existsSync(p)) return { cmd: p, args: [] }; } catch {}
   }
   if (process.platform === 'win32') return { cmd: 'pythonw.exe', args: [] };
-  return { cmd: 'python3', args: [] };
+  return { cmd: 'python3MINI_API_CMD=/Users/your_user/Projects/ChattingApp/venv_mac/bin/python -m app.mini_sentiment_api.api', args: [] };
 }
 
 async function ping(url: string, attempts = 40, delayMs = 250) {
