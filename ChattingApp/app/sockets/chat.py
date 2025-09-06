@@ -94,6 +94,24 @@ class ChatNamespace(Namespace):
         )
         emit("correction_acknowledged", json.dumps({"msg": "Correction noted. Warning count reset."}), room=request.sid)
     
+    def on_enable_analysis(self, raw):
+        data = json.loads(raw) if isinstance(raw, str) else raw or {}
+        try:
+            user_id = int(data.get('userID'))
+        except Exception:
+            return
+
+        v = data.get('enabled', False)
+        enabled = v if isinstance(v, bool) else str(v).strip().lower() in ("1", "true", "yes", "on")
+
+        partner_id = self.recording_service.chat_manager.get_partner_id(user_id)
+        print(f'[chat] enable_analysis enable={enabled} user={user_id} partner={partner_id} sid={request.sid}')
+
+        if partner_id:
+            emit('enable_analysis', {'userID': partner_id, 'enabled': enabled}, broadcast=True)
+        else:
+            print(f'[chat] enable_analysis no partner for user={user_id}')
+
     def alert_user_typing(self, alert):
         emit('alert_message', json.dumps(alert), broadcast=True)
         

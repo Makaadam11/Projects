@@ -417,16 +417,34 @@ document.addEventListener('click', (e) => {
   }
 });
 
+let bertSynced = false;
 const bertToggle = document.getElementById('toggle-bert');
 if (bertToggle) {
   bertToggle.checked = false;
+  applyBertUI(false);
   bertToggle.addEventListener('change', () => {
-    bertEnabled = bertToggle.checked;
-    document.getElementById('predicted_sentiment').style.display = bertEnabled ? 'block' : 'none';
-    document.getElementById('predValues').style.display = bertEnabled ? 'block' : 'none';
-    $("input#msg").removeClass("abusive positive neutral");
+    applyBertUI(bertToggle.checked);
   });
 }
+
+function applyBertUI(enabled) {
+  bertEnabled = enabled;
+  const pred = document.getElementById('predicted_sentiment');
+  const vals = document.getElementById('predValues');
+  if (pred) pred.style.display = enabled ? 'block' : 'none';
+  if (vals) vals.style.display = enabled ? 'block' : 'none';
+  if (!bertSynced) chatSocket.emit('enable_analysis', JSON.stringify({ userID: userID, enabled: enabled }));
+  $("input#msg").removeClass("abusive positive neutral");
+}
+
+chatSocket.on('enable_analysis', function(payload) {
+  const data_ = typeof payload === 'string' ? JSON.parse(payload) : payload;
+  if (data_.userID !== userID) return;
+  bertSynced = true;
+  if (bertToggle) bertToggle.checked = !!data_.enabled;
+  applyBertUI(!!data_.enabled);
+  bertSynced = false;
+});
 
 $(window).on('keydown', async function(event){
   if(event.which == 13){
