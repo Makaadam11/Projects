@@ -291,11 +291,11 @@ export default function EmotionTimelineSegments({
                 style={{
                   width: `${widthPct}%`,
                   backgroundColor: EMOTION_COLORS[s.dominantEmotion],
-                  minWidth: '1px',
+                  minWidth: '0.5px',
                   transition: 'width 120ms linear, background-color 120ms linear'
                 }}
                 className={`relative cursor-pointer ${
-                  selectedSegment === i ? 'ring-2 ring-blue-500 z-10' : ''
+                  selectedSegment === i ? 'ring-2 ring-black-500 z-10' : ''
                 } ${s.dominantEmotion === 'none' ? 'opacity-50' : 'hover:opacity-80'}`}
                 onClick={() =>
                   setSelectedSegment(selectedSegment === i ? null : i)
@@ -364,13 +364,12 @@ export default function EmotionTimelineSegments({
           )}
           {segments[selectedSegment].dominantEmotion !== 'none' && (
             <div className="space-y-2">
-              {segments[selectedSegment].messages.map((m, mi) => (
+              {segments[selectedSegment].messages.map((m, mi) => m.status !== "receiver" && (
                 <div key={mi} className="bg-white p-3 rounded border text-xs">
                   <div className="flex justify-between mb-1">
                     <span className="font-medium text-gray-700">
                       {formatFullTime(new Date(m.timestamp).getTime())}
                     </span>
-                    <span className="text-gray-500">{m.status}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-1 text-[11px] text-gray-600 mb-1">
                     <span>Happy: {m.happy ?? m.partner_happy ?? 0}</span>

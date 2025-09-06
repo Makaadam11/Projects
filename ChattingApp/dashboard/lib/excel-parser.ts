@@ -152,7 +152,7 @@ export class ExcelParser {
     }
   
 
-  private static extractUsersFromSplitData(data: UserRecord[], userNames: string[]): User[] {
+  private static extractUsersFromSplitData(data: UserRecord[]): User[] {
     const userMap = new Map<number, User>();
     
     data.forEach(record => {
@@ -162,6 +162,7 @@ export class ExcelParser {
         userMap.set(userId, {
           id: userId.toString(),
           name: record.username,
+          totalSessionTime: 0,
           totalSending: 0,
           totalViewing: 0,
           totalMessages: 0,
@@ -171,7 +172,7 @@ export class ExcelParser {
       }
       
       const user = userMap.get(userId)!;
-      
+
       if (record.status === 'sender' && record.complete_message !== '') {
         user.totalMessages++;
         user.totalSending += (record.total_sending_time || 0) / 1000;
@@ -182,7 +183,24 @@ export class ExcelParser {
       user.warnings_count += record.warnings_count || 0;
       user.corrections_count += record.corrections_count || 0;
     });
-    
+
+    const userRecordsMap = new Map<number, UserRecord[]>();
+    data.forEach(record => {
+      if (!userRecordsMap.has(record.user_id)) {
+        userRecordsMap.set(record.user_id, []);
+      }
+      userRecordsMap.get(record.user_id)!.push(record);
+    });
+    userMap.forEach((user, userId) => {
+      const records = userRecordsMap.get(userId);
+      if (records && records.length > 0) {
+        const timestamps = records.map(r => r.timestamp).filter(Boolean);
+        if (timestamps.length > 0) {
+          user.totalSessionTime = (new Date(timestamps[timestamps.length - 1]).getTime() - new Date(timestamps[0]).getTime()) / 1000;
+        }
+      }
+    });
+
     return Array.from(userMap.values());
   }
 

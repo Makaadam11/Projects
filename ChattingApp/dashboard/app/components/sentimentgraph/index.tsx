@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { SessionData, UserRecord } from '@/app/types/dashboard';
 
 const EMOTION_COLORS: Record<string, string> = {
@@ -35,11 +35,8 @@ interface Segment {
   start: number;
   end: number;
   durationMs: number;
-  // suma wartości w segmencie
   totals: { friendly: number; neutral: number; aggression: number };
-  // procentowy udział (0..100)
   percents: { friendly: number; neutral: number; aggression: number };
-  // pomocniczo – dominanta (do statystyki “Most Frequent”)
   dominantEmotion: string;
   messages: UserRecord[];
   isEmpty: boolean;
@@ -241,7 +238,7 @@ export default function SentimentTimelineSegments({
   if (!timelineConfig) {
     return (
       <div className={`bg-white p-6 rounded-lg shadow ${className}`}>
-        <h3 className="text-lg font-semibold mb-4">Emotion Timeline - {name}</h3>
+        <h3 className="text-lg font-semibold mb-4">Sentiment Timeline - {name}</h3>
         <div className="text-gray-500 text-sm">No data</div>
       </div>
     );
@@ -250,10 +247,11 @@ export default function SentimentTimelineSegments({
   return (
     <div className={`bg-white p-6 rounded-lg shadow ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Emotion Timeline - {name}</h3>
+        <h3 className="text-lg font-semibold">Sentiment Timeline - {name}</h3>
         <div className="flex items-center gap-2">
           <label className="text-xs text-gray-600">Segment</label>
           <select
+            title='Select segment duration'
             className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
             value={segmentSeconds}
             onChange={e => {
@@ -292,15 +290,14 @@ export default function SentimentTimelineSegments({
             const pN = Math.round(s.percents.neutral);
             const pA = Math.round(s.percents.aggression);
 
-            const title = `${formatFullTime(s.start)} - ${formatFullTime(s.end)}
-Friendly: ${pF}%, Neutral: ${pN}%, Aggression: ${pA}% (${Math.round(s.durationMs / 1000)}s)`;
+            const title = `${formatFullTime(s.start)} - ${formatFullTime(s.end)} Friendly: ${pF}%, Neutral: ${pN}%, Aggression: ${pA}% (${Math.round(s.durationMs / 1000)}s)`;
 
             return (
               <div
                 key={`${s.start}-${s.end}`}
-                style={{ width: `${widthPct}%`, minWidth: '1px' }}
+                style={{ width: `${widthPct}%`, minWidth: '0.5px' }}
                 className={`relative cursor-pointer transition-[width,background-color] duration-150
-                  ${selectedSegment === i ? 'ring-2 ring-blue-500 z-10' : ''}`}  // separator między segmentami
+                  ${selectedSegment === i ? 'ring-2 ring-black-500 z-10' : ''}`}  // separator między segmentami
                 onClick={() => setSelectedSegment(selectedSegment === i ? null : i)}
                 title={title}
               >
@@ -369,13 +366,12 @@ Friendly: ${pF}%, Neutral: ${pN}%, Aggression: ${pA}% (${Math.round(s.durationMs
 
           {segments[selectedSegment].messages.length > 0 && (
             <div className="space-y-2">
-              {segments[selectedSegment].messages.map((m, mi) => (
+              {segments[selectedSegment].messages.map((m, mi) => m.status !== "receiver" && (
                 <div key={mi} className="bg-white p-3 rounded border text-xs">
                   <div className="flex justify-between mb-1">
                     <span className="font-medium text-gray-700">
                       {formatFullTime(new Date(m.timestamp).getTime())}
                     </span>
-                    <span className="text-gray-500">{m.status}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-1 text-[11px] text-gray-600 mb-1">
                     <span>Neutral: {m.sentiment_neu ?? m.partner_sentiment_neu ?? 0}</span>

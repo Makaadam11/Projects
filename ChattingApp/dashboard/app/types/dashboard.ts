@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   name: string;
+  totalSessionTime: number;
   totalSending: number;
   totalViewing: number;
   totalMessages: number;

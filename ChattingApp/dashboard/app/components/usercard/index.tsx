@@ -57,17 +57,20 @@ export function UserCard({ name, data}: UserCardProps) {
       </div>
       
       <div className="grid grid-cols-3 gap-4 mt-4">
+
+
+          <div className="bg-gray-50 p-3 rounded text-center">
+            <div className="text-xs text-gray-600">Total Session Time</div>
+            <div className="text-lg font-bold" title={`${userData?.totalSessionTime || 0}s`}>
+              {formatTime(userData?.totalSessionTime || 0, timeUnit)}
+            </div>
+          </div>
+
         <div className="bg-blue-50 p-3 rounded text-center">
           <div className="text-xs text-gray-600">Total Time Sending</div>
           <div className="text-lg font-bold" title={`${userData?.totalSending || 0}s`}>
             {formatTime(userData?.totalSending || 0, timeUnit)}
           </div>
-          
-        </div>
-        <div className="bg-green-50 p-3 rounded text-center">
-          <div className="text-xs text-gray-600">Total Messages Sent</div>
-        <div className="text-lg font-bold">{userData?.totalMessages || 0}</div>
-          
         </div>
         <div className="bg-purple-50 p-3 rounded text-center">
           <div className="text-xs text-gray-600">Total Time Viewing</div>
@@ -76,7 +79,11 @@ export function UserCard({ name, data}: UserCardProps) {
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4 mt-4">
+      <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="bg-green-50 p-3 rounded text-center">
+          <div className="text-xs text-gray-600">Total Messages Sent</div>
+        <div className="text-lg font-bold">{userData?.totalMessages || 0}</div>
+        </div>
         <div className="mt-4 bg-red-50 p-3 rounded text-center">
           <div className="text-xs text-gray-600">No of Warnings</div>
           <div className="text-lg font-bold">{userData?.warnings_count || 0}</div>
