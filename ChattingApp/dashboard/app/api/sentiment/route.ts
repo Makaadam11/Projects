@@ -12,14 +12,13 @@ const PORT = process.env.MINI_API_PORT || '5003';
 const DEFAULT_BASE = `http://127.0.0.1:${PORT}`;
 
 function findPythonCmd(projectRoot: string): { cmd: string; args: string[] } {
-  // 1) env overrides
   const envPyW = process.env.PYTHONW;
   if (envPyW && fs.existsSync(envPyW)) return { cmd: envPyW, args: [] };
   const envPy = process.env.PYTHON;
   if (envPy && fs.existsSync(envPy)) return { cmd: envPy, args: [] };
 
-  // 2) venv candidates (prefer pythonw.exe on Windows)
   const candidates = [
+    // Windows venv
     path.join(projectRoot, 'venv2', 'Scripts', 'pythonw.exe'),
     path.join(projectRoot, '.venv', 'Scripts', 'pythonw.exe'),
     path.join(projectRoot, 'venv', 'Scripts', 'pythonw.exe'),
@@ -28,50 +27,55 @@ function findPythonCmd(projectRoot: string): { cmd: string; args: string[] } {
     path.join(projectRoot, '.venv', 'Scripts', 'python.exe'),
     path.join(projectRoot, 'venv', 'Scripts', 'python.exe'),
     path.join(projectRoot, 'env', 'Scripts', 'python.exe'),
-    // posix
-    path.join(projectRoot, 'venv2', 'bin', 'python'),
+    // mac/Linux venvs
+    path.join(projectRoot, 'venv_mac', 'bin', 'python'),
+    path.join(projectRoot, 'mac_venv', 'bin', 'python'),
     path.join(projectRoot, '.venv', 'bin', 'python'),
+    path.join(projectRoot, 'venv2', 'bin', 'python'),
     path.join(projectRoot, 'venv', 'bin', 'python'),
     path.join(projectRoot, 'env', 'bin', 'python'),
+    // system python3 (mac)
+    '/opt/homebrew/bin/python3',
+    '/usr/local/bin/python3',
+    '/usr/bin/python3',
   ];
   for (const p of candidates) {
-    if (fs.existsSync(p)) return { cmd: p, args: [] };
+    try { if (fs.existsSync(p)) return { cmd: p, args: [] }; } catch {}
   }
-
-  // 3) fallbacks (bez shell)
   if (process.platform === 'win32') return { cmd: 'pythonw.exe', args: [] };
   return { cmd: 'python3', args: [] };
-}
-
-async function ping(url: string, attempts = 40, delayMs = 250) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const r = await fetch(url, { cache: 'no-store' });
-      if (r.ok) return true;
-    } catch {}
-    await new Promise(r => setTimeout(r, delayMs));
-  }
-  return false;
 }
 
 function startMiniApi(baseUrl: string) {
   if (proc && !proc.killed) return;
 
-  const projectRoot = path.resolve(process.cwd(), '..'); // C:\Projects\ChattingApp
+  const projectRoot = path.resolve(process.cwd(), '..');
   const { cmd, args } = findPythonCmd(projectRoot);
+  const runArgs = [...args, '-m', 'app.mini_sentiment_api.api'];
+  const env = { ...process.env, PYTHONPATH: projectRoot, MINI_API_PORT: new URL(baseUrl).port || PORT };
+  const debug = process.env.DEBUG_SPAWN === '1';
+  if (debug) console.log('[mini-api] spawn cmd:', cmd, runArgs.join(' '));
 
-  // uruchom jako moduł, bez shell, ukryte okno
-  proc = spawn(cmd, [...args, '-m', 'app.mini_sentiment_api.api'], {
+  // Prefer direct spawn; on mac/linux do NOT use detached
+  proc = spawn(cmd, runArgs, {
     cwd: projectRoot,
-    detached: true,
-    stdio: 'ignore',
-    env: {
-      ...process.env,
-      PYTHONPATH: projectRoot,
-      MINI_API_PORT: new URL(baseUrl).port || PORT,
-    },
+    stdio: debug ? 'inherit' : 'ignore',
+    ...(process.platform === 'win32' ? { windowsHide: true, detached: true } : {}),
+    env,
   });
-  if (proc && proc.pid) proc.unref();
+
+  // Fallback: if direct exec fails (errno -8/ENOEXEC), use shell
+  proc.once('error', (err) => {
+    if (debug) console.error('[mini-api] direct spawn error -> shell fallback:', err);
+    const shCmd = `${cmd} ${runArgs.map(a => (/[\s'"]/.test(a) ? `'${a.replace(/'/g, `'\\''`)}` : a)).join(' ')}`;
+    proc = spawn('/bin/sh', ['-lc', shCmd], {
+      cwd: projectRoot,
+      stdio: debug ? 'inherit' : 'ignore',
+      env,
+    });
+  });
+
+  if (proc && proc.pid && process.platform === 'win32') proc.unref();
 }
 
 function ensureMiniApi(baseUrl: string) {
