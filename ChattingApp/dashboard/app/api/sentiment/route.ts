@@ -10,7 +10,6 @@ let readyPromise: Promise<void> | null = null;
 
 const PORT = process.env.MINI_API_PORT || '5003';
 const DEFAULT_BASE = `http://127.0.0.1:${PORT}`;
-
 function findPythonCmd(projectRoot: string): { cmd: string; args: string[] } {
   const envPyW = process.env.PYTHONW;
   if (envPyW && fs.existsSync(envPyW)) return { cmd: envPyW, args: [] };
@@ -44,6 +43,17 @@ function findPythonCmd(projectRoot: string): { cmd: string; args: string[] } {
   }
   if (process.platform === 'win32') return { cmd: 'pythonw.exe', args: [] };
   return { cmd: 'python3', args: [] };
+}
+
+async function ping(url: string, attempts = 40, delayMs = 250) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (r.ok) return true;
+    } catch {}
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  return false;
 }
 
 function startMiniApi(baseUrl: string) {
