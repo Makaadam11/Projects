@@ -180,8 +180,8 @@ export class ExcelParser {
         user.totalViewing += (record.total_viewing_time || 0) / 1000;
       }
 
-      user.warnings_count += record.warnings_count || 0;
-      user.corrections_count += record.corrections_count || 0;
+      user.warnings_count = Math.max(user.warnings_count, record.warnings_count || 0);
+      user.corrections_count = Math.max(user.corrections_count, record.corrections_count || 0);
     });
 
     const userRecordsMap = new Map<number, UserRecord[]>();

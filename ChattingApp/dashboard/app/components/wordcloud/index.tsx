@@ -16,6 +16,7 @@ interface WordFrequency {
   sentiment: number; // per-word NEG score 0..1
 }
 
+const NEG_TRESHOLD = 0.2
 const WORD_RE = /[A-Za-z]{2,}/g;
 const STOP = new Set([
   'the','and','that','this','with','have','will','they','from','been','were','said','each','which','their',
@@ -33,45 +34,35 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
     totalMessages: 0
   });
 
-  // Znormalizuj wiadomości autora "name" (jako sender) z obu perspektyw
-  const userMessages: { text: string; neg: number }[] = useMemo(() => {
+  const [cachedWordData, setCachedWordData] = useState<{
+    messageKey: string;
+    allWordFrequencies: WordFrequency[];
+    maxTopCount: number; // track the highest topCount we've calculated for
+  } | null>(null);
+
+  const userCompleteMessages: string[]= useMemo(() => {
     if (!data?.length) return [];
     const rows = data.flatMap(s => s.messages || []);
-    const out: { text: string; neg: number }[] = [];
+    const completeMessages: string[] = [];
     for (const r of rows) {
-      // jeśli autor jako baza
       if (r.username === name && r.complete_message && r.complete_message.trim()) {
-        const neg = Number(r.sentiment_neg ?? 0);
-        out.push({ text: r.complete_message.trim(), neg: isFinite(neg) ? neg : 0 });
+        completeMessages.push( r.complete_message.trim());
       }
-      // jeśli autor jako partner_* w pliku partnera
       if (r.partner_name === name && r.partner_complete_message && r.partner_complete_message.trim()) {
-        const neg = Number(r.partner_sentiment_neg ?? 0);
-        out.push({ text: r.partner_complete_message.trim(), neg: isFinite(neg) ? neg : 0 });
+        completeMessages.push( r.partner_complete_message.trim());
       }
     }
-    return out;
+    return completeMessages;
   }, [data, name]);
 
-  // wybierz top najbardziej negatywne zdania autora
-  function pickTopNegativeSentences(items: { text: string; neg: number }[], topK = 20, threshold = 0.1): string[] {
-    const filtered = items.filter(i => i.text && i.neg >= threshold);
-    const sorted = filtered.sort((a, b) => b.neg - a.neg).slice(0, topK);
-    const seen = new Set<string>();
-    const res: string[] = [];
-    for (const s of sorted) {
-      const k = s.text.toLowerCase();
-      if (!seen.has(k)) {
-        seen.add(k);
-        res.push(s.text);
-      }
-    }
-    return res;
-  }
+  const messagesKey = useMemo(() => {
+    return `${name}-${userCompleteMessages.length}-${userCompleteMessages.join('').substring(0, 100)}`;
+  }, [name, userCompleteMessages]);
 
-  function extractUniqueWords(sentences: string[]): string[] {
+
+  function extractUniqueWords(completeMessages: string[]): string[] {
     const set = new Set<string>();
-    for (const s of sentences) {
+    for (const s of completeMessages) {
       const tokens = (s.match(WORD_RE) || []).map(t => t.toLowerCase());
       for (const t of tokens) {
         if (t.length > 2 && !STOP.has(t)) set.add(t);
@@ -93,31 +84,59 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
   }
 
   async function buildTopNegativeWords(): Promise<WordFrequency[]> {
-    const sentences = pickTopNegativeSentences(userMessages, 1, 0);
-    const words = extractUniqueWords(sentences);
+    // Check if we can use cached data and have enough words
+    if (cachedWordData && 
+        cachedWordData.messageKey === messagesKey && 
+        cachedWordData.maxTopCount >= topCount) {
+      console.log('Using cached word data');
+      const items = cachedWordData.allWordFrequencies.slice(0, topCount);
+      setWordStats({
+        totalWords: items.length,
+        negativeMessages: userCompleteMessages.length,
+        totalMessages: userCompleteMessages.length
+      });
+      return items;
+    }
+
+    // Need to recalculate if topCount is higher than cached or data changed
+    if (cachedWordData && cachedWordData.messageKey === messagesKey && cachedWordData.maxTopCount < topCount) {
+      console.log(`Recalculating: topCount ${topCount} > cached ${cachedWordData.maxTopCount}`);
+    } else {
+      console.log('Computing fresh word data');
+    }
+
+    const words = extractUniqueWords(userCompleteMessages);
     const scores = await fetchWordNegScores(words);
 
-    console.log(sentences);
     console.log(words);
     console.log(scores);
 
-    // zbuduj frequency na bazie całego korpusu zdań (nie tylko top), ale filtruj po word score
     const freq = new Map<string, number>();
-    for (const { text } of userMessages) {
-      const tokens = (text.match(WORD_RE) || []).map(t => t.toLowerCase()).filter(t => !STOP.has(t) && t.length > 2);
+    for (const msg of userCompleteMessages) {
+      const tokens = (msg.match(WORD_RE) || []).map(t => t.toLowerCase()).filter(t => !STOP.has(t) && t.length > 2);
       for (const t of tokens) freq.set(t, (freq.get(t) || 0) + 1);
     }
 
-    const items: WordFrequency[] = Object.entries(scores)
-      .filter(([, neg]) => (neg ?? 0) >= 0)        // per-word próg
+    const allItems: WordFrequency[] = Object.entries(scores)
+      .filter(([, neg]) => (neg ?? 0) >= NEG_TRESHOLD)
       .map(([w, neg]) => ({ text: w, sentiment: Number(neg), frequency: freq.get(w) || 1 }))
-      .sort((a, b) => (b.sentiment - a.sentiment) || (b.frequency - a.frequency))
-      .slice(0, topCount);
+      .sort((a, b) => (b.sentiment - a.sentiment) || (b.frequency - a.frequency));
 
+    // Debug: show top 5 most negative words
+    console.log('Top 5 most negative words:', allItems.slice(0, 5).map(w => `${w.text}(${w.sentiment.toFixed(3)})`));
+
+    // Cache with the current topCount as maxTopCount (since we calculated all available words)
+    setCachedWordData({
+      messageKey: messagesKey,
+      allWordFrequencies: allItems,
+      maxTopCount: Math.max(topCount, allItems.length) // we have all available words
+    });
+
+    const items = allItems.slice(0, topCount);
     setWordStats({
       totalWords: items.length,
-      negativeMessages: sentences.length,
-      totalMessages: userMessages.length
+      negativeMessages: userCompleteMessages.length,
+      totalMessages: userCompleteMessages.length
     });
     return items;
   }
@@ -223,7 +242,7 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
       setLoading(false);
     })();
     return () => { mounted = false; };
-  }, [userMessages, topCount, fontScale]);
+  }, [userCompleteMessages, topCount, fontScale]);
 
   return (
     <div className={`bg-white p-6 rounded-lg shadow ${className}`}>
@@ -233,14 +252,14 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
           <p className="text-sm text-gray-600">Top {topCount} words (per-word negative sentiment)</p>
           <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
             <label>Font scale</label>
-            <input type="range" min={0.5} max={2} step={0.1} value={fontScale} onChange={e => setFontScale(parseFloat(e.target.value))} className="w-32" />
+            <input title='text size' type="range" min={0.5} max={2} step={0.1} value={fontScale} onChange={e => setFontScale(parseFloat(e.target.value))} className="w-32" />
             <span>{fontScale.toFixed(1)}x</span>
           </div>
         </div>
         <div className="text-right text-sm text-gray-500">
           <div>Words: {wordStats.totalWords}</div>
           <div>Analyzed messages: {wordStats.negativeMessages}</div>
-          <div>User messages: {userMessages.length}</div>
+          <div>User messages: {userCompleteMessages.length}</div>
         </div>
       </div>
       <div className="border border-gray-200 rounded overflow-hidden">
