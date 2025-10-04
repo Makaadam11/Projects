@@ -5,14 +5,16 @@ import os
 from typing import Optional, List, Union
 
 with open('api_key.json') as f:
-    key = json.load(f)['key']
+    api_keys = json.load(f)
+    antropic_key = api_keys['antropic_key']
+    grok_key = api_keys['grok_key']
 
 from groq import Groq
 
 class GroqClient:
     def __init__(self):
         self.client = Groq(
-            api_key=os.environ.get("GROQ_API_KEY"),
+            api_key=os.environ.get("GROQ_API_KEY") if os.environ.get("GROQ_API_KEY") else grok_key
         )
 
     def generate_report(self, prompt: str) -> str:
@@ -30,7 +32,7 @@ class GroqClient:
                         "content": prompt
                     }
                 ],
-                model="llama3-8b-8192"
+                model="llama-3.1-8b-instant"
             )
             return response.choices[0].message.content
 
@@ -41,7 +43,7 @@ class GroqClient:
 class AnthropicLanguageModel:
     def __init__(self):
         self.client = anthropic.Anthropic(
-            api_key=key
+            api_key=antropic_key
         )
 
     def generate_report(self, prompt: str) -> str:
