@@ -4,5 +4,4 @@ UAL_2425_data.xlsx
 data
 Final.csv
 requirements.txt
-/report_assets/*.*.png
-/report_assets/*.*.svg
+backend/report_assets/*.*
