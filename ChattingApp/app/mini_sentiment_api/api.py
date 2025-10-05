@@ -8,22 +8,15 @@ if __package__ in (None, "",):
         
 from flask import Flask, request, jsonify
 import re
-from app.config.config import Config
-from app.models.bert_model import BertModel
 from app.utils.translator_service import TranslatorService
+from afinn import Afinn
+afinn = Afinn()
 
 app = Flask(__name__)
 
-cfg = Config()
-bert = BertModel(cfg.MODEL_PATH, cfg.TOKENIZER_PATH, max_len=50)
 translator = TranslatorService()
 
 LABELS = ['negative','neutral','positive']
-
-def analyze(text: str):
-    probs, idx = bert.predict(text)
-    neg, neu, pos = float(probs[0]), float(probs[1]), float(probs[2])
-    return {'neg': neg, 'neu': neu, 'pos': pos, 'predicted': LABELS[int(idx)]}
 
 def to_en(text: str) -> str:
     try:
@@ -50,13 +43,11 @@ def score_words():
         norm.append(m[0].lower())
     uniq = sorted(set(norm))
     out = {}
-    for w in uniq:
-        try:
-            en = to_en(w)
-            pred = analyze(en)
-            out[w] = float(pred['neg'])
-        except Exception:
-            out[w] = 0.0
+    for uword in uniq:
+        if isinstance(uword, str) and len(uword) > 1:
+            score = afinn.score(uword)
+            neg_score = max(0, min(1, -score / 5))
+            out[uword.lower()] = round(neg_score, 3)
     return jsonify({'scores': out})
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@ interface WordFrequency {
   sentiment: number; // per-word NEG score 0..1
 }
 
-const NEG_TRESHOLD = 0.2
+const NEG_TRESHOLD = 0.1;
 const WORD_RE = /[A-Za-z]{2,}/g;
 const STOP = new Set([
   'the','and','that','this','with','have','will','they','from','been','were','said','each','which','their',
@@ -28,9 +28,8 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fontScale, setFontScale] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [wordStats, setWordStats] = useState<{ totalWords: number; negativeMessages: number; totalMessages: number }>({
+  const [wordStats, setWordStats] = useState<{ totalWords: number; totalMessages: number }>({
     totalWords: 0,
-    negativeMessages: 0,
     totalMessages: 0
   });
 
@@ -92,7 +91,6 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
       const items = cachedWordData.allWordFrequencies.slice(0, topCount);
       setWordStats({
         totalWords: items.length,
-        negativeMessages: userCompleteMessages.length,
         totalMessages: userCompleteMessages.length
       });
       return items;
@@ -135,7 +133,6 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
     const items = allItems.slice(0, topCount);
     setWordStats({
       totalWords: items.length,
-      negativeMessages: userCompleteMessages.length,
       totalMessages: userCompleteMessages.length
     });
     return items;
@@ -257,8 +254,7 @@ export default function WordCloud({ name, data, topCount = 50, className = '' }:
           </div>
         </div>
         <div className="text-right text-sm text-gray-500">
-          <div>Words: {wordStats.totalWords}</div>
-          <div>Analyzed messages: {wordStats.negativeMessages}</div>
+          <div>Negative Words: {wordStats.totalWords}</div>
           <div>User messages: {userCompleteMessages.length}</div>
         </div>
       </div>
